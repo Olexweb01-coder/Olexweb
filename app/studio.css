@@ -232,6 +232,63 @@
   #orbit-detail.behind, #orbit.behind { opacity: 0 !important; pointer-events: none !important; }
   @media (max-width: 720px) { #book-close { right: 6px; top: -18px; } }
   #orbit-items { max-height: calc(100vh - 200px); overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; scrollbar-width: thin; }
+
+  /* restored: gallery controls and lyrics layout */
+  #gallery { position: fixed; inset: 0; z-index: 12; pointer-events: none; opacity: 0; transition: opacity .5s ease .2s; }
+  #gallery.on { opacity: 1; }
+  #gallery button { position: fixed; top: var(--gy, 50%); width: 46px; height: 46px; margin-top: -23px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--ink); font: inherit; font-size: 26px; line-height: 1; cursor: pointer; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); pointer-events: auto; transition: border-color .2s, transform .2s; }
+  #gallery button:hover { border-color: var(--green); transform: scale(1.06); }
+  #gallery-prev { left: var(--gl, 20%); margin-left: -23px; }
+  #gallery-next { left: var(--gr, 80%); margin-left: -23px; }
+  #gallery #gallery-story { position: fixed; left: var(--gx, 50%); top: calc(var(--gb, 80%) + 44px); width: auto; height: auto; margin: 0; transform: translate(-50%, 0); appearance: none; border: 1px solid var(--line); background: var(--glass); color: var(--green); font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; cursor: pointer; pointer-events: auto; backdrop-filter: blur(14px); }
+  #gallery #gallery-story:hover { border-color: var(--green); transform: translate(-50%, 0); }
+  #gallery-caption { position: fixed; left: var(--gx, 50%); top: var(--gb, 80%); transform: translate(-50%, 0); background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(14px); color: var(--ink); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
+  #gallery #gallery-close { position: fixed; left: var(--gr, 80%); top: var(--gt, 20%); width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; border: 1px solid var(--line); background: var(--glass); color: var(--ink-dim); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; pointer-events: auto; backdrop-filter: blur(14px); }
+  #gallery-close:hover { color: var(--ink); border-color: rgba(242,239,233,.4); }
+  #orbit-detail.lyrics { width: 320px; }
+  #orbit-detail.lyrics #d-text { max-height: 46vh; overflow: auto; padding-right: 6px; font-size: 14px; line-height: 1.5; }
+  #orbit-detail.lyrics #d-text b { display: block; color: var(--green); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin: 12px 0 4px; }
+  #orbit-detail.lyrics #d-text b:first-child { margin-top: 0; }
+  #orbit-detail.lyrics #d-text span { display: block; }
+  #gallery #gallery-story { top: var(--gs, calc(var(--gb, 80%) + 44px)); }
+  @media (max-width: 720px) { #gallery button { width: 40px; height: 40px; margin-top: -20px; font-size: 22px; } #gallery-prev { left: 34px; } #gallery-next { left: calc(100vw - 34px); } }
+  @media (max-width: 720px) { #orbit-detail.lyrics #d-text { max-height: 36vh; } }
+
+  /* ---- mobile-first fixes ---- */
+  #orbit-detail { display: flex; flex-direction: column; max-height: calc(100vh - 28px); overflow: hidden; }
+  #orbit-detail #d-text { overflow-y: auto; min-height: 0; flex: 0 1 auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(143,227,106,.6) transparent; }
+  #orbit-items::-webkit-scrollbar, #d-text::-webkit-scrollbar { width: 4px; } 
+  #orbit-items::-webkit-scrollbar-thumb, #d-text::-webkit-scrollbar-thumb { background: rgba(143,227,106,.6); border-radius: 4px; }
+  #orbit-items { scrollbar-color: rgba(143,227,106,.6) transparent; }
+  .more-hint { display: none; margin: 6px 0 0 4px; font-size: 11.5px; font-weight: 600; color: var(--green); pointer-events: none; }
+  #orbit-col.has-more #orbit-more, #orbit-detail.has-more #d-more { display: block; }
+  #orbit-col.has-more #orbit-items, #orbit-detail.has-more #d-text { -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent); mask-image: linear-gradient(to bottom, #000 80%, transparent); }
+  html.is-reading #sound, html.is-reading #ask, html.is-reading #overview { opacity: 0 !important; pointer-events: none !important; }
+  @media (max-width: 900px) { html.is-focus #sound, html.is-focus #ask, html.is-focus #overview { opacity: 0 !important; pointer-events: none !important; } }
+  @media (max-width: 720px) { #orbit-detail, #orbit-detail.flip { max-height: calc(100vh - 176px); } }
+  /* the book: sized to leave room for its controls, logo in the page footer, arrows beside it only where there is room */
+  #book-inner { width: min(760px, 92vw, calc((100vh - 250px) * 1.6)); margin-bottom: 120px; }
+  .leaf .face, #book-left .face.static { padding: 30px 28px 40px; }
+  .leaf .pm { top: auto; right: auto; bottom: 12px; left: 16px; width: 14px; height: 16px; }
+  .leaf .pn { bottom: 12px; right: 16px; }
+  .leaf .face p.hl { font-size: 1.1em; line-height: 1.42; border-left: 3px solid var(--bk-accent); padding-left: .8em; color: #2b2a26; }
+  .opener .byline { margin-top: 1em; font-size: .8em; color: #6b665c; }
+  .colophon p { margin: 0 0 .5em; } .colophon .go { margin-top: 1.4em; color: #4f8a3a; font-weight: 600; }
+  .closing .mf { margin: 1em 0 .3em; font-size: .78em; letter-spacing: .1em; text-transform: uppercase; color: #6b665c; }
+  .closing ul { margin: 0 0 1em; padding-left: 1.2em; } .closing li { margin: 0 0 .3em; }
+  @media (max-width: 920px) {
+    #book .barrow { top: calc(100% + 8px); margin-top: 0; width: 44px; height: 44px; font-size: 24px; }
+    #book #book-prev { left: 0; right: auto; } #book #book-next { right: 0; left: auto; }
+    #book-controls { padding: 0 56px; margin-top: 20px; }
+  }
+  @media (max-width: 720px) {
+    #book-inner { width: min(96vw, calc((100vh - 270px) * 4 / 3)); aspect-ratio: 4 / 3; }
+    .leaf .face, #book-left .face.static { padding: 16px 14px 32px; font-size: 11.5px; }
+    #book-close { right: 4px; top: -20px; }
+  }
+  #orbit-detail .dback { align-self: flex-start; }
+  @media (max-width: 720px) { #orbit-detail.lyrics { width: auto; } }
+  #orbit-detail { transition: opacity .45s ease, transform .45s ease; }   /* cards fade in where they belong; their position never animates */
   #nowebgl { display: none; position: fixed; inset: 0; z-index: 40; place-items: center; text-align: center; padding: 24px; background: var(--bg); }
   #nowebgl.on { display: grid; }
   #nowebgl p { max-width: 420px; color: var(--ink-dim); line-height: 1.5; }

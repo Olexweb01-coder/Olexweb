@@ -40,14 +40,14 @@ export default function Studio() {
   <div id="orbit-ring"></div>
   <div id="orbit-col">
     <div id="orbit-head"></div>
-    <div id="orbit-items"></div>
+    <div id="orbit-items"></div><div class="more-hint" id="orbit-more">Scroll for more &darr;</div>
   </div>
 </div>
 <div id="orbit-detail">
   <button id="d-back" class="dback" type="button">&lsaquo; Back</button>
   <button id="d-close" class="x" type="button" aria-label="Close">&times;</button>
   <h3 id="d-title"></h3>
-  <p id="d-text"></p>
+  <p id="d-text"></p><div class="more-hint" id="d-more">Scroll for more &darr;</div>
   <a id="d-link" class="cta" href="#"></a><div id="d-ctas"></div>
 </div>
 <div id="veil"><img src="/studio/logo.png" alt="" width="180" /></div>
