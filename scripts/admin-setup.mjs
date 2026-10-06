@@ -53,7 +53,7 @@ function ask(question, { hidden = false } = {}) {
 }
 const COMMON = ['password', '123456', 'qwerty', 'olexweb', 'olaitan', 'letmein', 'admin', 'welcome', 'iloveyou', 'abc123']
 function weak(pw, email) {
-  if (pw.length < 12) return 'Use at least 12 characters.'
+  if (pw.length < 10) return 'Use at least 10 characters.'
   const low = pw.toLowerCase()
   if (COMMON.some((w) => low.includes(w))) return 'Avoid common words (password, admin, your name or the site name).'
   if (email && low.includes(email.split('@')[0].toLowerCase())) return 'Don\u2019t include your email name.'
@@ -127,7 +127,7 @@ async function main() {
   const name = auto ? (process.env.ADMIN_SETUP_NAME || 'Olaitan Adebayo') : ((await ask('  Your name [Olaitan Adebayo]: ')) || 'Olaitan Adebayo')
   let pw
   for (;;) {
-    pw = auto ? process.env.ADMIN_SETUP_PASSWORD : await ask('  Choose a password (at least 12 characters; typing is hidden): ', { hidden: true })
+    pw = auto ? process.env.ADMIN_SETUP_PASSWORD : await ask('  Choose a password (at least 10 characters; typing is hidden): ', { hidden: true })
     const w = weak(pw, email); if (w) { no(w); if (auto) { await db.end(); return } continue }
     if (auto || pw === await ask('  Type it again: ', { hidden: true })) break
     no('The two passwords didn\u2019t match. Try again.')
