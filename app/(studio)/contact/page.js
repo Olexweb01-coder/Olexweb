@@ -11,7 +11,7 @@ export default function Contact() {
     <p><a className="btn ghost" href={'tel:' + site.phone}>Call {site.phoneDisplay}</a><a className="btn ghost" href={'tel:' + site.phone2}>Other line {site.phone2Display}</a></p>
     <h2>Prefer to hire through a platform?</h2>
     <p>Olexweb is on Contra, where the agreement, milestones and payment are handled for you.</p>
-    <div className="contra-hire-me-button" data-analyticsUserId="36cfd02b-8e58-4bdb-a4a0-11cea727bb1d" data-theme="light" data-username="olexweb01"></div>
+    <div className="contra-hire-me-button" data-analyticsuserid="36cfd02b-8e58-4bdb-a4a0-11cea727bb1d" data-theme="light" data-username="olexweb01"></div>
     <p><a className="btn ghost" href="https://contra.com/olexweb01" target="_blank" rel="noopener">Open the Contra profile</a></p>
     <Script src="https://contra.com/static/embed/sdk.js" strategy="afterInteractive" charSet="utf-8" />
     <p className="muted">Ideas → Design → Code → Real impact.</p>
