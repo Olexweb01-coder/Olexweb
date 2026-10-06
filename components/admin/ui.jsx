@@ -86,5 +86,5 @@ export function ImagePicker({ value, onChange, kind = 'screenshot', label = 'Ima
 }
 
 export function Notice() {
-  return <p className="read-only">Changes are saved here straight away. The public website starts showing them after the next update (Phase 4).</p>
+  return <p className="read-only">Published changes appear on olexweb.com within seconds. Drafts stay private until you publish them.</p>
 }

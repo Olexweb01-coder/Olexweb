@@ -165,3 +165,39 @@ update ventures set summary = $q$A problem easy to notice and hard to fix, taken
 update ventures set line = $q$An AI second brain.$q$ where slug = 'aviirel' and line = $q$An AI second brain.$q$;
 update ventures set kind = $q$An AI product$q$ where slug = 'aviirel' and kind = '';
 update ventures set summary = $q$Notes, ideas and knowledge in one place that thinks with you, instead of sitting in folders.$q$ where slug = 'aviirel' and summary = '';
+
+-- ---------- Phase 5: the Assistant (safe to run again) ----------
+create table if not exists assistant_settings (
+  id          int primary key default 1 check (id = 1),               -- one row
+  mode        text not null default 'approval' check (mode in ('approval', 'autopilot')),
+  pace        int not null default 2 check (pace between 1 and 3),     -- articles a week
+  topics      jsonb not null default '["web development", "AI for business", "immersive 3D websites", "website speed and SEO", "small business websites"]',
+  socials     jsonb not null default '{"linkedin": "https://www.linkedin.com/in/olexweb", "x": "https://x.com/olexweb", "facebook": "https://www.facebook.com/share/17xWswJgGE/"}',
+  model       text,                                                    -- picked automatically from the models your key can use
+  last_run    timestamptz,
+  updated_at  timestamptz not null default now()
+);
+insert into assistant_settings (id) values (1) on conflict do nothing;
+create table if not exists assistant_messages (
+  id          bigserial primary key,
+  role        text not null check (role in ('you', 'assistant')),
+  text        text not null,
+  post_id     int references posts(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+create table if not exists research_items (
+  id          serial primary key,
+  topic       text not null,
+  why         text not null default '',
+  searches    jsonb not null default '[]',      -- real searches (Google suggestions) behind the topic: the evidence
+  sources     jsonb not null default '[]',      -- [{title, url, from}]
+  found_on    date not null default current_date,
+  used_by     int references posts(id) on delete set null
+);
+alter table posts add column if not exists origin text not null default 'person';            -- 'person' or 'assistant'
+alter table posts add column if not exists claims jsonb not null default '[]';               -- sentences the assistant could not confirm
+alter table posts add column if not exists auto_publish_at timestamptz;                      -- autopilot: publish if not reviewed by then
+alter table posts add column if not exists checks jsonb not null default '{}';              -- results of the last automatic checks
+insert into admin_users (email, name, role, perms, totp_enabled)
+  values ('assistant@olexweb.local', 'Assistant', 'assistant', '{"publish": false, "reviews": false, "testimonials": false, "ventures": false}', false)
+  on conflict (email) do nothing;                                                              -- never signs in: no password, no two-step secret

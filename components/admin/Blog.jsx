@@ -1,8 +1,9 @@
 'use client'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from './icons'
 import { act, toast, Sheet, Notice } from './ui'
+import { seoChecks } from '@/lib/seoChecks'
 
 const PILL = { live: ['live', 'Live'], draft: ['draft', 'Draft'], waiting: ['draft', 'Waiting for approval'] }
 const KW = ['Olaitan Adebayo', 'Olexweb', 'web developer', 'immersive digital experiences', '3D website design', 'business website design', 'Next.js developer', 'website that brings customers']
@@ -12,6 +13,7 @@ const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/
 export default function BlogBoard({ items, canPublish, isOwner }) {
   const router = useRouter(), [edit, setEdit] = useState(null)
   const close = useCallback(() => setEdit(null), [])
+  useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get('open')); const it = items.find((x) => x.id === id); if (it) setEdit({ data: it }) }, [items])   // links from the assistant open the draft
   return (<>
     <div className="top"><h1 className="d">Blog</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { body: [{ type: 'p', text: '' }], seo: {} } })}>Write</button></div>
     <Notice />
@@ -23,23 +25,8 @@ export default function BlogBoard({ items, canPublish, isOwner }) {
   </>)
 }
 
-// The checklist: the same rules the preview showed (keyword overuse is judged from 300 words).
-export function seoChecks({ keyword, title, description, body }) {
-  const kw = (keyword || '').trim().toLowerCase(), st = title || '', sd = description || ''
-  const text = body.map((b) => b.text).join(' '), words = text.split(/\s+/).filter(Boolean).length
-  const first = (body.find((b) => b.type === 'p') || {}).text || '', heads = body.filter((b) => b.type === 'h').map((b) => b.text.toLowerCase())
-  const hits = kw ? text.toLowerCase().split(kw).length - 1 : 0, density = words ? (hits * kw.split(/\s+/).length) / words * 100 : 0
-  return [
-    [!!kw, 'A focus keyword is chosen'],
-    [!!kw && st.toLowerCase().includes(kw), 'The keyword is in the search title'],
-    [!!kw && first.toLowerCase().includes(kw), 'The keyword is in the first paragraph'],
-    [!!kw && heads.some((h) => h.includes(kw)), 'The keyword is in at least one heading'],
-    [st.length >= 30 && st.length <= 60, 'Search title is 30 to 60 characters'],
-    [sd.length >= 110 && sd.length <= 155, 'Search description is 110 to 155 characters'],
-    [words >= 600, `At least 600 words (now ${words})`],
-    [words >= 300 && density <= 3, words < 300 ? 'Keyword use is checked once the article reaches 300 words' : density > 3 ? 'The keyword is overused: Google penalises stuffing' : 'The keyword is not overused', words >= 300 && density > 3],
-  ]
-}
+// The checklist lives in lib/seoChecks.js, shared with the assistant so both always agree.
+export { seoChecks }
 
 function PostEditor({ item, canPublish, isOwner, onClose, onDone }) {
   const p = item.data, seo0 = p.seo || {}
@@ -74,6 +61,7 @@ function PostEditor({ item, canPublish, isOwner, onClose, onDone }) {
 
   return (<Sheet title={item.isNew ? 'New article' : 'Edit article'} onClose={onClose} foot={foot}>
     {locked ? <p className="read-only">This article is live. Only Olaitan can change it.</p> : null}
+    {p.origin === 'assistant' ? <AssistantNotes p={p} /> : null}
     <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0 }}>
       <div className="field"><label htmlFor="bp1">Title</label><input className="input" id="bp1" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={140} /></div>
       <div className="field"><label htmlFor="bp2">Summary</label><textarea className="input" id="bp2" style={{ minHeight: 70 }} value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={320} placeholder="One or two sentences shown on the Blog page." /></div>
@@ -106,4 +94,17 @@ function PostEditor({ item, canPublish, isOwner, onClose, onDone }) {
     {err ? <p className="err" role="alert">{err}</p> : null}
     {isOwner && !item.isNew ? <p style={{ marginTop: 22 }}><button className="btn btn-bad" disabled={busy} onClick={() => go('bin', 'Moved to the bin.')}>Move to bin</button></p> : null}
   </Sheet>)
+}
+
+// What the assistant knows about its own draft: why the topic, what to check, where facts came from, and the checks.
+function AssistantNotes({ p }) {
+  const c = p.checks || {}, hours = p.auto_publish_at ? Math.max(0, Math.round((new Date(p.auto_publish_at) - Date.now()) / 3600e3)) : null
+  return (<div style={{ display: 'grid', gap: 10, marginBottom: 18 }}>
+    {hours !== null && p.status === 'waiting' ? <div className="endbox" style={{ borderColor: 'rgba(143,227,106,.4)' }}><b>Autopilot</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>If you don’t review it, the assistant removes anything unconfirmed, checks everything again and publishes it in about {hours} hour{hours === 1 ? '' : 's'}.</span></div> : null}
+    <div className="endbox" style={{ borderColor: 'rgba(158,197,255,.4)' }}><b style={{ color: '#9ec5ff' }}>Why this topic</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>Real searches: {(p.evidence || []).map((x) => '\u201c' + x + '\u201d').join(', ') || 'none recorded'}.</span></div>
+    {(p.claims || []).length ? <div className="endbox" style={{ borderColor: 'rgba(240,179,94,.45)' }}><b style={{ color: 'var(--warn)' }}>{p.claims.length} claim{p.claims.length === 1 ? '' : 's'} to check</b><ul style={{ margin: '6px 0 0', paddingLeft: 18, color: 'var(--dim)', fontSize: 13.5 }}>{p.claims.map((x) => <li key={x}>{x}</li>)}</ul><span style={{ color: 'var(--dim)', fontSize: 13 }}>Keep, soften or remove each one. Autopilot removes them.</span></div> : null}
+    {(p.sources || []).length ? <div className="endbox"><b>Sources</b><ol className="srclist">{p.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--paper)' }}>{s.title || s.url}</a></li>)}</ol></div> : null}
+    {c.seo ? <div className="endbox"><b>Automatic checks</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>{c.seo.filter((x) => x.pass).length} of {c.seo.length} search checks pass. Similarity to sources: {c.originality ? c.originality.overlap : 0}% (5% at most). {c.brokenLinks && c.brokenLinks.length ? 'Broken links: ' + c.brokenLinks.join(', ') : 'Every link works.'}</span></div> : null}
+    <p className="note" style={{ margin: 0 }}>To ask for changes, tell the assistant in its Chat. Links are written as [words](address).</p>
+  </div>)
 }
