@@ -143,3 +143,12 @@ alter table posts add column if not exists binned_at timestamptz;
 alter table ventures add column if not exists binned_at timestamptz;
 alter table ventures add column if not exists image text not null default '';
 update ventures set image = '/v2/sites/' || slug || '-full.webp' where image = '';
+
+-- ---------- Phase 3 (safe to run again) ----------
+alter table review_links add column if not exists token_enc text;          -- encrypted, so the owner can copy the link again
+alter table invites add column if not exists name text;
+alter table invites add column if not exists password_hash text;
+alter table invites add column if not exists totp_secret_enc text;
+alter table invites add column if not exists created_at timestamptz not null default now();
+alter table testimonials add column if not exists decided_at timestamptz;
+create index if not exists testimonials_ip on testimonials(ip_hash, created_at);

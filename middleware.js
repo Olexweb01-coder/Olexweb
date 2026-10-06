@@ -2,7 +2,8 @@
 // (The session itself is fully checked against the database on the server; this is the fast first gate.)
 import { NextResponse } from 'next/server'
 
-const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest']
+const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join']
+const PUBLIC = ['/review', '/api/review']      // clients' review pages: strict headers, no sign-in
 
 export function middleware(request) {
   const { pathname } = request.nextUrl
@@ -23,7 +24,8 @@ export function middleware(request) {
 
   const signedIn = request.cookies.has('__Host-olex_sess')
   let response
-  if (!signedIn && !OPEN.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+  const open = [...OPEN, ...PUBLIC].some((p) => pathname === p || pathname.startsWith(p + '/'))
+  if (!signedIn && !open) {
     response = pathname.startsWith('/admin/api/')
       ? NextResponse.json({ error: 'Sign in again.' }, { status: 401 })      // the admin's screens handle this and go to sign-in
       : NextResponse.redirect(new URL('/admin/login', request.url))
@@ -42,4 +44,4 @@ export function middleware(request) {
   if (!dev) response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains')
   return response
 }
-export const config = { matcher: ['/admin', '/admin/:path*'] }
+export const config = { matcher: ['/admin', '/admin/:path*', '/review/:path*', '/api/review'] }
