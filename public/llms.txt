@@ -15,6 +15,7 @@ Contact: WhatsApp +234 701 172 6321, email info@olexweb.com, Contra contra.com/o
 - Websites and web apps, frontend engineering (React, Next.js, motion, 3D), UI and UX, interactive experiences, speed and SEO, launch and upkeep.
 
 ## Ventures
+- [All ventures](https://olexweb.com/ventures): the products and companies Olexweb started itself.
 - [Needar](https://olexweb.com/ventures/needar): the LinkedIn job search, rebuilt around the person searching. A SaaS product.
 - [Aviirel](https://olexweb.com/ventures/aviirel): an AI second brain.
 - [Elvanex Digital](https://olexweb.com/ventures/elvanex): a digital and technology venture.
