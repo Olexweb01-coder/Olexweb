@@ -13,6 +13,6 @@ export default function Olexweb() {
     <ol>{process.map(p => <li key={p.title}><strong>{p.title}.</strong> {p.text}</li>)}</ol>
     <h2>Selected work</h2>
     <div className="grid">{work.map(w => <Link className="card" href={'/work/' + w.slug} key={w.slug}><h3>{w.name}</h3><p>{w.role}</p></Link>)}</div>
-    <p><Link className="btn" href="/contact">Start a project</Link><Link className="btn ghost" href="/">Back to the studio</Link></p>
+    <p><Link className="btn" href="/contact">Start a project</Link><Link className="btn ghost" href="/studio">Back to the studio</Link></p>
   </Page>)
 }

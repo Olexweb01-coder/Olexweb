@@ -1,18 +1,27 @@
-import Page from '@/components/Page'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { insights, person, site } from '@/content/site'
-export function generateStaticParams() { return insights.map(a => ({ slug: a.slug })) }
-export function generateMetadata({ params }) { const a = insights.find(x => x.slug === params.slug); if (!a) return {}; return { title: a.title, description: a.summary, keywords: a.keywords, alternates: { canonical: '/insights/' + a.slug }, openGraph: { type: 'article', title: a.title, description: a.summary, publishedTime: a.date } } }
+import { insights } from '@/content/site'
+import { articleMetadata, articleJsonLd } from '@/lib/seo'
+import JsonLd from '@/components/JsonLd'
+import V2Shell from '@/components/V2Shell'
+
+export const dynamicParams = false
+export function generateStaticParams() { return insights.map((a) => ({ slug: a.slug })) }
+export function generateMetadata({ params }) { const a = insights.find((x) => x.slug === params.slug); return a ? articleMetadata(a) : {} }
+const fmt = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+
 export default function Article({ params }) {
-  const a = insights.find(x => x.slug === params.slug); if (!a) notFound()
-  const ld = { '@context': 'https://schema.org', '@type': 'Article', headline: a.title, description: a.summary, datePublished: a.date, author: { '@type': 'Person', name: person.name, url: site.domain + '/olaitan' }, publisher: { '@type': 'Organization', name: 'Olexweb', url: site.domain } }
-  return (<Page>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-    <p className="eyebrow">Insights</p>
-    <h1>{a.title}</h1>
-    <p className="muted">{a.date} · {a.minutes} min read · by <Link href="/olaitan">Olaitan Adebayo</Link></p>
-    <div className="article">{a.body.map((t, i) => t.startsWith('## ') ? <h2 key={i}>{t.slice(3)}</h2> : <p key={i}>{t}</p>)}</div>
-    <p className="muted"><Link href="/insights">All insights</Link> · <Link href="/#shelf">Open it as a book in the studio</Link></p>
-  </Page>)
+  const i = insights.findIndex((x) => x.slug === params.slug); if (i < 0) notFound()
+  const a = insights[i], next = insights[(i + 1) % insights.length]
+  return (
+    <V2Shell kind="blog">
+      <JsonLd data={articleJsonLd(a)} />
+      <article className="art-page"><div className="art">
+        <p className="art-back"><a href="/insights">Back to the Blog</a></p>
+        <h1>{a.title}</h1>
+        <p className="art-meta">{fmt(a.date)}. A {a.minutes}-minute read.</p>
+        {a.body.map((p, k) => p.startsWith('## ') ? <h2 key={k}>{p.slice(3)}</h2> : <p key={k}>{p}</p>)}
+        <div className="art-next"><small>Next article</small><a href={'/insights/' + next.slug}>{next.title}</a></div>
+      </div></article>
+    </V2Shell>
+  )
 }

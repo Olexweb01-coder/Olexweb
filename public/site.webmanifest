@@ -1,0 +1,23 @@
+{
+  "name": "Olexweb",
+  "short_name": "Olexweb",
+  "description": "Websites and apps that work, built by Olaitan Adebayo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0b0a",
+  "theme_color": "#0a0b0a",
+  "icons": [
+    {
+      "src": "/v2/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/v2/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

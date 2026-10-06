@@ -1,0 +1,27 @@
+# Olexweb
+
+> Olexweb is the web studio of Olaitan Adebayo, based in Nigeria. It designs and builds websites, SaaS products and the systems behind them (the website people see and the admin a business runs it from), and runs its own ventures: Needar, Aviirel and Elvanex Digital.
+
+Contact: WhatsApp +234 701 172 6321, email info@olexweb.com, Contra contra.com/olexweb01. Olexweb is owned and operated by Olaitan Adebayo as a sole proprietor.
+
+## Main pages
+- [Home](https://olexweb.com/): Websites and apps that work. Introduction, services, about, ventures and contact.
+- [About Olaitan Adebayo](https://olexweb.com/about): creative ideator, builder, web developer, thinker and learner. His story, how he thinks, and the Lab.
+- [Portfolio](https://olexweb.com/portfolio): selected projects, including Viverst Global, Mojatech Electrical, Leathrock, Edithe Lekwachi, Ayodele Daniel, Tolu Afilaka Live, Needar and Aviirel.
+- [Work with me](https://olexweb.com/work-with-me): services, the four-step process (idea, design, code, launch), learning topics, and the Creator's Room community.
+- [3D studio](https://olexweb.com/studio): the original cinematic 3D version of the site, a virtual workspace where objects tell the story.
+
+## Services
+- Websites and web apps, frontend engineering (React, Next.js, motion, 3D), UI and UX, interactive experiences, speed and SEO, launch and upkeep.
+
+## Ventures
+- [Needar](https://olexweb.com/ventures/needar): the LinkedIn job search, rebuilt around the person searching. A SaaS product.
+- [Aviirel](https://olexweb.com/ventures/aviirel): an AI second brain.
+- [Elvanex Digital](https://olexweb.com/ventures/elvanex): a digital and technology venture.
+
+## Articles
+- [Why your website matters: 10 things every business owner should know](https://olexweb.com/insights/why-your-website-matters): Ten things every business owner should know about the site that carries their name, written from the desk that builds them.
+- [Why speed is a design decision](https://olexweb.com/insights/speed-is-a-design-decision): A slow website is not a technical problem waiting for a developer. It is a design choice someone already made.
+- [Building for people, not for browsers](https://olexweb.com/insights/built-for-people-not-browsers): A website can pass every technical check and still fail the person who came to use it.
+- [A small room, a big digital world](https://olexweb.com/insights/a-small-room-a-big-digital-world): On the print that leans against the wall of the studio, and why it is there.
+- [What a website should do in its first ten seconds](https://olexweb.com/insights/the-first-ten-seconds): A checklist I run on every site I build, and on most that I visit.

@@ -16,6 +16,6 @@ export default function Project({ params }) {
     <p><strong>Role:</strong> {w.role}</p>
     {w.result && <p><strong>Result:</strong> {w.result}</p>}
     <p><a className="btn" href={w.url} target="_blank" rel="noopener">Visit {w.url.replace(/^https?:\/\//, '')}</a><Link className="btn ghost" href="/contact">Build something like this</Link></p>
-    <p className="muted"><Link href="/work">All work</Link> · <Link href="/#monitors">See it on the monitor in the studio</Link></p>
+    <p className="muted"><Link href="/work">All work</Link> · <Link href="/studio#monitors">See it on the monitor in the studio</Link></p>
   </Page>)
 }
