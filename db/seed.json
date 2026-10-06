@@ -1,0 +1,384 @@
+{
+ "projects": [
+  {
+   "slug": "viverst",
+   "name": "Viverst Global",
+   "kind": "Client website",
+   "role": "Full design and development",
+   "text": "A diversified corporate group with several businesses under one name. One site had to hold all of them without flattening any.",
+   "built": [
+    "Main website",
+    "Studio platform",
+    "Agro platform",
+    "Admin system"
+   ],
+   "result": "One name, separate markets, one system behind them: the main site, the studio and agro platforms, and the admin that runs them.",
+   "url": "https://viverst.com",
+   "image": "/v2/sites/viverst-full.webp"
+  },
+  {
+   "slug": "mojatech",
+   "name": "Mojatech Electrical",
+   "kind": "Client website",
+   "role": "Full design and development",
+   "text": "Electrical, solar and security systems for homes and businesses. The site sells confidence first and products second.",
+   "built": [
+    "Main website",
+    "Products experience",
+    "Admin interface"
+   ],
+   "result": "Visitors request quotes from the site; the team manages the product range from its admin.",
+   "url": "https://mojatechelectrical.com",
+   "image": "/v2/sites/mojatech-full.webp"
+  },
+  {
+   "slug": "leathrock",
+   "name": "Leathrock",
+   "kind": "Client website",
+   "role": "Full website and admin",
+   "text": "Faith, growth and strategy, never separated. Communities, courses and events under one roof.",
+   "built": [
+    "Full website",
+    "Admin interface"
+   ],
+   "result": "One website carrying the community, the courses and the events, with an admin to keep all three current.",
+   "url": "https://leathrock.vercel.app",
+   "image": "/v2/sites/leathrock-full.webp"
+  },
+  {
+   "slug": "edithe",
+   "name": "Edithe Lekwachi",
+   "kind": "Client website",
+   "role": "Full website",
+   "text": "A business operations consultant whose work is turning chaos into systems. The site had to feel like that.",
+   "built": [
+    "Full website"
+   ],
+   "result": "A calm, ordered site that presents the work and leads to a conversation.",
+   "url": "https://edithelekwachi.vercel.app",
+   "image": "/v2/sites/edithe-full.webp"
+  },
+  {
+   "slug": "ayodele",
+   "name": "Ayodele Daniel",
+   "kind": "Client website",
+   "role": "Full website",
+   "text": "One centre, infinite orbits. A personal site for a man of many hats.",
+   "built": [
+    "Full website"
+   ],
+   "result": "A single site that holds several roles without letting any of them crowd the others.",
+   "url": "https://ayodeledaniel.vercel.app",
+   "image": "/v2/sites/ayodele-full.webp"
+  },
+  {
+   "slug": "tolu",
+   "name": "Tolu Afilaka Live",
+   "kind": "Client website",
+   "role": "Frontend and admin",
+   "text": "A live event: tickets, information and the feeling of the night before the night.",
+   "built": [
+    "Frontend",
+    "Admin system"
+   ],
+   "result": "The frontend that sells the night and the admin system behind it.",
+   "url": "https://toluafilaka.com",
+   "image": "/v2/sites/tolu-full.webp"
+  },
+  {
+   "slug": "needar",
+   "name": "Needar",
+   "kind": "Own product (SaaS)",
+   "role": "Product, design and development",
+   "text": "Needar started with a problem that was easy to notice and hard to fix: searching for work on LinkedIn is built around the platform, not the person doing the searching.",
+   "built": [
+    "Product concept",
+    "SaaS web app",
+    "Product website"
+   ],
+   "result": "Shipped as a service: from a problem worth fixing to a working product.",
+   "url": "https://needar.vercel.app",
+   "image": "/v2/sites/needar-full.webp"
+  },
+  {
+   "slug": "aviirel",
+   "name": "Aviirel",
+   "kind": "Own product (AI)",
+   "role": "Product, design and development",
+   "text": "Aviirel is a second brain: a place where your notes, ideas and knowledge live together and can think with you instead of sitting in folders.",
+   "built": [
+    "Product concept",
+    "Product website",
+    "Waitlist"
+   ],
+   "result": "The product site and waitlist are live while the second brain is being built.",
+   "url": "https://aviirel.com",
+   "image": "/v2/sites/aviirel-full.webp"
+  }
+ ],
+ "ventures": [
+  {
+   "slug": "elvanex",
+   "name": "Elvanex Digital",
+   "line": "A digital and technology venture.",
+   "kind": "",
+   "text": [
+    "Elvanex Digital is where the products, platforms and experiments that outgrow a single website are built and run. It exists because some ideas need a company around them, not a client.",
+    "It explores the problems worth building for: tools people use every day, systems that make small businesses look and work bigger, and the places where technology can remove friction.",
+    "Its direction is simple: build things that are useful, keep the ones that prove it, and let the rest teach."
+   ],
+   "url": "https://elvanexdigital.com",
+   "image": "/v2/sites/elvanex-full.webp"
+  },
+  {
+   "slug": "needar",
+   "name": "Needar",
+   "line": "A SaaS that makes the LinkedIn job search work for the person searching.",
+   "kind": "",
+   "text": [
+    "Needar started with a problem that was easy to notice and hard to fix: searching for work on LinkedIn is built around the platform, not the person doing the searching.",
+    "It went the whole way from that observation to a product: the problem defined, the concept shaped, the software built and shipped as a service.",
+    "That arc, from noticing to shipping, is the point of Needar as much as the product is."
+   ],
+   "url": "https://needar.vercel.app",
+   "image": "/v2/sites/needar-full.webp"
+  },
+  {
+   "slug": "aviirel",
+   "name": "Aviirel",
+   "line": "An AI second brain.",
+   "kind": "",
+   "text": [
+    "Aviirel is a second brain: a place where your notes, ideas and knowledge live together and can think with you instead of sitting in folders.",
+    "It comes from an interest in knowledge systems, productivity and how people and machines work together, and from wanting a tool that remembers the way you do, only better."
+   ],
+   "url": "https://aviirel.com",
+   "image": "/v2/sites/aviirel-full.webp"
+  }
+ ],
+ "posts": [
+  {
+   "slug": "why-your-website-matters",
+   "title": "Why your website matters: 10 things every business owner should know",
+   "summary": "Ten things every business owner should know about the site that carries their name, written from the desk that builds them.",
+   "body": [
+    {
+     "type": "h",
+     "text": "1. It is open when you are not"
+    },
+    {
+     "type": "p",
+     "text": "Your website is the only part of your business that works at three in the morning, on a public holiday, and while you are in a meeting. Someone hears your name at dinner, types it into a phone in a taxi, and decides in that moment whether you are real. You are not in that conversation. The site is. It should say what you would say if you were there: who you are, what you do, and how to reach you."
+    },
+    {
+     "type": "h",
+     "text": "2. People check before they call"
+    },
+    {
+     "type": "p",
+     "text": "Almost nobody calls a business cold any more. They look first. A referral is a reason to look you up, not a reason to trust you; the trust is earned on the page they land on. If there is no site, or the site looks abandoned, the referral quietly dies and you never know it happened. A good site turns a mention into a conversation."
+    },
+    {
+     "type": "h",
+     "text": "3. Ten seconds decides it"
+    },
+    {
+     "type": "p",
+     "text": "A visitor gives a new site about ten seconds before deciding whether to stay. In that time the site must tell them where they are, show them it is real, and make the next step obvious. A slogan is not a description; a stock photo of a handshake is not proof; a menu with nine items is not a next step. Say who you are in one line a stranger could repeat, show a real photograph, and put the phone number where a person looks for it. The full checklist is in \"What a website should do in its first ten seconds\", also on this shelf."
+    },
+    {
+     "type": "h",
+     "text": "4. A slow site is a choice"
+    },
+    {
+     "type": "p",
+     "text": "A slow site is not a technical fault waiting for a developer. It is a series of choices that were made without counting their cost: the autoplaying video, the four typefaces, the tracking scripts stacked six deep. Every element on a page must earn its weight the way it earns its place. A site that loads in a second on a phone in a market is worth more than one that looks spectacular on a designer's monitor. The longer argument is in \"Why speed is a design decision\", further along this shelf."
+    },
+    {
+     "type": "h",
+     "text": "5. Your phone is the real screen"
+    },
+    {
+     "type": "p",
+     "text": "Most of your visitors will open the site on a phone, often on a slow connection, often with one thumb. If the buttons are small, the text is tiny, the form asks for twelve things, or the number cannot be tapped to call, the site is failing the majority of the people it was built for. Build for the phone first and let the desktop be the bonus."
+    },
+    {
+     "type": "h",
+     "text": "6. Being findable is not luck"
+    },
+    {
+     "type": "p",
+     "text": "Search engines do not guess what your business is. They read the page. Clear headings, plain language, a page for each service, a real address and phone number, fast loading and a structure a machine can follow: these are not tricks, they are hygiene. Do them and you appear when people search for what you do. Skip them and the competitor who did them appears instead."
+    },
+    {
+     "type": "h",
+     "text": "7. One clear action beats five"
+    },
+    {
+     "type": "p",
+     "text": "A page that asks for a call, a form, a newsletter, a download and a follow has asked for nothing. Decide what you want the visitor to do next and make that one thing prominent, working, and written like a person would say it. \"Send my request\" outperforms \"Submit\" every time, and it is not close."
+    },
+    {
+     "type": "h",
+     "text": "8. Trust is built from small true things"
+    },
+    {
+     "type": "p",
+     "text": "A named client. A real result. A review with a person's name on it. A photograph of the actual office, the actual product, the actual team. One is enough on each page, as long as it is true. Visitors have seen a thousand sites that promise excellence; they are looking for the one that shows evidence."
+    },
+    {
+     "type": "h",
+     "text": "9. A website is a system, not a poster"
+    },
+    {
+     "type": "p",
+     "text": "The visible page is the smallest part. Behind a good business site sits an admin the owner can use without a developer, forms that reach the right inbox, analytics that answer real questions, backups, and hosting that stays up. Ask any web builder what happens when you need to change a price on a Sunday. The answer tells you whether you are buying a poster or a system."
+    },
+    {
+     "type": "h",
+     "text": "10. It is never finished, and that is the point"
+    },
+    {
+     "type": "p",
+     "text": "A site that launched and was never touched again tells visitors the business stopped in that year. The best sites change a little every month: a new project, a new review, an updated price, a fresh photograph. Budget for that rhythm from the start. A website that grows with the business becomes its most reliable employee."
+    }
+   ],
+   "published_on": "2026-09-30",
+   "minutes": 12,
+   "seo": {},
+   "sources": []
+  },
+  {
+   "slug": "speed-is-a-design-decision",
+   "title": "Why speed is a design decision",
+   "summary": "A slow website is not a technical problem waiting for a developer. It is a design choice someone already made.",
+   "body": [
+    {
+     "type": "p",
+     "text": "People talk about website speed as if it were plumbing: something you call a specialist about after the house is built. It is not plumbing. It is the front door, and every extra second is a second the door stays shut."
+    },
+    {
+     "type": "p",
+     "text": "When a page takes four seconds to show anything, the visitor has already decided something about you. Not consciously, and not fairly, but firmly: this will be hard. Everything the page says after that is said to someone who is already leaving."
+    },
+    {
+     "type": "p",
+     "text": "Speed is a design decision because every slow site got that way through choices. The hero video that autoplays at full resolution. The four font families. The carousel nobody asked for. The tracking scripts stacked six deep. None of those were engineering mistakes. They were design decisions made without counting their cost."
+    },
+    {
+     "type": "p",
+     "text": "So I count. Every element on a page has to earn its weight in the same way it has to earn its place in the layout. If a picture cannot justify its bytes, it is not a design decision to include it; it is a design failure with a nice visual."
+    },
+    {
+     "type": "p",
+     "text": "The sites I build are fast because speed is designed in, not tuned in later. The layout is decided knowing what it will cost to load. The images are sized for where they sit. The scripts are there because they do something for the visitor, not for a dashboard."
+    },
+    {
+     "type": "p",
+     "text": "You do not need a faster developer. You need a designer who counts."
+    }
+   ],
+   "published_on": "2026-09-01",
+   "minutes": 4,
+   "seo": {},
+   "sources": []
+  },
+  {
+   "slug": "built-for-people-not-browsers",
+   "title": "Building for people, not for browsers",
+   "summary": "A website can pass every technical check and still fail the person who came to use it.",
+   "body": [
+    {
+     "type": "p",
+     "text": "There is a way of building websites that is entirely about the browser. Does it render? Does it validate? Does it score well? These are good questions, and I ask all of them. They are also the wrong place to stop."
+    },
+    {
+     "type": "p",
+     "text": "The person who opens the site does not care whether it validates. They came with a question: can these people fix my roof, can I buy this before Friday, is this the consultant I have been looking for. The site is good if it answers that question quickly and honestly. Everything else is scaffolding."
+    },
+    {
+     "type": "p",
+     "text": "Building for people means starting from what they came for and working backwards. On a business site, the phone number goes where a person looks for a phone number, not where the template put it. The most important thing on the page is the thing they need, not the thing the business is proudest of."
+    },
+    {
+     "type": "p",
+     "text": "It also means writing like a person. Interfaces that say \"Submit\" are written for the machine. Interfaces that say \"Send my request\" are written for the human clicking them. The second one converts better, and not by a little."
+    },
+    {
+     "type": "p",
+     "text": "None of this argues against technical care. It argues for the right order: person first, browser second. Get the first right and the second is much easier, because you are no longer decorating a page. You are helping someone."
+    }
+   ],
+   "published_on": "2026-08-14",
+   "minutes": 5,
+   "seo": {},
+   "sources": []
+  },
+  {
+   "slug": "a-small-room-a-big-digital-world",
+   "title": "A small room, a big digital world",
+   "summary": "On the print that leans against the wall of the studio, and why it is there.",
+   "body": [
+    {
+     "type": "p",
+     "text": "The studio is a small room. It has a desk, two monitors, a laptop, a chair, a shelf of books, a window with a view of the city, and a phone on the side table. Everything I have built came out of it."
+    },
+    {
+     "type": "p",
+     "text": "I used to think the room was the limit: that bigger work needed a bigger place. It does not. What it needs is a clear desk, a clear head and a reliable connection. The rest of the size is in the work."
+    },
+    {
+     "type": "p",
+     "text": "The print says \"A small room, a big digital world\" because that is the honest description of what happens here. A conversation on the phone becomes a sketch on the notebook becomes a build on the monitors becomes a site that runs in a city I have never visited."
+    },
+    {
+     "type": "p",
+     "text": "If you are building from a small room too: it is enough. Make it clear, make it quiet, and make things."
+    }
+   ],
+   "published_on": "2026-07-30",
+   "minutes": 3,
+   "seo": {},
+   "sources": []
+  },
+  {
+   "slug": "the-first-ten-seconds",
+   "title": "What a website should do in its first ten seconds",
+   "summary": "A checklist I run on every site I build, and on most that I visit.",
+   "body": [
+    {
+     "type": "p",
+     "text": "Ten seconds is roughly what a new visitor gives a site before deciding whether to stay. Here is what a business website should have done by then."
+    },
+    {
+     "type": "p",
+     "text": "Told them where they are. Not a slogan, a description: who this is and what they do, in one line a stranger can repeat."
+    },
+    {
+     "type": "p",
+     "text": "Shown them it is real. A photograph of the place or the people, not a stock image of a handshake. Real is the whole point."
+    },
+    {
+     "type": "p",
+     "text": "Made the next step obvious. A phone number, a message button, a form. One of them, prominent, working on a phone."
+    },
+    {
+     "type": "p",
+     "text": "Loaded. Completely. Text readable, buttons clickable, nothing still arriving."
+    },
+    {
+     "type": "p",
+     "text": "Given them a reason to trust. A named client, a result, a review. One is enough; it must be true."
+    },
+    {
+     "type": "p",
+     "text": "That is the checklist. It fits on a sticky note, and it is worth more than most redesigns."
+    }
+   ],
+   "published_on": "2026-07-12",
+   "minutes": 4,
+   "seo": {},
+   "sources": []
+  }
+ ]
+}
