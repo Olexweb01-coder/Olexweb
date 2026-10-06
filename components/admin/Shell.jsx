@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Icon } from './icons'
+import { Toast } from './ui'
 
 const NAV = [['/admin', 'home', 'Home'], ['/admin/projects', 'work', 'Projects'], ['/admin/assistant', 'assistant', 'Assistant'], ['/admin/reviews', 'reviews', 'Reviews'], ['/admin/blog', 'blog', 'Blog'], ['/admin/more', 'more', 'More']]
 export default function Shell({ name, waiting = 0, children }) {
@@ -24,6 +25,7 @@ export default function Shell({ name, waiting = 0, children }) {
           ))}
         </nav>
       </div>
+      <Toast />
     </>
   )
 }

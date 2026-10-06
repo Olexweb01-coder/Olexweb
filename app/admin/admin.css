@@ -1,7 +1,9 @@
+/* plain zeros: digits come from Mona Sans (Hubot Sans draws a dotted zero), as on the website */
+@font-face{font-family:'Olex Digits';src:url(/v2/fonts/mona-digits.woff2) format('woff2');font-weight:200 900;font-stretch:75% 125%;unicode-range:U+0030-0039;font-display:swap}
 /* Olexweb admin. Styles come from the approved preview (11-admin/admin-preview-source.html). */
 
 :root{--night:#0a0b0a;--raise:#121412;--raise2:#181b18;--paper:#f2efe9;--dim:rgba(242,239,233,.62);--faint:rgba(242,239,233,.38);--line:rgba(242,239,233,.11);--green:#8fe36a;--ink:#0e1a0b;--warn:#f0b35e;--bad:#ef7a6a;
-  --display:var(--font-hubot),'Arial Narrow',system-ui,sans-serif;--body:var(--font-mona),system-ui,-apple-system,'Segoe UI',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
+  --display:'Olex Digits',var(--font-hubot),'Arial Narrow',system-ui,sans-serif;--body:var(--font-mona),system-ui,-apple-system,'Segoe UI',sans-serif;--ease:cubic-bezier(.16,1,.3,1)}
 *{box-sizing:border-box}html{background:var(--night);color-scheme:dark}
 a{color:inherit}
 body{margin:0;background:var(--night);color:var(--paper);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
@@ -182,3 +184,6 @@ textarea.input{min-height:110px;resize:vertical;line-height:1.6}
 
 .nav-a{text-decoration:none}.tab{text-decoration:none}
 .read-only{border:1px dashed var(--line);border-radius:14px;padding:12px 14px;color:var(--dim);font-size:13.5px;margin:0 0 18px}
+
+/* Bin: on small phones the buttons sit on their own line, so the details stay readable */
+@media (max-width:560px){.bin-row{grid-template-columns:auto minmax(0,1fr)}.bin-row .acts{grid-column:1/-1;justify-content:flex-end}.bin-row .row-s{white-space:normal}}

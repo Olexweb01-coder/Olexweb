@@ -132,3 +132,14 @@ create table if not exists media (
   created_at  timestamptz not null default now(),
   created_by  uuid references admin_users(id)
 );
+
+-- ---------- Phase 2 (safe to run again) ----------
+alter table projects drop constraint if exists projects_status_check;
+alter table projects add constraint projects_status_check check (status in ('live', 'hidden', 'draft', 'waiting', 'bin'));
+alter table ventures drop constraint if exists ventures_status_check;
+alter table ventures add constraint ventures_status_check check (status in ('live', 'hidden', 'draft', 'waiting', 'bin'));
+alter table projects add column if not exists binned_at timestamptz;
+alter table posts add column if not exists binned_at timestamptz;
+alter table ventures add column if not exists binned_at timestamptz;
+alter table ventures add column if not exists image text not null default '';
+update ventures set image = '/v2/sites/' || slug || '-full.webp' where image = '';

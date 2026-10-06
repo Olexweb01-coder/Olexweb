@@ -77,6 +77,7 @@ async function main() {
   ok('Connected to ' + host + (host.includes('neon.tech') ? ' (certificate verified)' : ''))
   await db.query(fs.readFileSync(path.join(ROOT, 'db', 'schema.sql'), 'utf8'))
   await db.query("insert into schema_migrations (version) values ('2026-10-06-phase1') on conflict do nothing")
+  await db.query("insert into schema_migrations (version) values ('2026-10-07-phase2') on conflict do nothing")
   ok('Tables are ready')
 
   step('3. Content')

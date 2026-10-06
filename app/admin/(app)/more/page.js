@@ -1,4 +1,5 @@
-import { requireUser, ownerOnly } from '@/lib/admin/auth'
+import Link from 'next/link'
+import { requireUser, ownerOnly, can } from '@/lib/admin/auth'
 import { q } from '@/lib/admin/db'
 import { SignOut, SignOutOthers } from '@/components/admin/Actions'
 import { Icon } from '@/components/admin/icons'
@@ -14,6 +15,10 @@ export default async function More() {
   const r = (await q('select coalesce(array_length(recovery_hashes, 1), 0) as n from admin_users where id = $1', [u.id])).rows[0]
   return (<>
     <div className="top"><h1 className="d">More</h1></div>
+    <ul className="rows">
+      {can(u, 'ventures') ? <li><Link href="/admin/ventures" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.ventures}</span><span><span className="row-t">Ventures</span><span className="row-s">Elvanex Digital, Needar, Aviirel</span></span><span className="pill">Edit</span></Link></li> : null}
+      {ownerOnly(u) ? <li><Link href="/admin/bin" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.bin}</span><span><span className="row-t">Bin</span><span className="row-s">Deleted items, kept for 30 days</span></span><span className="pill">Open</span></Link></li> : null}
+    </ul>
     {ownerOnly(u) ? (<ul className="rows"><li className="row"><span className="ic">{Icon.person}</span><span><span className="row-t">People</span><span className="row-s">{people.map((p) => p.name + (p.role === 'owner' ? ' (owner)' : '')).join(', ')}. Inviting editors arrives in the next update.</span></span><span className="pill">{people.length}</span></li></ul>) : null}
     <h2 className="section-t">Security</h2>
     <div className="sec-row"><span><b>Two-step sign-in</b><span>A code from your authenticator app is needed every time you sign in</span></span><span className="ok">On</span></div>

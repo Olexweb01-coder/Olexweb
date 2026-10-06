@@ -24,7 +24,9 @@ export function middleware(request) {
   const signedIn = request.cookies.has('__Host-olex_sess')
   let response
   if (!signedIn && !OPEN.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
-    response = NextResponse.redirect(new URL('/admin/login', request.url))
+    response = pathname.startsWith('/admin/api/')
+      ? NextResponse.json({ error: 'Sign in again.' }, { status: 401 })      // the admin's screens handle this and go to sign-in
+      : NextResponse.redirect(new URL('/admin/login', request.url))
   } else {
     const h = new Headers(request.headers)
     h.set('x-nonce', nonce); h.set('Content-Security-Policy', csp)   // Next.js puts the nonce on its own scripts
