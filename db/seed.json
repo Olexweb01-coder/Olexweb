@@ -120,40 +120,43 @@
   {
    "slug": "elvanex",
    "name": "Elvanex Digital",
-   "line": "A digital and technology venture.",
-   "kind": "",
+   "line": "Where ideas too big for one website go.",
+   "kind": "A digital and technology venture",
    "text": [
     "Elvanex Digital is where the products, platforms and experiments that outgrow a single website are built and run. It exists because some ideas need a company around them, not a client.",
     "It explores the problems worth building for: tools people use every day, systems that make small businesses look and work bigger, and the places where technology can remove friction.",
     "Its direction is simple: build things that are useful, keep the ones that prove it, and let the rest teach."
    ],
    "url": "https://elvanexdigital.com",
-   "image": "/v2/sites/elvanex-full.webp"
+   "image": "/v2/sites/elvanex-full.webp",
+   "summary": "A digital and technology venture that builds and runs products, platforms and experiments that outgrow a single site."
   },
   {
    "slug": "needar",
    "name": "Needar",
-   "line": "A SaaS that makes the LinkedIn job search work for the person searching.",
-   "kind": "",
+   "line": "The LinkedIn job search, rebuilt around the person searching.",
+   "kind": "A SaaS product",
    "text": [
     "Needar started with a problem that was easy to notice and hard to fix: searching for work on LinkedIn is built around the platform, not the person doing the searching.",
     "It went the whole way from that observation to a product: the problem defined, the concept shaped, the software built and shipped as a service.",
     "That arc, from noticing to shipping, is the point of Needar as much as the product is."
    ],
    "url": "https://needar.vercel.app",
-   "image": "/v2/sites/needar-full.webp"
+   "image": "/v2/sites/needar-full.webp",
+   "summary": "A problem easy to notice and hard to fix, taken the whole way: defined, designed, built and shipped as a service."
   },
   {
    "slug": "aviirel",
    "name": "Aviirel",
    "line": "An AI second brain.",
-   "kind": "",
+   "kind": "An AI product",
    "text": [
     "Aviirel is a second brain: a place where your notes, ideas and knowledge live together and can think with you instead of sitting in folders.",
     "It comes from an interest in knowledge systems, productivity and how people and machines work together, and from wanting a tool that remembers the way you do, only better."
    ],
    "url": "https://aviirel.com",
-   "image": "/v2/sites/aviirel-full.webp"
+   "image": "/v2/sites/aviirel-full.webp",
+   "summary": "Notes, ideas and knowledge in one place that thinks with you, instead of sitting in folders."
   }
  ],
  "posts": [

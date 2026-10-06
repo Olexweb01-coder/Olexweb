@@ -13,7 +13,16 @@ const CSS = `
 .legal h1{font-family:var(--display);font-weight:800;font-stretch:78%;font-size:clamp(40px,5.4vw,76px);line-height:.95;margin:0 0 10px;letter-spacing:-.02em}
 .legal .upd{color:var(--paper-dim);font-size:14px;margin:0 0 34px}.legal h2{font-family:var(--display);font-weight:700;font-stretch:90%;font-size:22px;margin:34px 0 10px}
 .legal p,.legal li{font-size:16.5px;line-height:1.72;color:rgba(242,239,233,.84);max-width:68ch}.legal ul{padding-left:20px}.legal a{color:var(--green)}
-.legal-back{margin:44px 0 0}`
+.legal-back{margin:44px 0 0}
+.art-meta .art-by{color:var(--paper);text-decoration:none;border-bottom:1px solid var(--hair)}
+.art-sources{margin:40px 0 0;padding-top:24px;border-top:1px solid var(--hair)}.art-sources ol{padding-left:20px;color:var(--paper-dim)}.art-sources a{color:var(--paper)}
+.art-share{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:40px 0 0;padding-top:24px;border-top:1px solid var(--hair)}.art-share span{display:flex;flex-wrap:wrap;gap:8px}.art-share .btn{padding:9px 16px;font-size:14px;text-decoration:none}
+.art-author{display:grid;grid-template-columns:72px 1fr;gap:18px;align-items:start;margin:32px 0 0;padding:22px;border:1px solid var(--hair);border-radius:20px}
+.art-author img{width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:50% 20%}.art-author b{font-family:var(--display);font-weight:700;font-stretch:90%;font-size:20px}
+.art-author p{margin:6px 0 0;color:var(--paper-dim);font-size:15.5px;line-height:1.6}.art-follow a{color:var(--paper);margin-right:10px}
+.art-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin:28px 0 0;padding:20px 22px;border-radius:20px;background:rgba(143,227,106,.08);border:1px solid rgba(143,227,106,.3)}
+.art-cta p{margin:0;font-family:var(--display);font-weight:700;font-stretch:90%;font-size:20px}.art-cta .btn{text-decoration:none}
+@media (max-width:480px){.art-author{grid-template-columns:52px 1fr;gap:14px;padding:18px}.art-author img{width:52px;height:52px}.art-author p{font-size:14.5px;line-height:1.55}}`
 export default function V2Shell({ kind = 'legal', children }) {
   const [top, bottom] = SHELLS[kind]
   return (<><style dangerouslySetInnerHTML={{ __html: CSS }} /><V2Html html={top} /><main id="top">{children}</main><V2Html html={bottom} /></>)

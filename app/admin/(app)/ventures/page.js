@@ -6,6 +6,6 @@ export const metadata = { title: 'Ventures' }
 export default async function Ventures() {
   const u = await requireUser()
   if (!can(u, 'ventures')) redirect('/admin/more')
-  const rows = (await q("select id, slug, name, line, kind, text, url, image, status from ventures where status <> 'bin' order by sort, id")).rows
+  const rows = (await q("select id, slug, name, line, kind, summary, text, url, image, status from ventures where status <> 'bin' order by sort, id")).rows
   return <VenturesBoard items={rows} isOwner={ownerOnly(u)} />
 }

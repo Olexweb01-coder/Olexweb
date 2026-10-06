@@ -19,7 +19,7 @@ export default function VenturesBoard({ items, isOwner }) {
 }
 function VentureEditor({ item, isOwner, onClose, onDone }) {
   const v = item.data
-  const [f, setF] = useState({ name: v.name || '', line: v.line || '', kind: v.kind || '', url: v.url || '', image: v.image || '' })
+  const [f, setF] = useState({ name: v.name || '', line: v.line || '', kind: v.kind || '', summary: v.summary || '', url: v.url || '', image: v.image || '' })
   const [paras, setParas] = useState((v.text && v.text.length ? v.text : ['']).map((t, i) => ({ t, k: i + '-' + Math.random() })))
   const [id, setId] = useState(v.id || null), [err, setErr] = useState(''), [busy, setBusy] = useState(false)
   const isLive = v.status === 'live', set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -37,6 +37,7 @@ function VentureEditor({ item, isOwner, onClose, onDone }) {
     <ImagePicker value={f.image} onChange={(x) => setF({ ...f, image: x })} kind="screenshot" label="Screenshot of its website" />
     <div className="field"><label htmlFor="vn1">Name</label><input className="input" id="vn1" value={f.name} onChange={set('name')} maxLength={80} /></div>
     <div className="field"><label htmlFor="vn2">One line</label><input className="input" id="vn2" value={f.line} onChange={set('line')} maxLength={140} /></div>
+    <div className="field"><label htmlFor="vn5">Short description</label><textarea className="input" id="vn5" style={{ minHeight: 70 }} value={f.summary} onChange={set('summary')} maxLength={300} placeholder="One or two sentences shown on the Ventures cards." /></div>
     <div className="field"><label htmlFor="vn3">Type</label><input className="input" id="vn3" value={f.kind} onChange={set('kind')} maxLength={80} placeholder="For example: SaaS product" /></div>
     <div className="field"><label>Why it exists</label>
       {paras.map((p, i) => <textarea key={p.k} className="input" style={{ marginBottom: 8 }} value={p.t} maxLength={1500} aria-label={'Paragraph ' + (i + 1)} onChange={(e) => setParas(paras.map((x, j) => (j === i ? { ...x, t: e.target.value } : x)))} />)}

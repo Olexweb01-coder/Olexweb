@@ -152,3 +152,16 @@ alter table invites add column if not exists totp_secret_enc text;
 alter table invites add column if not exists created_at timestamptz not null default now();
 alter table testimonials add column if not exists decided_at timestamptz;
 create index if not exists testimonials_ip on testimonials(ip_hash, created_at);
+
+-- ---------- Phase 4 (safe to run again) ----------
+alter table ventures add column if not exists summary text not null default '';   -- the short text on the Ventures cards
+-- the live site's wording, filled in only where the original wording is still unchanged (your edits are never overwritten)
+update ventures set line = $q$Where ideas too big for one website go.$q$ where slug = 'elvanex' and line = $q$A digital and technology venture.$q$;
+update ventures set kind = $q$A digital and technology venture$q$ where slug = 'elvanex' and kind = '';
+update ventures set summary = $q$A digital and technology venture that builds and runs products, platforms and experiments that outgrow a single site.$q$ where slug = 'elvanex' and summary = '';
+update ventures set line = $q$The LinkedIn job search, rebuilt around the person searching.$q$ where slug = 'needar' and line = $q$A SaaS that makes the LinkedIn job search work for the person searching.$q$;
+update ventures set kind = $q$A SaaS product$q$ where slug = 'needar' and kind = '';
+update ventures set summary = $q$A problem easy to notice and hard to fix, taken the whole way: defined, designed, built and shipped as a service.$q$ where slug = 'needar' and summary = '';
+update ventures set line = $q$An AI second brain.$q$ where slug = 'aviirel' and line = $q$An AI second brain.$q$;
+update ventures set kind = $q$An AI product$q$ where slug = 'aviirel' and kind = '';
+update ventures set summary = $q$Notes, ideas and knowledge in one place that thinks with you, instead of sitting in folders.$q$ where slug = 'aviirel' and summary = '';
