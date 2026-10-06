@@ -14,11 +14,11 @@ export const metadata = {
   manifest: '/site.webmanifest',
   formatDetection: { telephone: false },
 }
-export const viewport = { themeColor: '#0a0b0a', width: 'device-width', initialScale: 1, viewportFit: 'cover' }
+export const viewport = { themeColor: '#0a0b0a', colorScheme: 'dark', width: 'device-width', initialScale: 1, viewportFit: 'cover' }
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={[manrope.variable, hubot.variable, mona.variable].join(' ')} data-time="day">
+    <html lang="en" className={[manrope.variable, hubot.variable, mona.variable].join(' ')} data-time="day" style={{ backgroundColor: '#0a0b0a' }}>
       <body>{children}</body>
     </html>
   )
