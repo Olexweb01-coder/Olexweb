@@ -1,8 +1,13 @@
 'use client'
 import { useState } from 'react'
+import { GOOGLE_REVIEW_URL } from '@/lib/site/links'
 export default function ReviewForm({ token, stamp }) {
   const [stars, setStars] = useState(0), [text, setText] = useState(''), [consent, setConsent] = useState(false)
-  const [err, setErr] = useState(''), [busy, setBusy] = useState(false), [sent, setSent] = useState(false)
+  const [err, setErr] = useState(''), [busy, setBusy] = useState(false), [sent, setSent] = useState(false), [copied, setCopied] = useState(false)
+  async function copyReview() {                                        // so they can paste it on Google
+    try { await navigator.clipboard.writeText(text) } catch { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy') } catch {} t.remove() }
+    setCopied(true); setTimeout(() => setCopied(false), 2500)
+  }
   async function send(e) {
     e.preventDefault(); const f = new FormData(e.currentTarget)
     // tell people straight away, before anything is sent (the server checks all of this again)
@@ -19,7 +24,14 @@ export default function ReviewForm({ token, stamp }) {
   }
   const mark = <div className="auth-mark"><img src="/studio/mark.png" alt="" width="26" height="30" />Olexweb</div>
   if (sent) return (<main className="auth"><div className="auth-box" style={{ maxWidth: 520 }}>{mark}
-    <h1 className="d">Thank you.</h1><p className="lead">Olaitan will read your review before it appears on olexweb.com.</p><p><a className="btn btn-line" href="/">Visit olexweb.com</a></p></div></main>)
+    <h1 className="d">Thank you.</h1><p className="lead">Olaitan will read your review before it appears on olexweb.com.</p>
+    <div className="share" style={{ marginTop: 18 }}>
+      <b className="d" style={{ fontSize: 19, fontWeight: 700, fontStretch: '90%' }}>Would you also share it on Google?</b>
+      <p style={{ color: 'var(--dim)', margin: '6px 0 14px', fontSize: 14.5, lineHeight: 1.55 }}>It helps other businesses find Olexweb. Copy your review, then paste it on Google. It takes a few seconds.</p>
+      <div className="acts"><button type="button" className="btn btn-line" onClick={copyReview}>{copied ? 'Copied' : 'Copy my review'}</button>
+        <a className="btn btn-green" href={GOOGLE_REVIEW_URL} target="_blank" rel="noopener noreferrer">Open Google</a></div>
+    </div>
+    <p style={{ marginTop: 18 }}><a className="btn btn-line" href="/">Visit olexweb.com</a></p></div></main>)
   return (<main className="auth"><form className="auth-box" style={{ maxWidth: 520 }} onSubmit={send} noValidate>
     {mark}
     <h1 className="d">How was working with Olexweb?</h1>
