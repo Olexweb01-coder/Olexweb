@@ -212,3 +212,9 @@ a.btn{text-decoration:none}
 @media (min-width:821px){.fresh-new ~ .toast{bottom:104px}}
 .fresh-short{display:none}
 @media (max-width:820px){.fresh-long{display:none}.fresh-short{display:inline}.fresh-new{flex-wrap:nowrap;justify-content:space-between;padding:10px 10px 10px 16px}.fresh-new .btn{padding:10px 16px;flex:none}}
+
+/* link tabs look exactly like the button tabs */
+.seg a.segl{white-space:nowrap;flex:none}
+.seg a.segl{appearance:none;border:0;background:none;padding:8px 14px;border-radius:999px;font-weight:600;color:var(--dim);cursor:pointer}
+.seg a.segl{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.seg a.segl[aria-pressed=true]{background:var(--raise2);color:var(--paper)}

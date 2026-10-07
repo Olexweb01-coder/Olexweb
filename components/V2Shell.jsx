@@ -22,6 +22,11 @@ const CSS = `
 .art-author p{margin:6px 0 0;color:var(--paper-dim);font-size:15.5px;line-height:1.6}.art-follow a{color:var(--paper);margin-right:10px}
 .art-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin:28px 0 0;padding:20px 22px;border-radius:20px;background:rgba(143,227,106,.08);border:1px solid rgba(143,227,106,.3)}
 .art-cta p{margin:0;font-family:var(--display);font-weight:700;font-stretch:90%;font-size:20px}.art-cta .btn{text-decoration:none}
+.art-quote{margin:22px 0 0;padding:22px;border-radius:20px;background:#121412;border:1px solid var(--hair);display:flex;flex-direction:column;gap:12px}
+.art-quote blockquote{margin:0;font-family:var(--display);font-weight:700;font-stretch:92%;font-size:19px;line-height:1.32}.art-stars{color:var(--green);letter-spacing:3px}
+.art-quote figcaption{font-size:14px}.art-quote figcaption span{color:var(--paper-dim)}
+.art-work{margin:12px 0 0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-radius:20px;border:1px solid rgba(143,227,106,.35);text-decoration:none;color:var(--paper)}
+.art-work b{display:block;font-size:15.5px}.art-work span span{display:block;margin-top:4px;font-size:13.5px;color:var(--paper-dim)}.art-work>span:last-child{color:var(--green);font-size:20px}
 @media (max-width:480px){.art-author{grid-template-columns:52px 1fr;gap:14px;padding:18px}.art-author img{width:52px;height:52px}.art-author p{font-size:14.5px;line-height:1.55}}`
 export default function V2Shell({ kind = 'legal', children }) {
   const [top, bottom] = SHELLS[kind]

@@ -204,3 +204,30 @@ insert into admin_users (email, name, role, perms, totp_enabled)
 
 -- ---------- which AI wrote each assistant draft (safe to run again) ----------
 alter table posts add column if not exists written_by text;
+
+-- ---------- Blog engagement: likes, saves, shares, reading, analytics (safe to run again) ----------
+-- Daily totals only. Readers are anonymous: a one-way fingerprint that changes every day, never an address or a cookie.
+create table if not exists blog_daily (
+  post_id  int not null references posts(id) on delete cascade,
+  day      date not null,
+  metric   text not null check (metric in ('view', 'reader', 'read', 'like', 'unlike', 'save', 'unsave', 'share', 'source')),
+  key      text not null default '',          -- the app for shares, where readers came from for sources
+  n        int not null default 0,
+  primary key (post_id, day, metric, key)
+);
+create index if not exists blog_daily_day on blog_daily(day);
+create table if not exists blog_seen (           -- today's anonymous readers (fingerprints kept 2 days)
+  post_id int not null, day date not null, fp text not null, primary key (post_id, day, fp));
+create table if not exists blog_likes (          -- one like per reader per article (fingerprint without the day)
+  post_id int not null references posts(id) on delete cascade, fp text not null, at timestamptz not null default now(), primary key (post_id, fp));
+create table if not exists blog_reading (        -- "reading now": a check-in every 30 seconds while the article is open
+  post_id int not null, fp text not null, seen_at timestamptz not null default now(), primary key (post_id, fp));
+create table if not exists blog_rate (           -- limits per anonymous reader, so scripts can't flood the counts
+  fp text not null, window_start timestamptz not null, n int not null default 0, primary key (fp, window_start));
+alter table posts add column if not exists likes int not null default 0;
+alter table posts add column if not exists saves int not null default 0;
+create table if not exists blog_settings (
+  id int primary key default 1 check (id = 1),
+  views_from int not null default 100, likes_from int not null default 10, reading_from int not null default 3,
+  badges boolean not null default true, testimonials boolean not null default true, updated_at timestamptz not null default now());
+insert into blog_settings (id) values (1) on conflict do nothing;

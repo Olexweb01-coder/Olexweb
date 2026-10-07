@@ -1,8 +1,14 @@
+import BlogAnalytics from '@/components/admin/BlogAnalytics'
+import { analytics } from '@/lib/site/engage'
 import { requireUser, can, ownerOnly } from '@/lib/admin/auth'
 import { q } from '@/lib/admin/db'
 import BlogBoard from '@/components/admin/Blog'
 export const metadata = { title: 'Blog' }
-export default async function Blog() {
+export default async function Blog({ searchParams }) {
+  if (searchParams && searchParams.view === 'analytics') {
+    const u = await requireUser()
+    return <BlogAnalytics data={await analytics(searchParams.days)} isOwner={ownerOnly(u)} />
+  }
   const u = await requireUser()
   const rows = (await q("select id, slug, title, summary, body, seo, to_char(published_on, 'YYYY-MM-DD') as published_on, minutes, status, origin, claims, evidence, sources, checks, auto_publish_at, written_by from posts where status <> 'bin' order by published_on desc nulls first, id desc")).rows
   return <BlogBoard items={rows.map((r) => ({ ...r, auto_publish_at: r.auto_publish_at ? r.auto_publish_at.toISOString() : null }))} canPublish={can(u, 'publish')} isOwner={ownerOnly(u)} />

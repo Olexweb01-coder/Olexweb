@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Icon } from './icons'
 import { act, toast, Sheet, Notice } from './ui'
 import { seoChecks } from '@/lib/seoChecks'
+import { BlogTabs } from './BlogAnalytics'
 
 const PILL = { live: ['live', 'Live'], draft: ['draft', 'Draft'], waiting: ['draft', 'Waiting for approval'] }
 const KW = ['Olaitan Adebayo', 'Olexweb', 'web developer', 'immersive digital experiences', '3D website design', 'business website design', 'Next.js developer', 'website that brings customers']
@@ -16,6 +17,7 @@ export default function BlogBoard({ items, canPublish, isOwner }) {
   useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get('open')); const it = items.find((x) => x.id === id); if (it) setEdit({ data: it }) }, [items])   // links from the assistant open the draft
   return (<>
     <div className="top"><h1 className="d">Blog</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { body: [{ type: 'p', text: '' }], seo: {} } })}>Write</button></div>
+    <BlogTabs current="articles" />
     <Notice />
     <ul className="rows">{items.map((p) => (
       <li key={p.id} className="row click" onClick={() => setEdit({ data: p })}><span className="ic">{Icon.pen}</span>

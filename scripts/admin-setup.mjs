@@ -82,6 +82,7 @@ async function main() {
   await db.query("insert into schema_migrations (version) values ('2026-10-07-phase4') on conflict do nothing")
   await db.query("insert into schema_migrations (version) values ('2026-10-07-phase5') on conflict do nothing")
   await db.query("insert into schema_migrations (version) values ('2026-10-08-cloudflare-backup') on conflict do nothing")
+  await db.query("insert into schema_migrations (version) values ('2026-10-08-blog-engagement') on conflict do nothing")
   ok('Tables are ready')
 
   step('3. Content')

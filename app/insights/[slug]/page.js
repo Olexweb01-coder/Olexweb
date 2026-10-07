@@ -1,6 +1,7 @@
 // An article page, from the database. New articles get a page automatically the first time someone opens them.
 import { notFound } from 'next/navigation'
-import { getPosts, getPost, getSocials } from '@/lib/site/data'
+import { getPosts, getPost, getSocials, getTestimonials, getBlogSettings } from '@/lib/site/data'
+import ArticleSocial from '@/components/site/ArticleSocial'
 import { fmtDate } from '@/lib/site/render'
 import { pageMetadata, pageJsonLd, SITE, OG_IMAGE } from '@/lib/seo'
 import JsonLd from '@/components/JsonLd'
@@ -33,14 +34,14 @@ export async function generateMetadata({ params }) {
 
 export default async function Article({ params }) {
   const a = await getPost(params.slug); if (!a) notFound()
+  const [settings, quotes] = await Promise.all([getBlogSettings(), getTestimonials()])
+  const quote = settings.testimonials && quotes.length ? quotes[a.slug.length % quotes.length] : null   // one of the approved testimonials, steady per article
   const SOCIAL = await getSocials(), okUrls = new Set((Array.isArray(a.sources) ? a.sources : []).map((s) => s && s.url))
   const all = await getPosts(), i = all.findIndex((x) => x.slug === a.slug), next = all.length > 1 ? all[(i + 1) % all.length] : null
   const url = SITE + '/insights/' + a.slug, seo = a.seo || {}
   const ld = pageJsonLd('blog', [{ '@type': 'BlogPosting', headline: a.title, description: seo.description || a.summary, datePublished: a.published_on, dateModified: (a.updated_at || a.published_on || '').slice(0, 10) || undefined,
     url, mainEntityOfPage: url, author: { '@id': SITE + '/#olaitan' }, publisher: { '@id': SITE + '/#org' }, image: SITE + OG_IMAGE.url, timeRequired: 'PT' + a.minutes + 'M', inLanguage: 'en', keywords: seo.keyword || undefined }],
     { path: '/insights/' + a.slug, title: a.title, description: a.summary })
-  const share = [['WhatsApp', 'https://wa.me/?text=' + encodeURIComponent(a.title + ' ' + url)], ['LinkedIn', 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url)],
-    ['Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url)], ['X', 'https://x.com/intent/post?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(a.title)]]
   const sources = Array.isArray(a.sources) ? a.sources.filter((s) => s && /^https?:\/\//.test(s.url || '')) : []
   return (
     <V2Shell kind="blog">
@@ -49,14 +50,17 @@ export default async function Article({ params }) {
         <p className="art-back"><a href="/insights">Back to the Blog</a></p>
         <h1>{a.title}</h1>
         <p className="art-meta">By <a href="/about" className="art-by">Olaitan Adebayo</a>. {fmtDate(a.published_on)}. A {a.minutes}-minute read.</p>
+        <ArticleSocial part="top" {...{ slug: a.slug, title: a.title, url, summary: a.summary, minutes: a.minutes }} />
         {(a.body || []).map((b, k) => (b.type === 'h' ? <h2 key={k}>{b.text.replace(LINK, '$1')}</h2> : <p key={k}>{rich(b.text, okUrls)}</p>))}
         {sources.length ? <div className="art-sources"><h2>Sources</h2><ol>{sources.map((s, k) => <li key={k}><a href={s.url} target="_blank" rel="noopener nofollow">{s.title || s.url}</a></li>)}</ol></div> : null}
-        <div className="art-share"><b>Share this article</b><span>{share.map(([n, h]) => <a key={n} className="btn btn-line" href={h} target="_blank" rel="noopener noreferrer">{n}</a>)}</span></div>
+        <ArticleSocial part="end" {...{ slug: a.slug, title: a.title, url, summary: a.summary, minutes: a.minutes }} />
         <aside className="art-author" aria-label="About the author">
           <img src="/v2/photos/p2.webp" alt="Olaitan Adebayo" width="72" height="72" />
           <div><b>Olaitan Adebayo</b><p>Founder of Olexweb. A web developer who builds websites, products and the systems behind them, and writes about what makes them work.</p>
             <p className="art-follow">Follow Olaitan: {[['LinkedIn', SOCIAL.linkedin], ['X', SOCIAL.x], ['Facebook', SOCIAL.facebook]].filter(([, h]) => /^https:\/\//.test(h || '')).map(([n, h]) => <a key={n} href={h} target="_blank" rel="noopener me">{n}</a>)}</p></div>
         </aside>
+        {quote ? <figure className="art-quote">{quote.stars ? <div className="art-stars" aria-label={quote.stars + ' out of 5'}>{'\u2605'.repeat(quote.stars)}</div> : null}<blockquote>\u201c{quote.text}\u201d</blockquote><figcaption><b>{quote.name}</b>{quote.role ? <span>, {quote.role}</span> : null}</figcaption></figure> : null}
+        <a className="art-work" href="/portfolio"><span><b>See the websites Olaitan has built</b><span>Real projects, live today</span></span><span aria-hidden="true">\u2192</span></a>
         <div className="art-cta"><p>Need a website that brings in work?</p><a className="btn btn-green" href={WA}>Start my project</a></div>
         {next ? <div className="art-next"><small>Next article</small><a href={'/insights/' + next.slug}>{next.title}</a></div> : null}
       </div></article>
