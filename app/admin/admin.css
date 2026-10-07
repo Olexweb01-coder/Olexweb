@@ -190,3 +190,25 @@ textarea.input{min-height:110px;resize:vertical;line-height:1.6}
 
 /* link-buttons look like buttons, without the underline */
 a.btn{text-decoration:none}
+
+/* ---------- staying fresh: Refresh, pull to refresh, new version notice ---------- */
+.fresh-side{appearance:none;background:none;border:0;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;margin-top:auto}
+.fresh-side + .me{margin-top:8px}
+.fresh-phone{display:none}
+.fresh-ic,.fresh-spin{display:inline-flex}.fresh-spin{animation:freshSpin .7s linear infinite}
+@keyframes freshSpin{to{transform:rotate(360deg)}}
+.fresh-new{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 86px);display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  width:min(560px,calc(100% - 28px));padding:12px 14px 12px 18px;border-radius:18px;background:#141614;border:1px solid rgba(143,227,106,.45);box-shadow:0 18px 40px rgba(0,0,0,.45);font-size:14.5px}
+@media (min-width:821px){.fresh-new{bottom:24px}}
+@media (max-width:820px){
+  .fresh-phone{display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:5}
+  .main{padding-top:calc(env(safe-area-inset-top,0px) + 54px)}
+  .fresh-btn{appearance:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer;color:var(--paper);background:rgba(242,239,233,.06);border:1px solid var(--line)}
+}
+.fresh-pull{position:fixed;top:0;left:0;right:0;z-index:40;display:grid;place-items:end center;padding-bottom:8px;pointer-events:none;color:var(--green)}
+@media (prefers-reduced-motion:reduce){.fresh-spin{animation:none}}
+/* while the new-version notice shows, messages appear above it, never on top of its button */
+.fresh-new ~ .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 168px)}
+@media (min-width:821px){.fresh-new ~ .toast{bottom:104px}}
+.fresh-short{display:none}
+@media (max-width:820px){.fresh-long{display:none}.fresh-short{display:inline}.fresh-new{flex-wrap:nowrap;justify-content:space-between;padding:10px 10px 10px 16px}.fresh-new .btn{padding:10px 16px;flex:none}}

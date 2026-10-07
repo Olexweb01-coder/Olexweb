@@ -17,6 +17,7 @@ const hoursLeft = (d) => Math.max(0, Math.round((new Date(d) - Date.now()) / 360
 export default function AssistantBoard({ ready, scheduled, settings, messages, research, drafts, published }) {
   const router = useRouter(), [tab, setTab] = useState('chat'), [msgs, setMsgs] = useState(messages), [text, setText] = useState(''), [busy, setBusy] = useState('')
   const end = useRef(null)
+  useEffect(() => { setMsgs(messages) }, [messages])                     // after a refresh, show messages from the daily runs too
   useEffect(() => { if (tab === 'chat' && end.current) end.current.scrollIntoView({ block: 'end' }) }, [msgs, tab])
   const modeLine = <span className={'pill ' + (settings.mode === 'approval' ? 'live' : 'draft')}>{settings.mode === 'approval' ? 'Drafts wait for you' : `Autopilot, ${settings.pace} a week`}</span>
   if (!ready) return (<><div className="top"><h1 className="d">Assistant</h1>{modeLine}</div>

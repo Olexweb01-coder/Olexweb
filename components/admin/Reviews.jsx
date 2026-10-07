@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from './icons'
 import { toast, Sheet } from './ui'
@@ -17,6 +17,7 @@ const ago = (d) => { const m = Math.round((Date.now() - new Date(d)) / 60000); r
 export default function ReviewsBoard({ items, link, isOwner, canReviews, canTestimonials }) {
   const router = useRouter()
   const [tab, setTab] = useState('waiting'), [busy, setBusy] = useState(null), [adding, setAdding] = useState(false), [url, setUrl] = useState(link)
+  useEffect(() => { setUrl(link) }, [link])                              // after a refresh, show the current review link
   const waiting = items.filter((r) => r.status === 'waiting'), published = items.filter((r) => r.status === 'published')
   const list = tab === 'published' ? published : waiting
   async function decide(id, action, done) {
