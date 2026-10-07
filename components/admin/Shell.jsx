@@ -5,7 +5,7 @@ import { Icon } from './icons'
 import { Toast } from './ui'
 import Freshness, { RefreshButton } from './Freshness'
 
-const NAV = [['/admin', 'home', 'Home'], ['/admin/projects', 'work', 'Projects'], ['/admin/assistant', 'assistant', 'Assistant'], ['/admin/reviews', 'reviews', 'Reviews'], ['/admin/blog', 'blog', 'Blog'], ['/admin/more', 'more', 'More']]
+const NAV = [['/admin', 'home', 'Home'], ['/admin/projects', 'work', 'Projects'], ['/admin/assistant', 'assistant', 'Olex AI'], ['/admin/reviews', 'reviews', 'Reviews'], ['/admin/blog', 'blog', 'Blog'], ['/admin/more', 'more', 'More']]
 export default function Shell({ name, waiting = 0, version, children }) {
   const path = usePathname()
   const here = (href) => (href === '/admin' ? path === '/admin' : path.startsWith(href))

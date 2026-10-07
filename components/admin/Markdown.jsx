@@ -1,5 +1,5 @@
 'use client'
-// Renders the assistant's Markdown as React elements. No raw HTML is ever inserted, so nothing in an answer can run as code.
+// Renders Olex AI's Markdown as React elements. No raw HTML is ever inserted, so nothing in an answer can run as code.
 // Supports: headings, paragraphs, bold, italics, inline code, code blocks, bullet and numbered lists, tables, quotes, rules, links.
 import { Fragment } from 'react'
 

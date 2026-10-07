@@ -14,7 +14,7 @@ const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/
 export default function BlogBoard({ items, canPublish, isOwner }) {
   const router = useRouter(), [edit, setEdit] = useState(null)
   const close = useCallback(() => setEdit(null), [])
-  useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get('open')); const it = items.find((x) => x.id === id); if (it) setEdit({ data: it }) }, [items])   // links from the assistant open the draft
+  useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get('open')); const it = items.find((x) => x.id === id); if (it) setEdit({ data: it }) }, [items])   // links from Olex AI open the draft
   return (<>
     <div className="top"><h1 className="d">Blog</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { body: [{ type: 'p', text: '' }], seo: {} } })}>Write</button></div>
     <BlogTabs current="articles" />
@@ -27,7 +27,7 @@ export default function BlogBoard({ items, canPublish, isOwner }) {
   </>)
 }
 
-// The checklist lives in lib/seoChecks.js, shared with the assistant so both always agree.
+// The checklist lives in lib/seoChecks.js, shared with Olex AI so both always agree.
 export { seoChecks }
 
 function PostEditor({ item, canPublish, isOwner, onClose, onDone }) {
@@ -98,16 +98,16 @@ function PostEditor({ item, canPublish, isOwner, onClose, onDone }) {
   </Sheet>)
 }
 
-// What the assistant knows about its own draft: why the topic, what to check, where facts came from, and the checks.
+// What Olex AI knows about its own draft: why the topic, what to check, where facts came from, and the checks.
 function AssistantNotes({ p }) {
   const c = p.checks || {}, hours = p.auto_publish_at ? Math.max(0, Math.round((new Date(p.auto_publish_at) - Date.now()) / 3600e3)) : null
   return (<div style={{ display: 'grid', gap: 10, marginBottom: 18 }}>
-    {hours !== null && p.status === 'waiting' ? <div className="endbox" style={{ borderColor: 'rgba(143,227,106,.4)' }}><b>Autopilot</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>If you don’t review it, the assistant removes anything unconfirmed, checks everything again and publishes it in about {hours} hour{hours === 1 ? '' : 's'}.</span></div> : null}
+    {hours !== null && p.status === 'waiting' ? <div className="endbox" style={{ borderColor: 'rgba(143,227,106,.4)' }}><b>Autopilot</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>If you don’t review it, Olex AI removes anything unconfirmed, checks everything again and publishes it in about {hours} hour{hours === 1 ? '' : 's'}.</span></div> : null}
     {p.written_by ? <p className="note" style={{ margin: 0 }}>Written by {p.written_by}.</p> : null}
     <div className="endbox" style={{ borderColor: 'rgba(158,197,255,.4)' }}><b style={{ color: '#9ec5ff' }}>Why this topic</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>Real searches: {(p.evidence || []).map((x) => '\u201c' + x + '\u201d').join(', ') || 'none recorded'}.</span></div>
     {(p.claims || []).length ? <div className="endbox" style={{ borderColor: 'rgba(240,179,94,.45)' }}><b style={{ color: 'var(--warn)' }}>{p.claims.length} claim{p.claims.length === 1 ? '' : 's'} to check</b><ul style={{ margin: '6px 0 0', paddingLeft: 18, color: 'var(--dim)', fontSize: 13.5 }}>{p.claims.map((x) => <li key={x}>{x}</li>)}</ul><span style={{ color: 'var(--dim)', fontSize: 13 }}>Keep, soften or remove each one. Autopilot removes them.</span></div> : null}
     {(p.sources || []).length ? <div className="endbox"><b>Sources</b><ol className="srclist">{p.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--paper)' }}>{s.title || s.url}</a></li>)}</ol></div> : null}
     {c.seo ? <div className="endbox"><b>Automatic checks</b><br /><span style={{ color: 'var(--dim)', fontSize: 13.5 }}>{c.seo.filter((x) => x.pass).length} of {c.seo.length} search checks pass. Similarity to sources: {c.originality ? c.originality.overlap : 0}% (5% at most). {c.brokenLinks && c.brokenLinks.length ? 'Broken links: ' + c.brokenLinks.join(', ') : 'Every link works.'}</span></div> : null}
-    <p className="note" style={{ margin: 0 }}>To ask for changes, tell the assistant in its Chat. Links are written as [words](address).</p>
+    <p className="note" style={{ margin: 0 }}>To ask for changes, tell Olex AI in its Chat. Links are written as [words](address).</p>
   </div>)
 }

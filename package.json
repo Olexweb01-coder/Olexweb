@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "admin:setup": "node scripts/admin-setup.mjs",
-    "assistant:check": "node scripts/assistant-check.mjs"
+    "assistant:check": "node scripts/assistant-check.mjs",
+    "notify:keys": "node scripts/notify-keys.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
@@ -21,6 +22,7 @@
     "react-dom": "18.3.1",
     "server-only": "^0.0.1",
     "sharp": "^0.33.5",
-    "three": "0.128.0"
+    "three": "0.128.0",
+    "web-push": "^3.6.7"
   }
 }

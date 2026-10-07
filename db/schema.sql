@@ -252,3 +252,31 @@ do $$ begin
 end $$;
 create index if not exists assistant_messages_chat on assistant_messages(chat_id, id);
 create table if not exists assistant_usage (day date primary key, chat int not null default 0);   -- chat messages per day (protects the writer's allowance)
+
+-- ---------- Olex AI: scheduling and notifications (safe to run again) ----------
+create table if not exists scheduled_changes (
+  id         serial primary key,
+  run_at     timestamptz not null,
+  kind       text not null check (kind in ('publish_post', 'set_mode', 'set_pace')),
+  data       jsonb not null default '{}',
+  label      text not null default '',
+  created_at timestamptz not null default now(),
+  done_at    timestamptz,
+  result     text
+);
+create index if not exists scheduled_due on scheduled_changes(run_at) where done_at is null;
+alter table assistant_settings add column if not exists paused_until timestamptz;
+create table if not exists push_subscriptions (
+  id         serial primary key,
+  user_id    uuid not null references admin_users(id) on delete cascade,
+  endpoint   text not null unique,
+  keys       jsonb not null,
+  device     text not null default '',
+  created_at timestamptz not null default now(),
+  last_ok    timestamptz,
+  failures   int not null default 0
+);
+create table if not exists notify_prefs (
+  user_id uuid primary key references admin_users(id) on delete cascade,
+  prefs   jsonb not null default '{"published": true, "draft": true, "research": true, "run": true, "busy": true, "review": true}'
+);

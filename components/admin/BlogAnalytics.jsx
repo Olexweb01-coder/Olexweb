@@ -59,13 +59,13 @@ export default function BlogAnalytics({ data, isOwner }) {
           <td style={{ padding: '12px 8px 12px 0', fontWeight: 600, maxWidth: 320 }}><a href={'/insights/' + r.slug} target="_blank" rel="noopener" style={{ color: 'inherit' }}>{r.title}</a></td>
           <td style={{ padding: 12, textAlign: 'right' }}>{fmt(r.views)}</td><td style={{ padding: 12, textAlign: 'right' }}>{pct(r.reads, r.views)}%</td>
           <td style={{ padding: 12, textAlign: 'right' }}>{fmt(r.likes_total)}</td><td style={{ padding: 12, textAlign: 'right' }}>{fmt(Math.max(0, r.saves))}</td><td style={{ padding: 12, textAlign: 'right' }}>{fmt(r.shares)}</td>
-          <td style={{ padding: '12px 0 12px 8px' }}><span className={'pill ' + (r.origin === 'assistant' ? 'res' : 'live')}>{r.origin === 'assistant' ? 'Assistant' : 'You'}</span></td></tr>)}</tbody>
+          <td style={{ padding: '12px 0 12px 8px' }}><span className={'pill ' + (r.origin === 'assistant' ? 'res' : 'live')}>{r.origin === 'assistant' ? 'Olex AI' : 'You'}</span></td></tr>)}</tbody>
       </table></div>
     </section>
     <section style={{ ...card, marginTop: 12 }} aria-labelledby="anVs">
-      <h2 id="anVs" style={h2}>Your articles and the assistant’s</h2>
+      <h2 id="anVs" style={h2}>Your articles and Olex AI’s</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-        {[['Yours', d.you, 'rgba(143,227,106,.35)'], ['The assistant’s', d.assistant, 'rgba(158,197,255,.35)']].map(([k, s, c]) => (
+        {[['Yours', d.you, 'rgba(143,227,106,.35)'], ['Olex AI’s', d.assistant, 'rgba(158,197,255,.35)']].map(([k, s, c]) => (
           <div key={k} style={{ padding: 15, borderRadius: 15, border: '1px solid ' + c }}><b>{k} ({s.articles})</b>
             <p style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--dim)' }}>{s.articles ? `${fmt(s.views)} views each on average. ${s.readRate}% read most of it. ${s.likes} likes each.` : 'No articles in this period yet.'}</p></div>))}
       </div>

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast, Sheet } from './ui'
 import Markdown from './Markdown'
+import Notifications from './Notifications'
 
 async function call(payload) {
   try {
@@ -15,7 +16,7 @@ async function call(payload) {
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '')
 const hoursLeft = (d) => Math.max(0, Math.round((new Date(d) - Date.now()) / 3600e3))
 
-export default function AssistantBoard({ ready, scheduled, settings, messages, research, drafts, published, chats = [], chatId: firstChat = null }) {
+export default function AssistantBoard({ ready, scheduled, pending = [], pausedUntil = null, settings, messages, research, drafts, published, chats = [], chatId: firstChat = null }) {
   const [chatId, setChatId] = useState(firstChat), [chatList, setChatList] = useState(chats), [showChats, setShowChats] = useState(false)
   useEffect(() => { setChatList(chats) }, [chats])                       // after a refresh, the latest chat list
   useEffect(() => { if (chatId === firstChat) setMsgs(messages) }, [messages])   // and the latest messages of the open chat
@@ -23,9 +24,9 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
   const end = useRef(null)
   useEffect(() => { if (tab === 'chat' && end.current) end.current.scrollIntoView({ block: 'end' }) }, [msgs, tab])
   const modeLine = <span className={'pill ' + (settings.mode === 'approval' ? 'live' : 'draft')}>{settings.mode === 'approval' ? 'Drafts wait for you' : `Autopilot, ${settings.pace} a week`}</span>
-  if (!ready) return (<><div className="top"><h1 className="d">Assistant</h1>{modeLine}</div>
+  if (!ready) return (<><div className="top"><h1 className="d">Olex AI</h1>{modeLine}</div>
     <div className="share"><b className="d" style={{ fontSize: 20, fontWeight: 700, fontStretch: '90%' }}>One step to switch it on.</b>
-      <p style={{ color: 'var(--dim)' }}>The assistant needs a free Gemini API key from Google AI Studio (no card). Add it to Vercel and to .env.local as GEMINI_API_KEY, then run npm run assistant:check.</p></div></>)
+      <p style={{ color: 'var(--dim)' }}>Olex AI needs a free Gemini API key from Google AI Studio (no card). Add it to Vercel and to .env.local as GEMINI_API_KEY, then run npm run assistant:check.</p></div></>)
   async function send(e) {
     e.preventDefault(); const t = text.trim(); if (!t || busy) return
     const temp = { id: 'me' + Date.now(), role: 'you', text: t }
@@ -60,7 +61,7 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
   async function refresh() { if (busy) return; setBusy('Checking the news and what people are searching for\u2026'); const r = await call({ action: 'research' }); setBusy(''); if (r.error) toast(r.error); else { toast(r.topics.length === 1 ? '1 topic found.' : `${r.topics.length} topics found.`); router.refresh() } }
   const tabs = [['chat', 'Chat'], ['research', 'Today\u2019s research'], ['plan', 'Plan'], ['settings', 'Settings']]
   return (<>
-    <div className="top"><h1 className="d">Assistant</h1>{modeLine}</div>
+    <div className="top"><h1 className="d">Olex AI</h1>{modeLine}</div>
     <div className="seg" role="group" aria-label="Show">{tabs.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>)}</div>
     {busy ? <p className="read-only" role="status">{busy}</p> : null}
     {tab === 'chat' ? (<>
@@ -69,7 +70,7 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
         <button type="button" className="btn btn-line" onClick={newChat} disabled={!chatId && !msgs.length}>New chat</button>
       </div>
       <div className="chat">{msgs.length ? msgs.map((m) => m.role === 'you' ? <div key={m.id} className="msg me">{m.text}</div>
-        : <div key={m.id} className="msg ai"><div className="who-ai">Assistant</div><Markdown text={m.text} />
+        : <div key={m.id} className="msg ai"><div className="who-ai">Olex AI</div><Markdown text={m.text} />
             {m.action ? <div className={'actcard ' + (m.action_state || '')}>
               <p className="actlabel">{m.action.label}</p>
               {m.action_state === 'proposed' ? <div className="acts"><button type="button" className="btn btn-green" disabled={!!busy} onClick={() => decide(m, true)}>Do it</button><button type="button" className="btn btn-line" disabled={!!busy} onClick={() => decide(m, false)}>Cancel</button></div>
@@ -78,7 +79,7 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
             {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id} style={{ textDecoration: 'none', color: 'inherit' }}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}</div>)
         : <div className="empty">Ask me anything: questions about your business, a quick explanation, a plan, a price, some code. I can also find topics, write and revise articles, draft a Portfolio project or change what readers see. I always ask before I change anything.</div>}
         {busy ? <div className="msg ai typing" role="status"><span /><span /><span /></div> : null}<div ref={end} /></div>
-      <form className="compose" onSubmit={send}><textarea className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={4000} placeholder="Ask anything, or ask me to do something…" aria-label="Message the assistant" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) send(e) }} /><button className="btn btn-green" type="submit" disabled={!!busy}>Send</button></form>
+      <form className="compose" onSubmit={send}><textarea className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={4000} placeholder="Ask anything, or ask me to do something…" aria-label="Message Olex AI" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) send(e) }} /><button className="btn btn-green" type="submit" disabled={!!busy}>Send</button></form>
       <p className="note">It knows your site’s numbers, articles, projects and reviews. Nothing changes until you tap Do it. On Google’s free plan, messages may be used to improve Google’s products, so keep confidential client details out of chats.</p>
       {showChats ? <Sheet title="Your chats" onClose={() => setShowChats(false)}>
         <button type="button" className="btn btn-green btn-wide" onClick={newChat} style={{ marginBottom: 14 }}>New chat</button>
@@ -95,11 +96,16 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
         <button className="btn btn-line" onClick={() => write(t.id)} disabled={!!busy || !t.sources.length}>Write about this</button></article>))
         : <div className="empty">No topics yet. Tap “Check now”, or wait for tomorrow’s automatic run.</div>}
     </>) : tab === 'plan' ? (<>
-      <h2 className="section-t" style={{ marginTop: 0 }}>Drafts waiting for you</h2>
+      {pausedUntil ? <div className="share" style={{ marginBottom: 14 }}><b>Olex AI is paused until {day(pausedUntil)}.</b><p style={{ margin: '6px 0 0', color: 'var(--dim)' }}>No research, writing or Autopilot publishing until then. Posts you scheduled still go out. Ask in Chat to resume.</p></div> : null}
+      <h2 className="section-t" style={{ marginTop: 0 }}>Scheduled</h2>
+      {pending.length ? <ul className="rows plan">{pending.map((x) => <li key={x.id} className="row"><span className="ic">◷</span><span><span className="row-t">{x.label}</span><span className="row-s">{day(x.run_at)}, {new Date(x.run_at).getUTCHours() >= 12 ? 'afternoon (about 4 pm)' : 'morning (about 8 am)'}</span></span>
+        <button type="button" className="btn btn-line" onClick={async () => { if (!window.confirm('Cancel this?')) return; const r = await call({ action: 'unschedule', id: x.id }); if (r.error) toast(r.error); else { toast('Cancelled.'); router.refresh() } }}>Cancel</button></li>)}</ul>
+        : <div className="empty">Nothing scheduled. Ask in Chat, for example “publish my draft next Monday morning”.</div>}
+      <h2 className="section-t">Drafts waiting for you</h2>
       {drafts.length ? <ul className="rows plan">{drafts.map((d) => <li key={d.id}><a className="row click" href={'/admin/blog?open=' + d.id} style={{ textDecoration: 'none', color: 'inherit' }}><span className="ic">✎</span><span><span className="row-t">{d.title}</span><span className="row-s">{(d.claims || []).length ? `${d.claims.length} claim${d.claims.length === 1 ? '' : 's'} to check` : 'Nothing flagged'}</span></span><span className="pill live">{d.auto_publish_at ? `Publishes in ${hoursLeft(d.auto_publish_at)} h` : 'Waiting for you'}</span></a></li>)}</ul> : <div className="empty">No drafts waiting.</div>}
       <h2 className="section-t">Up next</h2>
       {research.length ? <ul className="rows plan">{research.slice(0, 5).map((t) => <li key={t.id} className="row"><span className="ic">○</span><span><span className="row-t">{t.topic}</span><span className="row-s">{t.searches[0]}</span></span><span className="pill res">Researched</span></li>)}</ul> : <div className="empty">Research runs every morning.</div>}
-      <h2 className="section-t">Published by the assistant</h2>
+      <h2 className="section-t">Published by Olex AI</h2>
       {published.length ? <ul className="rows plan">{published.map((p) => <li key={p.id}><a className="row click" href={'/insights/' + p.slug} target="_blank" rel="noopener" style={{ textDecoration: 'none', color: 'inherit' }}><span className="ic">✓</span><span><span className="row-t">{p.title}</span><span className="row-s">{day(p.published_on)}</span></span><span className="pill">View</span></a></li>)}</ul> : <div className="empty">Nothing yet.</div>}
       <p className="note">{settings.pace} article{settings.pace === 1 ? '' : 's'} a week at most, never two days in a row. {scheduled ? 'The daily run happens every morning.' : 'The daily run isn\u2019t scheduled yet: add CRON_SECRET in Vercel.'}</p>
     </>) : <Settings settings={settings} busy={busy} setBusy={setBusy} />}
@@ -117,13 +123,14 @@ function Settings({ settings, busy, setBusy }) {
     <h2 className="section-t" style={{ marginTop: 0 }}>How it publishes</h2>
     <div className="radio">
       <label><input type="radio" name="mode" checked={mode === 'approval'} onChange={() => setMode('approval')} /><span><b>Drafts wait for me</b><span>You read, edit and publish. Recommended while you get to know its writing.</span></span></label>
-      <label><input type="radio" name="mode" checked={mode === 'autopilot'} onChange={() => setMode('autopilot')} /><span><b>Autopilot, with 24 hours for you</b><span>Each draft waits 24 hours for your review. If you don’t review it in time, the assistant removes anything it couldn’t confirm, re-checks everything (all checks, working links, originality), then publishes and tells you. You can unpublish with one tap.</span></span></label></div>
+      <label><input type="radio" name="mode" checked={mode === 'autopilot'} onChange={() => setMode('autopilot')} /><span><b>Autopilot, with 24 hours for you</b><span>Each draft waits 24 hours for your review. If you don’t review it in time, Olex AI removes anything it couldn’t confirm, re-checks everything (all checks, working links, originality), then publishes and tells you. You can unpublish with one tap.</span></span></label></div>
     <h2 className="section-t">Pace</h2><div className="seg" role="group" aria-label="Articles a week">{[1, 2, 3].map((n) => <button key={n} aria-pressed={pace === n} onClick={() => setPace(n)}>{n} a week</button>)}</div>
     <h2 className="section-t">Topics it researches</h2>
     <div className="chips">{topics.map((x) => <span className="chip" key={x}>{x}<button aria-label={'Remove ' + x} onClick={() => setTopics(topics.filter((y) => y !== x))}>&times;</button></span>)}</div>
     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}><input className="input" value={t} onChange={(e) => setT(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} placeholder="For example: websites for restaurants" maxLength={60} /><button className="btn btn-line" onClick={add}>Add</button></div>
     <h2 className="section-t">Links at the end of every article</h2>
     {[['linkedin', 'LinkedIn'], ['x', 'X (Twitter)'], ['facebook', 'Facebook']].map(([k, l]) => <div className="field" key={k}><label htmlFor={'so' + k}>{l}</label><input className="input" id={'so' + k} value={socials[k] || ''} onChange={(e) => setSocials({ ...socials, [k]: e.target.value })} inputMode="url" /></div>)}
+    <Notifications />
     <h2 className="section-t">Rules it always follows</h2>
     <ul className="rules"><li>Only writes about what real people are searching for, and saves that evidence with the article.</li><li>Researches several sources before writing, every time.</li><li>Writes in its own words. Never copies; quotes at most a sentence, with credit.</li><li>Ends every article with its sources.</li><li>Flags any figure or claim it can’t confirm, for you to check.</li><li>Never invents clients, results or testimonials.</li><li>Links to your pages only where it genuinely helps the reader.</li><li>Never publishes more than your chosen pace.</li></ul>
     {err ? <p className="err" role="alert">{err}</p> : null}

@@ -7,6 +7,7 @@ import { handleMessage, confirm, cancel, chats, chatMessages, deleteChat } from 
 import { refreshResearch } from '@/lib/assistant/research'
 import { writeArticle } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
+import { cancelScheduled } from '@/lib/assistant/schedule'
 export const dynamic = 'force-dynamic'
 // Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
 export const fetchCache = 'force-no-store'
@@ -15,7 +16,7 @@ const TOPIC = /^[\p{L}\p{N} .,'&+\-]{2,60}$/u
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const u = await currentUser(); if (!u) return refuse('Sign in again.', 401)
-  if (!ownerOnly(u)) return refuse('Only Olaitan can use the assistant.', 403)
+  if (!ownerOnly(u)) return refuse('Only Olaitan can use Olex AI.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   return respond(async () => {
     const id = (v) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) throw new Refused('Unknown item.'); return n }
@@ -25,6 +26,7 @@ export async function POST(request) {
     if (b.action === 'confirm') return confirm(id(b.messageId))
     if (b.action === 'cancel') return cancel(id(b.messageId))
     if (b.action === 'delete-chat') return deleteChat(id(b.chatId))
+    if (b.action === 'unschedule') return cancelScheduled(id(b.id))
     if (b.action === 'research') return { topics: await refreshResearch() }
     if (b.action === 'write') {
       const item = (await q('select id, topic, why, searches, sources from research_items where id = $1 and used_by is null', [Number(b.researchId)])).rows[0]

@@ -2,7 +2,7 @@
 // (The session itself is fully checked against the database on the server; this is the fast first gate.)
 import { NextResponse } from 'next/server'
 
-const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join']
+const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join', '/admin/sw.js']
 const PUBLIC = ['/review', '/api/review']      // clients' review pages: strict headers, no sign-in
 
 export function middleware(request) {
@@ -16,6 +16,7 @@ export function middleware(request) {
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self'",
+    "worker-src 'self'",                                   // the notification helper (/admin/sw.js), from this site only
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'none'",
