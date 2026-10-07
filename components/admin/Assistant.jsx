@@ -29,12 +29,34 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
       <p style={{ color: 'var(--dim)' }}>Olex AI needs a free Gemini API key from Google AI Studio (no card). Add it to Vercel and to .env.local as GEMINI_API_KEY, then run npm run assistant:check.</p></div></>)
   async function send(e) {
     e.preventDefault(); const t = text.trim(); if (!t || busy) return
-    const temp = { id: 'me' + Date.now(), role: 'you', text: t }
-    setMsgs((m) => [...m, temp]); setText(''); setBusy('Thinking\u2026')
-    const r = await call({ action: 'message', chatId, text: t }); setBusy('')
-    if (r.error) { setMsgs((m) => m.filter((x) => x !== temp)); setText(t); toast(r.error); return }
-    setChatId(r.chatId); setMsgs((m) => [...m.filter((x) => x !== temp), ...r.messages])
-    const c = await call({ action: 'chats' }); if (c.chats) setChatList(c.chats)
+    const mine = { id: 'me' + Date.now(), role: 'you', text: t }, live = { id: 'live', role: 'assistant', text: '' }
+    setMsgs((m) => [...m, mine]); setText(''); setBusy('Thinking\u2026')
+    let full = '', done = null, failed = null, started = false
+    const show = () => { let v = full.split('<<<ACTION')[0]; v = v.replace(/<{1,3}A?C?T?I?O?N?$/, ''); setMsgs((m) => [...m.filter((x) => x.id !== 'live'), { ...live, text: v }]) }
+    try {
+      const r = await fetch('/admin/api/assistant/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ chatId, text: t }) })
+      if (r.status === 401) { window.location.assign('/admin/login'); return }
+      if (!r.ok || !r.body) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'Something went wrong. Try again.') }
+      const reader = r.body.getReader(), dec = new TextDecoder(); let buf = '', last = 0
+      for (;;) {
+        const { done: end, value } = await reader.read(); if (end) break
+        buf += dec.decode(value, { stream: true }); let i
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const block = buf.slice(0, i); buf = buf.slice(i + 2)
+          const ev = (block.match(/^event: (.*)$/m) || [])[1], data = (block.match(/^data: (.*)$/m) || [])[1]
+          let j = {}; try { j = JSON.parse(data || '{}') } catch {}
+          if (ev === 'delta') { full += j.text || ''; if (!started) { started = true; setBusy('Writing\u2026') } if (Date.now() - last > 40) { last = Date.now(); show() } }
+          else if (ev === 'done') done = j
+          else if (ev === 'error') failed = j.error
+        }
+      }
+      if (failed) throw new Error(failed)
+      if (!done) throw new Error('The answer was interrupted. Try again.')
+      setChatId(done.chatId); setMsgs((m) => [...m.filter((x) => x.id !== 'live' && x !== mine), ...done.messages])
+      const c = await call({ action: 'chats' }); if (c.chats) setChatList(c.chats)
+    } catch (err) {
+      setMsgs((m) => m.filter((x) => x.id !== 'live' && x !== mine)); setText(t); toast(err.message || 'Something went wrong. Try again.')
+    } finally { setBusy('') }
   }
   async function openChat(id) { setShowChats(false); const r = await call({ action: 'chat', chatId: id }); if (r.error) { toast(r.error); return } setChatId(id); setMsgs(r.messages) }
   function newChat() { setShowChats(false); setChatId(null); setMsgs([]) }
@@ -78,7 +100,7 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
             </div> : null}
             {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id} style={{ textDecoration: 'none', color: 'inherit' }}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}</div>)
         : <div className="empty">Ask me anything: questions about your business, a quick explanation, a plan, a price, some code. I can also find topics, write and revise articles, draft a Portfolio project or change what readers see. I always ask before I change anything.</div>}
-        {busy ? <div className="msg ai typing" role="status"><span /><span /><span /></div> : null}<div ref={end} /></div>
+        {busy && !msgs.some((m) => m.id === 'live' && m.text) ? <div className="msg ai typing" role="status"><span /><span /><span /></div> : null}<div ref={end} /></div>
       <form className="compose" onSubmit={send}><textarea className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={4000} placeholder="Ask anything, or ask me to do something…" aria-label="Message Olex AI" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) send(e) }} /><button className="btn btn-green" type="submit" disabled={!!busy}>Send</button></form>
       <p className="note">It knows your site’s numbers, articles, projects and reviews. Nothing changes until you tap Do it. On Google’s free plan, messages may be used to improve Google’s products, so keep confidential client details out of chats.</p>
       {showChats ? <Sheet title="Your chats" onClose={() => setShowChats(false)}>
