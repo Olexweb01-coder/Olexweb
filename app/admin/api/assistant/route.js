@@ -3,7 +3,7 @@ import { currentUser, sameOrigin, ownerOnly, audit, clientIp } from '@/lib/admin
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
 import { q } from '@/lib/admin/db'
-import { handleMessage } from '@/lib/assistant/chat'
+import { handleMessage, confirm, cancel, chats, chatMessages, deleteChat } from '@/lib/assistant/chat'
 import { refreshResearch } from '@/lib/assistant/research'
 import { writeArticle } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
@@ -18,7 +18,13 @@ export async function POST(request) {
   if (!ownerOnly(u)) return refuse('Only Olaitan can use the assistant.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   return respond(async () => {
-    if (b.action === 'message') return { messages: await handleMessage(b.text) }
+    const id = (v) => { const n = Number(v); if (!Number.isInteger(n) || n < 1) throw new Refused('Unknown item.'); return n }
+    if (b.action === 'message') return handleMessage(b.chatId ? id(b.chatId) : null, b.text)
+    if (b.action === 'chats') return { chats: await chats() }
+    if (b.action === 'chat') return { messages: await chatMessages(id(b.chatId)) }
+    if (b.action === 'confirm') return confirm(id(b.messageId))
+    if (b.action === 'cancel') return cancel(id(b.messageId))
+    if (b.action === 'delete-chat') return deleteChat(id(b.chatId))
     if (b.action === 'research') return { topics: await refreshResearch() }
     if (b.action === 'write') {
       const item = (await q('select id, topic, why, searches, sources from research_items where id = $1 and used_by is null', [Number(b.researchId)])).rows[0]

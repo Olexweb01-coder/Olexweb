@@ -1,7 +1,8 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from './ui'
+import { toast, Sheet } from './ui'
+import Markdown from './Markdown'
 
 async function call(payload) {
   try {
@@ -14,10 +15,12 @@ async function call(payload) {
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '')
 const hoursLeft = (d) => Math.max(0, Math.round((new Date(d) - Date.now()) / 3600e3))
 
-export default function AssistantBoard({ ready, scheduled, settings, messages, research, drafts, published }) {
+export default function AssistantBoard({ ready, scheduled, settings, messages, research, drafts, published, chats = [], chatId: firstChat = null }) {
+  const [chatId, setChatId] = useState(firstChat), [chatList, setChatList] = useState(chats), [showChats, setShowChats] = useState(false)
+  useEffect(() => { setChatList(chats) }, [chats])                       // after a refresh, the latest chat list
+  useEffect(() => { if (chatId === firstChat) setMsgs(messages) }, [messages])   // and the latest messages of the open chat
   const router = useRouter(), [tab, setTab] = useState('chat'), [msgs, setMsgs] = useState(messages), [text, setText] = useState(''), [busy, setBusy] = useState('')
   const end = useRef(null)
-  useEffect(() => { setMsgs(messages) }, [messages])                     // after a refresh, show messages from the daily runs too
   useEffect(() => { if (tab === 'chat' && end.current) end.current.scrollIntoView({ block: 'end' }) }, [msgs, tab])
   const modeLine = <span className={'pill ' + (settings.mode === 'approval' ? 'live' : 'draft')}>{settings.mode === 'approval' ? 'Drafts wait for you' : `Autopilot, ${settings.pace} a week`}</span>
   if (!ready) return (<><div className="top"><h1 className="d">Assistant</h1>{modeLine}</div>
@@ -25,11 +28,29 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
       <p style={{ color: 'var(--dim)' }}>The assistant needs a free Gemini API key from Google AI Studio (no card). Add it to Vercel and to .env.local as GEMINI_API_KEY, then run npm run assistant:check.</p></div></>)
   async function send(e) {
     e.preventDefault(); const t = text.trim(); if (!t || busy) return
-    setMsgs([...msgs, { id: 'me' + Date.now(), role: 'you', text: t }]); setText(''); setBusy('Thinking. Researching and writing a draft can take a minute or two\u2026')
-    const r = await call({ action: 'message', text: t }); setBusy('')
-    if (r.error) { toast(r.error); return }
-    setMsgs((m) => [...m, ...r.messages]); router.refresh()
+    const temp = { id: 'me' + Date.now(), role: 'you', text: t }
+    setMsgs((m) => [...m, temp]); setText(''); setBusy('Thinking\u2026')
+    const r = await call({ action: 'message', chatId, text: t }); setBusy('')
+    if (r.error) { setMsgs((m) => m.filter((x) => x !== temp)); setText(t); toast(r.error); return }
+    setChatId(r.chatId); setMsgs((m) => [...m.filter((x) => x !== temp), ...r.messages])
+    const c = await call({ action: 'chats' }); if (c.chats) setChatList(c.chats)
   }
+  async function openChat(id) { setShowChats(false); const r = await call({ action: 'chat', chatId: id }); if (r.error) { toast(r.error); return } setChatId(id); setMsgs(r.messages) }
+  function newChat() { setShowChats(false); setChatId(null); setMsgs([]) }
+  async function removeChat(id) {
+    if (!window.confirm('Delete this chat? This can\u2019t be undone.')) return
+    const r = await call({ action: 'delete-chat', chatId: id }); if (r.error) { toast(r.error); return }
+    setChatList((l) => l.filter((c) => c.id !== id)); if (id === chatId) newChat(); toast('Chat deleted.')
+  }
+  async function decide(m, yes) {
+    if (busy) return
+    setMsgs((all) => all.map((x) => (x.id === m.id ? { ...x, action_state: yes ? 'running' : 'cancelled' } : x)))
+    if (yes) setBusy(m.action && ['write', 'revise', 'research'].includes(m.action.type) ? 'Working on it. Researching and writing can take a minute or two\u2026' : 'Working on it\u2026')
+    const r = await call({ action: yes ? 'confirm' : 'cancel', messageId: m.id }); setBusy('')
+    if (r.error) { toast(r.error); const c = await call({ action: 'chat', chatId }); if (c.messages) setMsgs(c.messages); return }
+    setMsgs((all) => [...all.map((x) => (x.id === m.id ? { ...x, action_state: r.state } : x)), ...(r.message ? [r.message] : [])]); router.refresh()
+  }
+
   async function write(id) {
     if (busy) return; setBusy('Reading the sources and writing. This can take a minute or two\u2026')
     const r = await call({ action: 'write', researchId: id }); setBusy('')
@@ -43,11 +64,29 @@ export default function AssistantBoard({ ready, scheduled, settings, messages, r
     <div className="seg" role="group" aria-label="Show">{tabs.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>)}</div>
     {busy ? <p className="read-only" role="status">{busy}</p> : null}
     {tab === 'chat' ? (<>
+      <div className="chatbar">
+        <button type="button" className="chatpick" onClick={() => setShowChats(true)} aria-label="Your chats"><span>{chatId ? (chatList.find((c) => c.id === chatId) || {}).title || 'Chat' : 'New chat'}</span><b>Chats</b></button>
+        <button type="button" className="btn btn-line" onClick={newChat} disabled={!chatId && !msgs.length}>New chat</button>
+      </div>
       <div className="chat">{msgs.length ? msgs.map((m) => m.role === 'you' ? <div key={m.id} className="msg me">{m.text}</div>
-        : <div key={m.id} className="msg ai"><div className="who-ai">Assistant</div>{m.text}{m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id} style={{ textDecoration: 'none', color: 'inherit' }}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}</div>)
-        : <div className="empty">Ask for an article, ideas, or changes to a draft. For example: “Find today’s topics”, or “Write about website speed for restaurants”.</div>}<div ref={end} /></div>
-      <form className="compose" onSubmit={send}><textarea className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder="Ask for an article, a change, or ideas…" aria-label="Message the assistant" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) send(e) }} /><button className="btn btn-green" type="submit" disabled={!!busy}>Send</button></form>
-      <p className="note">It reads the site and researches the web. It never changes people, security or the review link, and it doesn’t publish unless Autopilot is on.</p>
+        : <div key={m.id} className="msg ai"><div className="who-ai">Assistant</div><Markdown text={m.text} />
+            {m.action ? <div className={'actcard ' + (m.action_state || '')}>
+              <p className="actlabel">{m.action.label}</p>
+              {m.action_state === 'proposed' ? <div className="acts"><button type="button" className="btn btn-green" disabled={!!busy} onClick={() => decide(m, true)}>Do it</button><button type="button" className="btn btn-line" disabled={!!busy} onClick={() => decide(m, false)}>Cancel</button></div>
+                : <p className="actstate">{{ running: 'Working on it\u2026', done: 'Done', cancelled: 'Cancelled', failed: 'Didn\u2019t work' }[m.action_state] || ''}</p>}
+            </div> : null}
+            {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id} style={{ textDecoration: 'none', color: 'inherit' }}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}</div>)
+        : <div className="empty">Ask me anything: questions about your business, a quick explanation, a plan, a price, some code. I can also find topics, write and revise articles, draft a Portfolio project or change what readers see. I always ask before I change anything.</div>}
+        {busy ? <div className="msg ai typing" role="status"><span /><span /><span /></div> : null}<div ref={end} /></div>
+      <form className="compose" onSubmit={send}><textarea className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={4000} placeholder="Ask anything, or ask me to do something…" aria-label="Message the assistant" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) send(e) }} /><button className="btn btn-green" type="submit" disabled={!!busy}>Send</button></form>
+      <p className="note">It knows your site’s numbers, articles, projects and reviews. Nothing changes until you tap Do it. On Google’s free plan, messages may be used to improve Google’s products, so keep confidential client details out of chats.</p>
+      {showChats ? <Sheet title="Your chats" onClose={() => setShowChats(false)}>
+        <button type="button" className="btn btn-green btn-wide" onClick={newChat} style={{ marginBottom: 14 }}>New chat</button>
+        {chatList.length ? <ul className="rows">{chatList.map((c) => <li key={c.id} className="row">
+          <button type="button" className="chatrow" onClick={() => openChat(c.id)} aria-current={c.id === chatId ? 'true' : undefined}><span className="row-t">{c.title}</span><span className="row-s">{day(c.updated_at)}</span></button>
+          <button type="button" className="btn btn-line" aria-label={'Delete ' + c.title} onClick={() => removeChat(c.id)}>Delete</button></li>)}</ul>
+          : <div className="empty">No chats yet.</div>}
+      </Sheet> : null}
     </>) : tab === 'research' ? (<>
       <p className="note" style={{ marginTop: 0 }}>Topics backed by real Google searches, with articles to learn from. {settings.last_run ? 'Last checked ' + day(settings.last_run) + '.' : ''} <button className="btn btn-line" style={{ padding: '6px 12px', fontSize: 13 }} onClick={refresh} disabled={!!busy}>Check now</button></p>
       {research.length ? research.map((t) => (<article className="trend" key={t.id}><h3>{t.topic}</h3>{t.why ? <p>{t.why}</p> : null}

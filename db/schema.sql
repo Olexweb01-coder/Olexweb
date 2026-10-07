@@ -231,3 +231,24 @@ create table if not exists blog_settings (
   views_from int not null default 100, likes_from int not null default 10, reading_from int not null default 3,
   badges boolean not null default true, testimonials boolean not null default true, updated_at timestamptz not null default now());
 insert into blog_settings (id) values (1) on conflict do nothing;
+
+-- ---------- Assistant chat: conversations, and actions that wait for "Do it" (safe to run again) ----------
+create table if not exists assistant_chats (
+  id          serial primary key,
+  title       text not null default 'New chat',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+alter table assistant_messages add column if not exists chat_id int references assistant_chats(id) on delete cascade;
+alter table assistant_messages add column if not exists action jsonb;                 -- what the assistant proposes to do
+alter table assistant_messages add column if not exists action_state text check (action_state in ('proposed', 'running', 'done', 'cancelled', 'failed'));
+-- messages from before chats existed go into one chat, once
+do $$ begin
+  if exists (select 1 from assistant_messages where chat_id is null) then
+    with c as (insert into assistant_chats (title, created_at, updated_at)
+               select 'Earlier messages', min(created_at), max(created_at) from assistant_messages where chat_id is null returning id)
+    update assistant_messages set chat_id = (select id from c) where chat_id is null;
+  end if;
+end $$;
+create index if not exists assistant_messages_chat on assistant_messages(chat_id, id);
+create table if not exists assistant_usage (day date primary key, chat int not null default 0);   -- chat messages per day (protects the writer's allowance)
