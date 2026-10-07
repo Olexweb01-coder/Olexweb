@@ -8,6 +8,8 @@ import { refreshResearch } from '@/lib/assistant/research'
 import { writeArticle } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
 export const dynamic = 'force-dynamic'
+// Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
+export const fetchCache = 'force-no-store'
 export const maxDuration = 300
 const TOPIC = /^[\p{L}\p{N} .,'&+\-]{2,60}$/u
 export async function POST(request) {

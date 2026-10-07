@@ -6,6 +6,10 @@
     {
       "path": "/api/assistant/cron",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/assistant/cron?run=retry",
+      "schedule": "0 15 * * *"
     }
   ]
 }

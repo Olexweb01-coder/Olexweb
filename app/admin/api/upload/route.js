@@ -8,6 +8,8 @@ import { q, one } from '@/lib/admin/db'
 import { putImage } from '@/lib/admin/storage'
 
 export const dynamic = 'force-dynamic'
+// Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
+export const fetchCache = 'force-no-store'
 const MAX_BYTES = 4 * 1024 * 1024
 const OK_FORMATS = ['jpeg', 'png', 'webp', 'gif', 'avif', 'heif', 'tiff']
 const SHAPES = { screenshot: { width: 1600, height: 12000, fit: 'inside' }, photo: { width: 2000, height: 2000, fit: 'inside' } }

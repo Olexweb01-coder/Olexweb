@@ -4,7 +4,7 @@ const ok = (s) => console.log('  \u2713 ' + s), no = (s) => { console.log('  \u2
 const f = '.env.local'
 if (fs.existsSync(f)) for (const line of fs.readFileSync(f, 'utf8').split(/\r?\n/)) { const m = line.match(/^\s*([A-Z_0-9]+)\s*=\s*(.*)\s*$/); if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '') }
 console.log('Olexweb assistant check\n')
-const key = process.env.GEMINI_API_KEY, BASE = 'https://generativelanguage.googleapis.com'
+const key = process.env.GEMINI_API_KEY, BASE = process.env.ASSISTANT_GEMINI_BASE || 'https://generativelanguage.googleapis.com'
 if (!key) no('GEMINI_API_KEY is missing from .env.local'); else ok('GEMINI_API_KEY is set')
 process.env.CRON_SECRET && process.env.CRON_SECRET.length >= 32 ? ok('CRON_SECRET is set (the daily run is protected)') : no('CRON_SECRET is missing or shorter than 32 characters')
 if (key) {
@@ -12,15 +12,25 @@ if (key) {
   if (!r || !r.ok) no('Google did not accept the key' + (r ? ' (' + r.status + ')' : ' (no connection)'))
   else {
     const names = ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace('models/', ''))
-    const PREFER = [/^gemini-3\.8-flash$/, /^gemini-3\.\d+-flash$/, /^gemini-3\.\d+-flash-lite$/, /^gemini-\d+(\.\d+)?-flash$/]
-    const model = process.env.GEMINI_MODEL || PREFER.map((re) => names.filter((n) => re.test(n)).sort().reverse()[0]).find(Boolean)
-    if (!model) no('No suitable Gemini model is available for this key'); else {
-      ok('Key accepted. Model: ' + model)
-      const g = await fetch(`${BASE}/v1beta/models/${model}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with {"ok": true}' }] }], generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 50 } }) })
-      if (g.status === 429) no('The free daily limit is used up right now. Try again tomorrow.')
-      else if (!g.ok) no('A test request failed (' + g.status + ')')
-      else ok('A test request worked')
+    const PREFER = [/^gemini-3\.8-flash$/, /^gemini-3\.\d+-flash$/, /^gemini-3\.\d+-flash-lite$/, /^gemini-\d+(\.\d+)?-flash$/, /^gemini-\d+(\.\d+)?-flash-lite$/]
+    const models = process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : [...new Set(PREFER.flatMap((re) => names.filter((n) => re.test(n)).sort().reverse()))].slice(0, 3)
+    if (!models.length) no('No suitable Gemini model is available for this key'); else {
+      ok('Key accepted. Models it can use, best first: ' + models.join(', '))
+      let worked = null, busy = false, notes = []
+      for (const model of models) {
+        const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 45000)
+        try {
+          const g = await fetch(`${BASE}/v1beta/models/${model}:generateContent`, { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with {"ok": true}' }] }], generationConfig: { responseMimeType: 'application/json' } }) })
+          const j = await g.json().catch(() => ({}))
+          if (g.ok) { worked = model; break }
+          if (g.status === 503 || g.status === 500 || g.status === 429) busy = true
+          notes.push(model + ': ' + g.status + (j.error ? ' ' + j.error.message : ''))
+        } catch { busy = true; notes.push(model + ': no answer within 45 seconds') } finally { clearTimeout(timer) }
+      }
+      if (worked) ok('A test request worked (' + worked + ')')
+      else if (busy) console.log('  \u26A0 Gemini is busy right now. Temporary: the assistant waits, retries and switches models by itself.\n    ' + notes.join('\n    '))
+      else no('A test request failed:\n    ' + notes.join('\n    '))
     }
   }
 }

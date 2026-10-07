@@ -4,6 +4,8 @@ import { one } from '@/lib/admin/db'
 import { getImage, KEY_RE } from '@/lib/admin/storage'
 
 export const dynamic = 'force-dynamic'
+// Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
+export const fetchCache = 'force-no-store'
 const notFound = () => new Response('Not found', { status: 404, headers: { 'Cache-Control': 'public, max-age=60' } })
 
 export async function GET(_request, { params }) {
