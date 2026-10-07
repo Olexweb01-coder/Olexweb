@@ -201,3 +201,6 @@ alter table posts add column if not exists checks jsonb not null default '{}';  
 insert into admin_users (email, name, role, perms, totp_enabled)
   values ('assistant@olexweb.local', 'Assistant', 'assistant', '{"publish": false, "reviews": false, "testimonials": false, "ventures": false}', false)
   on conflict (email) do nothing;                                                              -- never signs in: no password, no two-step secret
+
+-- ---------- which AI wrote each assistant draft (safe to run again) ----------
+alter table posts add column if not exists written_by text;
