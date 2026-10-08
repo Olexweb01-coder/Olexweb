@@ -1,3 +1,4 @@
+import { searchData } from '@/lib/site/gsc'
 import BlogAnalytics from '@/components/admin/BlogAnalytics'
 import { analytics } from '@/lib/site/engage'
 import { requireUser, can, ownerOnly } from '@/lib/admin/auth'
@@ -7,7 +8,8 @@ export const metadata = { title: 'Blog' }
 export default async function Blog({ searchParams }) {
   if (searchParams && searchParams.view === 'analytics') {
     const u = await requireUser()
-    return <BlogAnalytics data={await analytics(searchParams.days)} isOwner={ownerOnly(u)} />
+    const search = await searchData(25)
+    return <BlogAnalytics data={await analytics(searchParams.days)} isOwner={ownerOnly(u)} search={{ ...search, lastFetch: search.lastFetch ? search.lastFetch.toISOString() : null }} />
   }
   const u = await requireUser()
   const rows = (await q("select id, slug, title, summary, body, seo, to_char(published_on, 'YYYY-MM-DD') as published_on, minutes, status, origin, claims, evidence, sources, checks, auto_publish_at, written_by from posts where status <> 'bin' order by published_on desc nulls first, id desc")).rows

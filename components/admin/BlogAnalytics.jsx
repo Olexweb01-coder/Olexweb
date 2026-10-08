@@ -16,7 +16,7 @@ export function BlogTabs({ current }) {
   </div>)
 }
 
-export default function BlogAnalytics({ data, isOwner }) {
+export default function BlogAnalytics({ data, isOwner, search = null }) {
   const d = data, t = d.totals, max = Math.max(1, ...d.series.map((s) => s.views))
   const change = t.viewsBefore ? Math.round(((t.view - t.viewsBefore) / t.viewsBefore) * 100) : null
   const bars = (rows, color) => { const m = Math.max(1, ...rows.map((r) => r.n)); return rows.map((r) => (
@@ -70,6 +70,7 @@ export default function BlogAnalytics({ data, isOwner }) {
             <p style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--dim)' }}>{s.articles ? `${fmt(s.views)} views each on average. ${s.readRate}% read most of it. ${s.likes} likes each.` : 'No articles in this period yet.'}</p></div>))}
       </div>
     </section>
+    {search ? <SearchConsole s={search} isOwner={isOwner} /> : null}
     {isOwner ? <Thresholds s={d.settings} shown={d.shown} live={d.live} /> : null}
     <p className="note">Counted without cookies or personal data; only daily totals are kept. Which Google searches found you comes from Google Search Console (free), which can be connected after launch.</p>
   </>)
@@ -111,3 +112,27 @@ function Thresholds({ s, shown, live }) {
 const LABELS = { whatsapp: 'WhatsApp', linkedin: 'LinkedIn', facebook: 'Facebook', x: 'X', copy: 'Copy link', more: 'More apps' }
 const label = (k) => LABELS[k] || k
 const short = (day) => (day ? new Date(day + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '')
+
+// Google searches that brought people to the site (Search Console, last 28 days).
+function SearchConsole({ s, isOwner }) {
+  const router = useRouter(), [busy, setBusy] = useState(false)
+  async function fetchNow() {
+    setBusy(true)
+    try { const r = await fetch('/admin/api/gsc', { method: 'POST', credentials: 'same-origin' }); const j = await r.json().catch(() => ({})); if (!r.ok) toast(j.error || 'Something went wrong.'); else { toast(`Fetched ${j.rows} rows from Search Console.`); router.refresh() } }
+    catch { toast('No connection. Try again.') } finally { setBusy(false) }
+  }
+  return (<section style={{ ...card, marginTop: 12 }} aria-labelledby="anGsc">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <h2 id="anGsc" style={{ ...h2, margin: 0 }}>Google searches that found you</h2>
+      {isOwner && s.ready ? <button className="btn btn-line" disabled={busy} onClick={fetchNow}>{busy ? 'Fetching…' : 'Fetch now'}</button> : null}
+    </div>
+    {!s.ready ? <p style={{ margin: '10px 0 0', color: 'var(--dim)', fontSize: 14, lineHeight: 1.55 }}>Not connected yet. Once Search Console is connected (GSC_CLIENT_EMAIL, GSC_PRIVATE_KEY and GSC_SITE), the searches that bring people to your site appear here, and Olex AI uses them to choose topics.</p>
+      : s.error ? <p style={{ margin: '10px 0 0', color: 'var(--warn)', fontSize: 14, lineHeight: 1.55 }}>{s.error}</p>
+      : !s.queries.length ? <p style={{ margin: '10px 0 0', color: 'var(--dim)', fontSize: 14 }}>Connected. Google needs a few weeks of data before searches show here; Olex AI checks every morning.</p>
+      : (<><p className="note" style={{ margin: '8px 0 12px' }}>Last 28 days (Google’s data runs 2 to 3 days behind). Updated {new Date(s.lastFetch).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.</p>
+        <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', minWidth: 520, borderCollapse: 'collapse', fontSize: 14 }}>
+          <thead><tr style={{ textAlign: 'left', color: 'var(--dim)', fontSize: 12.5 }}>{['Search', 'Clicks', 'Impressions', 'Average position'].map((h, i) => <th key={h} style={{ padding: 8, paddingLeft: i ? 8 : 0, fontWeight: 600, textAlign: i ? 'right' : 'left' }}>{h}</th>)}</tr></thead>
+          <tbody>{s.queries.map((r) => <tr key={r.key} style={{ borderTop: '1px solid var(--line)' }}><td style={{ padding: '10px 8px 10px 0', fontWeight: 600 }}>{r.key}</td><td style={{ padding: 10, textAlign: 'right' }}>{fmt(r.clicks)}</td><td style={{ padding: 10, textAlign: 'right' }}>{fmt(r.impressions)}</td><td style={{ padding: 10, textAlign: 'right' }}>{Number(r.position).toFixed(1)}</td></tr>)}</tbody>
+        </table></div></>)}
+  </section>)
+}

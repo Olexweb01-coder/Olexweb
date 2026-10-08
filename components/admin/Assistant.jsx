@@ -16,7 +16,7 @@ async function call(payload) {
 const day = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '')
 const hoursLeft = (d) => Math.max(0, Math.round((new Date(d) - Date.now()) / 3600e3))
 
-export default function AssistantBoard({ ready, scheduled, pending = [], pausedUntil = null, settings, messages, research, drafts, published, chats = [], chatId: firstChat = null }) {
+export default function AssistantBoard({ ready, scheduled, pending = [], pausedUntil = null, speed = null, settings, messages, research, drafts, published, chats = [], chatId: firstChat = null }) {
   const [chatId, setChatId] = useState(firstChat), [chatList, setChatList] = useState(chats), [showChats, setShowChats] = useState(false)
   useEffect(() => { setChatList(chats) }, [chats])                       // after a refresh, the latest chat list
   useEffect(() => { if (chatId === firstChat) setMsgs(messages) }, [messages])   // and the latest messages of the open chat
@@ -98,6 +98,7 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
               {m.action_state === 'proposed' ? <div className="acts"><button type="button" className="btn btn-green" disabled={!!busy} onClick={() => decide(m, true)}>Do it</button><button type="button" className="btn btn-line" disabled={!!busy} onClick={() => decide(m, false)}>Cancel</button></div>
                 : <p className="actstate">{{ running: 'Working on it\u2026', done: 'Done', cancelled: 'Cancelled', failed: 'Didn\u2019t work' }[m.action_state] || ''}</p>}
             </div> : null}
+            {m.written_by && m.ms_first != null ? <p className="msgmeta">{m.written_by} · first words {(m.ms_first / 1000).toFixed(1)} s</p> : null}
             {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id} style={{ textDecoration: 'none', color: 'inherit' }}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}</div>)
         : <div className="empty">Ask me anything: questions about your business, a quick explanation, a plan, a price, some code. I can also find topics, write and revise articles, draft a Portfolio project or change what readers see. I always ask before I change anything.</div>}
         {busy && !msgs.some((m) => m.id === 'live' && m.text) ? <div className="msg ai typing" role="status"><span /><span /><span /></div> : null}<div ref={end} /></div>
@@ -130,11 +131,11 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
       <h2 className="section-t">Published by Olex AI</h2>
       {published.length ? <ul className="rows plan">{published.map((p) => <li key={p.id}><a className="row click" href={'/insights/' + p.slug} target="_blank" rel="noopener" style={{ textDecoration: 'none', color: 'inherit' }}><span className="ic">✓</span><span><span className="row-t">{p.title}</span><span className="row-s">{day(p.published_on)}</span></span><span className="pill">View</span></a></li>)}</ul> : <div className="empty">Nothing yet.</div>}
       <p className="note">{settings.pace} article{settings.pace === 1 ? '' : 's'} a week at most, never two days in a row. {scheduled ? 'The daily run happens every morning.' : 'The daily run isn\u2019t scheduled yet: add CRON_SECRET in Vercel.'}</p>
-    </>) : <Settings settings={settings} busy={busy} setBusy={setBusy} />}
+    </>) : <Settings settings={settings} busy={busy} setBusy={setBusy} speed={speed} />}
   </>)
 }
 
-function Settings({ settings, busy, setBusy }) {
+function Settings({ settings, busy, setBusy, speed }) {
   const router = useRouter()
   const [mode, setMode] = useState(settings.mode), [pace, setPace] = useState(settings.pace), [topics, setTopics] = useState(settings.topics), [t, setT] = useState('')
   const [socials, setSocials] = useState({ linkedin: '', x: '', facebook: '', ...settings.socials }), [err, setErr] = useState('')
@@ -153,6 +154,11 @@ function Settings({ settings, busy, setBusy }) {
     <h2 className="section-t">Links at the end of every article</h2>
     {[['linkedin', 'LinkedIn'], ['x', 'X (Twitter)'], ['facebook', 'Facebook']].map(([k, l]) => <div className="field" key={k}><label htmlFor={'so' + k}>{l}</label><input className="input" id={'so' + k} value={socials[k] || ''} onChange={(e) => setSocials({ ...socials, [k]: e.target.value })} inputMode="url" /></div>)}
     <Notifications />
+    {speed ? <section aria-labelledby="spT"><h2 className="section-t" id="spT">Chat speed</h2>
+      {speed.replies ? <div className="share">
+        <p style={{ margin: 0 }}>Over your last {speed.replies} replies, the first words usually arrived after <b>{speed.medianFirst != null ? (speed.medianFirst / 1000).toFixed(1) + ' seconds' : 'no answer'}</b>. The Cloudflare backup answered {speed.backup}% of them{speed.failed ? `; ${speed.failed} couldn’t be answered (both AIs busy)` : ''}.</p>
+        {speed.slowest.length ? <p style={{ margin: '10px 0 0', color: 'var(--dim)', fontSize: 14 }}>Slowest: {speed.slowest.map((x) => `${(x.ms / 1000).toFixed(1)} s (${x.by || 'unknown'})`).join(', ')}.</p> : null}
+      </div> : <p className="note">No replies measured yet. Ask Olex AI something in Chat.</p>}</section> : null}
     <h2 className="section-t">Rules it always follows</h2>
     <ul className="rules"><li>Only writes about what real people are searching for, and saves that evidence with the article.</li><li>Researches several sources before writing, every time.</li><li>Writes in its own words. Never copies; quotes at most a sentence, with credit.</li><li>Ends every article with its sources.</li><li>Flags any figure or claim it can’t confirm, for you to check.</li><li>Never invents clients, results or testimonials.</li><li>Links to your pages only where it genuinely helps the reader.</li><li>Never publishes more than your chosen pace.</li></ul>
     {err ? <p className="err" role="alert">{err}</p> : null}

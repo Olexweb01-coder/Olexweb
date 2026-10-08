@@ -248,3 +248,5 @@ a.btn{text-decoration:none}
 @keyframes typing{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){.msg.typing span{animation:none}}
 .msg.ai{max-width:100%}
+
+.msgmeta{margin:8px 0 0;font-size:12px;color:var(--dim)}

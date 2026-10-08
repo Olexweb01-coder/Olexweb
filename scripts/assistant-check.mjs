@@ -51,6 +51,24 @@ else {
     else no('Cloudflare test request failed (' + r.status + (msg ? ': ' + msg : '') + ')')
   } catch { console.log('  \u26A0 The Cloudflare backup didn\u2019t answer within 45 seconds. Temporary.') } finally { clearTimeout(timer) }
 }
+// Search Console (optional)
+if (!process.env.GSC_CLIENT_EMAIL && !process.env.GSC_PRIVATE_KEY) console.log('  \u2013 Search Console not connected (optional: GSC_CLIENT_EMAIL, GSC_PRIVATE_KEY, GSC_SITE)')
+else {
+  try {
+    const { createSign } = await import('node:crypto'); const now = Math.floor(Date.now() / 1000), b = (x) => Buffer.from(JSON.stringify(x)).toString('base64url')
+    const u = b({ alg: 'RS256', typ: 'JWT' }) + '.' + b({ iss: process.env.GSC_CLIENT_EMAIL, scope: 'https://www.googleapis.com/auth/webmasters.readonly', aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 })
+    const sig = createSign('RSA-SHA256').update(u).sign((process.env.GSC_PRIVATE_KEY || '').replace(/\\n/g, '\n')).toString('base64url')
+    const t = await fetch(process.env.GSC_TOKEN_URL || 'https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: u + '.' + sig }) }).then((r) => r.json())
+    if (!t.access_token) no('Search Console: Google did not accept the service account' + (t.error_description ? ' (' + t.error_description + ')' : ''))
+    else {
+      const site = process.env.GSC_SITE || ''; const d = (o) => new Date(Date.now() - o * 86400e3).toISOString().slice(0, 10)
+      const r = await fetch(`${(process.env.GSC_API_BASE || 'https://www.googleapis.com')}/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t.access_token }, body: JSON.stringify({ startDate: d(29), endDate: d(2), dimensions: ['query'], rowLimit: 1 }) })
+      if (r.ok) ok('Search Console connected (' + site + ')')
+      else if (r.status === 403) no('Search Console: add ' + process.env.GSC_CLIENT_EMAIL + ' as a user of ' + site + ' (Settings, Users and permissions)')
+      else no('Search Console: the property "' + site + '" was not found (' + r.status + '). Use sc-domain:olexweb.com or https://olexweb.com/')
+    }
+  } catch (e) { no('Search Console: the private key could not be read. Copy the whole private_key value.') }
+}
 for (const [name, url] of [['Google search suggestions', 'https://suggestqueries.google.com/complete/search?client=firefox&hl=en&q=website'], ['Google News', 'https://news.google.com/rss/search?q=web&hl=en-US&gl=US&ceid=US:en'], ['Hacker News', 'https://hn.algolia.com/api/v1/search?query=web&tags=story&hitsPerPage=1'], ['dev.to', 'https://dev.to/api/articles?per_page=1']]) {
   const r = await fetch(url, { headers: { 'User-Agent': 'OlexwebAssistant/1.0' } }).catch(() => null)
   r && r.ok ? ok(name + ' is reachable') : no(name + ' could not be reached')

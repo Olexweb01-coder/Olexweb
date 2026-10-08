@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from './ui'
 
-const KINDS = [['published', 'A post went live'], ['draft', 'A new draft is waiting'], ['research', 'Research is done'], ['run', 'Today’s run is done'], ['busy', 'Gemini was busy (retrying)'], ['review', 'A new review is waiting']]
+const KINDS = [['published', 'A post went live'], ['draft', 'A new draft is waiting'], ['research', 'Research is done'], ['run', 'Today’s run is done'], ['busy', 'Gemini was busy (retrying)'], ['review', 'A new review is waiting'], ['lead', 'A new enquiry']]
 async function call(payload) {
   try {
     const r = await fetch('/admin/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'same-origin' })

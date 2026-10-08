@@ -280,3 +280,36 @@ create table if not exists notify_prefs (
   user_id uuid primary key references admin_users(id) on delete cascade,
   prefs   jsonb not null default '{"published": true, "draft": true, "research": true, "run": true, "busy": true, "review": true}'
 );
+
+-- ---------- Chat speed, leads inbox, Search Console (safe to run again) ----------
+alter table assistant_messages add column if not exists ms_first int;           -- how long the first words took
+alter table assistant_messages add column if not exists ms_total int;           -- how long the whole reply took
+alter table assistant_messages add column if not exists written_by text;        -- which AI answered
+create table if not exists leads (
+  id          serial primary key,
+  created_at  timestamptz not null default now(),
+  name        text not null,
+  contact     text not null,                                                    -- WhatsApp number or email, as given
+  need        text not null,
+  business    text not null default '',
+  budget      text not null default '',
+  timeline    text not null default '',
+  page        text not null default '',                                         -- the page they came from
+  source      text not null default '',                                         -- Google, WhatsApp, LinkedIn, Direct…
+  status      text not null default 'new' check (status in ('new', 'contacted', 'won', 'lost')),
+  notes       text not null default '',
+  ip_hash     text not null default '',                                         -- for spam limits only (one-way)
+  updated_at  timestamptz not null default now()
+);
+create index if not exists leads_recent on leads(created_at desc);
+create table if not exists lead_clicks (                                        -- taps on WhatsApp buttons, by page (daily totals)
+  day date not null, page text not null, label text not null default '', n int not null default 0,
+  primary key (day, page, label)
+);
+create table if not exists gsc_queries (                                        -- Search Console: searches that found the site (last 28 days)
+  fetched_on date not null, kind text not null check (kind in ('query', 'page')), key text not null,
+  clicks int not null default 0, impressions int not null default 0, ctr real not null default 0, position real not null default 0,
+  primary key (fetched_on, kind, key)
+);
+create table if not exists gsc_state (id int primary key default 1 check (id = 1), last_fetch timestamptz, last_error text, rows int not null default 0);
+insert into gsc_state (id) values (1) on conflict do nothing;

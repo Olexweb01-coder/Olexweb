@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { requireUser } from '@/lib/admin/auth'
+import { requireUser, ownerOnly } from '@/lib/admin/auth'
 import { one, q } from '@/lib/admin/db'
 import { InstallNote } from '@/components/admin/Actions'
 import { Icon } from '@/components/admin/icons'
 
 export const metadata = { title: 'Home' }
-const LABEL = { signed_in: ['lock', 'Signed in'], signed_out: ['lock', 'Signed out'], sign_in_failed: ['lock', 'Blocked a failed sign-in'], signed_out_other_devices: ['lock', 'Signed out other devices'], owner_created: ['person', 'Admin set up'], image_uploaded: ['work', 'Uploaded an image'], assistant_drafted: ['assistant', 'Olex AI drafted an article'], assistant_published: ['assistant', 'Olex AI published an article'], assistant_held_back: ['assistant', 'Olex AI held an article back'], assistant_settings_changed: ['assistant', 'Changed Olex AI\u2019s settings'], assistant_busy: ['assistant', 'Gemini was busy; Olex AI will try again'], review_received: ['reviews', 'A client sent a review'], review_approved: ['reviews', 'Approved a review'], review_rejected: ['reviews', 'Rejected a review'], review_unpublished: ['reviews', 'Unpublished a review'], testimonial_added: ['reviews', 'Added a testimonial'], review_link_created: ['reviews', 'Made a new review link'], review_link_switched_off: ['reviews', 'Switched the review link off'], editor_invited: ['person', 'Invited an editor'], editor_joined: ['person', 'An editor joined'], editor_permissions_changed: ['person', 'Changed an editor’s permissions'], editor_removed: ['person', 'Removed an editor’s access'], invite_cancelled: ['person', 'Cancelled an invite'] }
+const LABEL = { signed_in: ['lock', 'Signed in'], signed_out: ['lock', 'Signed out'], sign_in_failed: ['lock', 'Blocked a failed sign-in'], signed_out_other_devices: ['lock', 'Signed out other devices'], owner_created: ['person', 'Admin set up'], image_uploaded: ['work', 'Uploaded an image'], assistant_drafted: ['assistant', 'Olex AI drafted an article'], assistant_published: ['assistant', 'Olex AI published an article'], assistant_held_back: ['assistant', 'Olex AI held an article back'], lead_updated: ['person', 'Updated an enquiry'], lead_deleted: ['person', 'Deleted an enquiry'], assistant_settings_changed: ['assistant', 'Changed Olex AI\u2019s settings'], assistant_busy: ['assistant', 'Gemini was busy; Olex AI will try again'], review_received: ['reviews', 'A client sent a review'], review_approved: ['reviews', 'Approved a review'], review_rejected: ['reviews', 'Rejected a review'], review_unpublished: ['reviews', 'Unpublished a review'], testimonial_added: ['reviews', 'Added a testimonial'], review_link_created: ['reviews', 'Made a new review link'], review_link_switched_off: ['reviews', 'Switched the review link off'], editor_invited: ['person', 'Invited an editor'], editor_joined: ['person', 'An editor joined'], editor_permissions_changed: ['person', 'Changed an editor’s permissions'], editor_removed: ['person', 'Removed an editor’s access'], invite_cancelled: ['person', 'Cancelled an invite'] }
 const KIND = { project: ['work', 'project'], post: ['blog', 'article'], venture: ['ventures', 'venture'] }
 const VERB = { created: 'Added a', edited: 'Edited a', published: 'Published a', sent_for_approval: 'Sent for approval: a', hidden: 'Took off the site: a', reordered: 'Reordered the', moved_to_bin: 'Moved to bin: a', restored: 'Restored a', deleted_for_good: 'Deleted for good: a' }
 function describe(action) {
@@ -18,7 +18,7 @@ const ago = (d) => { const m = Math.round((Date.now() - new Date(d)) / 60000); r
 export default async function Home() {
   const u = await requireUser()
   const c = await one(`select (select count(*) from projects where status = 'live')::int as projects, (select count(*) from posts where status = 'live')::int as posts,
-                              (select count(*) from testimonials where status = 'waiting')::int as waiting, (select count(*) from posts where origin = 'assistant' and status = 'waiting')::int as drafts, (select coalesce(sum(bytes), 0) from media)::bigint as bytes`)
+                              (select count(*) from testimonials where status = 'waiting')::int as waiting, (select count(*) from posts where origin = 'assistant' and status = 'waiting')::int as drafts, (select count(*) from leads where status = 'new')::int as leads, (select coalesce(sum(bytes), 0) from media)::bigint as bytes`)
   const acts = (await q("select action, at from audit_log where user_id = $1 or user_id is null or user_id in (select id from admin_users where role = 'assistant') order by at desc limit 6", [u.id])).rows
   const hour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Africa/Lagos' }).format(new Date()))
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -31,6 +31,7 @@ export default async function Home() {
       <div className="stat"><strong className="d">{c.projects}</strong><span>projects live</span></div>
       <div className="stat"><strong className="d">{c.posts}</strong><span>articles live</span></div>
     </div>
+    {ownerOnly(u) && c.leads ? <Link href="/admin/leads" className="stat act" style={{ textDecoration: 'none', display: 'block', marginTop: 12 }}><strong className="d">{c.leads}</strong><span>{c.leads === 1 ? 'new enquiry is' : 'new enquiries are'} waiting for you</span></Link> : null}
     {c.drafts ? <Link href="/admin/blog" className="stat act" style={{ textDecoration: 'none', display: 'block', marginTop: 12 }}><strong className="d">{c.drafts}</strong><span>{c.drafts === 1 ? 'draft from Olex AI is' : 'drafts from Olex AI are'} waiting for you</span></Link> : null}
     <div className="stat" style={{ marginTop: 12 }}><span>Image storage</span><div className="meter"><i style={{ width: Math.max(pct, 0.6) + '%' }} /></div><span>{mb < 1 ? '0' : mb.toFixed(0)} MB of 5 GB used</span></div>
     <h2 className="section-t">Recent activity</h2>
