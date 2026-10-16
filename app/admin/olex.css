@@ -1,0 +1,238 @@
+/* ===================== Olex AI: the chat-first admin =====================
+   Loaded after admin.css. Layout first (sidebar, stage, chat), then the three looks: glass (default), clay, neumorphic.
+   Every look only sets tokens and surfaces, so all sections (Projects, Olex Blog, Reviews…) follow the chosen look. */
+
+/* ---------- tokens: glass (default) ---------- */
+.olex{--page:#070908;--side:rgba(9,11,10,.55);--sheet:rgba(12,14,13,.86);
+  --sf:rgba(255,255,255,.045);--sb:1px solid rgba(255,255,255,.09);--ss:0 12px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);--sbf:blur(22px) saturate(140%);
+  --sf2:rgba(255,255,255,.075);--pf:rgba(0,0,0,.28);--pb:1px solid rgba(255,255,255,.1);--ps:inset 0 1px 2px rgba(0,0,0,.3);
+  --r:18px;--r-lg:26px;--on:rgba(255,255,255,.08);--on-sh:none;
+  --btn-sh:0 6px 18px rgba(143,227,106,.22),inset 0 1px 0 rgba(255,255,255,.45);
+  min-height:100vh;position:relative;background:var(--page)}
+.olex-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(55% 45% at 12% 8%,rgba(143,227,106,.17),transparent 70%),
+  radial-gradient(45% 40% at 92% 88%,rgba(60,170,140,.15),transparent 70%),
+  radial-gradient(35% 35% at 72% 18%,rgba(110,130,255,.07),transparent 70%),var(--page)}
+
+/* ---------- clay ---------- */
+.olex[data-style=clay]{--page:#0f130e;--side:#141a13;--sheet:#141a13;
+  --sf:#1c241b;--sb:0;--ss:12px 14px 28px rgba(0,0,0,.55),inset -7px -8px 14px rgba(0,0,0,.42),inset 7px 8px 14px rgba(170,235,140,.075);--sbf:none;
+  --sf2:#222c20;--pf:#0e110f;--pb:0;--ps:inset 4px 5px 10px rgba(0,0,0,.55),inset -3px -3px 8px rgba(255,255,255,.03);
+  --r:26px;--r-lg:34px;--on:#222c20;--on-sh:6px 8px 16px rgba(0,0,0,.4),inset 3px 3px 7px rgba(255,255,255,.05),inset -3px -3px 7px rgba(0,0,0,.35);
+  --btn-sh:6px 8px 16px rgba(0,0,0,.45),inset -4px -5px 9px rgba(30,70,15,.55),inset 4px 5px 9px rgba(255,255,255,.5)}
+.olex[data-style=clay] .olex-bg{background:radial-gradient(60% 50% at 20% 0%,rgba(143,227,106,.07),transparent 70%),var(--page)}
+
+/* ---------- neumorphic ---------- */
+.olex[data-style=neu]{--page:#161917;--side:#161917;--sheet:#161917;
+  --sf:#161917;--sb:0;--ss:7px 7px 15px #0b0d0b,-7px -7px 15px #212521;--sbf:none;
+  --sf2:#191c1a;--pf:#161917;--pb:0;--ps:inset 4px 4px 9px #0b0d0b,inset -4px -4px 9px #212521;
+  --r:20px;--r-lg:28px;--on:#161917;--on-sh:inset 3px 3px 7px #0b0d0b,inset -3px -3px 7px #212521;
+  --btn-sh:5px 5px 12px #0b0d0b,-5px -5px 12px #212521;
+  --line:rgba(242,239,233,.06)}
+.olex[data-style=neu] .olex-bg{background:var(--page)}
+
+/* ---------- surfaces every section uses ---------- */
+.olex :is(.stat,.review,.trend,.share,.seo,.newchat,.composer,.ideas button,.look,.actcard,.radio label,.switch,.block,.banner,.endbox,.draftcard,.drop,.fresh-new){
+  background:var(--sf);border:var(--sb);box-shadow:var(--ss);backdrop-filter:var(--sbf);-webkit-backdrop-filter:var(--sbf)}
+.olex :is(.stat,.review,.trend,.share,.seo,.look,.radio label,.switch,.banner,.drop){border-radius:var(--r)}
+.olex .stat.act{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.42)}
+.olex .actcard{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.38)}
+.olex .radio label:has(input:checked){box-shadow:var(--ss),inset 0 0 0 1.5px rgba(143,227,106,.6)}
+.olex :is(.input,textarea.input,select.input,.seg,.chatpick){background:var(--pf);border:var(--pb);box-shadow:var(--ps)}
+.olex .seg button[aria-pressed=true],.olex .seg a.segl[aria-pressed=true]{background:var(--sf2);box-shadow:var(--on-sh)}
+.olex .btn-green{box-shadow:var(--btn-sh)}
+.olex[data-style=neu] .btn-line{border:0;box-shadow:var(--btn-sh)}
+.olex[data-style=clay] .btn-line{border:0;background:var(--sf);box-shadow:var(--ss)}
+.olex .sheet{background:var(--sheet);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.olex .sheet-foot{background:transparent}
+.olex .empty{border-radius:var(--r)}
+.olex[data-style=neu] .empty{border:0;box-shadow:var(--ps)}
+.inline-link{color:var(--green)}
+
+/* ---------- frame: sidebar + stage ---------- */
+.olex .app{position:relative;z-index:1;display:flex;min-height:100vh;grid-template-columns:none}
+.olex .side{display:flex;flex-direction:column;flex:none;width:272px;height:100vh;height:100dvh;position:sticky;top:0;padding:12px 10px 10px;gap:0;
+  background:var(--side);border-right:1px solid var(--line);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);transition:margin-left .38s var(--ease)}
+.olex[data-style=neu] .side{border-right:0;box-shadow:6px 0 16px #0b0d0b}
+.olex[data-style=clay] .side{border-right:0;box-shadow:8px 0 24px rgba(0,0,0,.45)}
+.olex.side-closed .side{margin-left:-272px}
+.side-head{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 12px 8px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:800;font-stretch:108%;font-size:19px;letter-spacing:-.01em}
+.brand img{width:22px;height:26px}
+.icon-btn{appearance:none;border:0;background:none;width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;color:var(--dim);cursor:pointer;text-decoration:none;transition:background .2s,color .2s,opacity .2s}
+.icon-btn svg{width:20px;height:20px}
+.icon-btn:hover{color:var(--paper);background:rgba(242,239,233,.07)}
+.icon-btn:disabled{opacity:.35;cursor:default;background:none}
+.newchat{display:flex;align-items:center;gap:12px;padding:11px 12px;margin:0 2px 12px;border-radius:14px;text-decoration:none;font-weight:700;font-size:14.5px}
+.newchat svg{width:19px;height:19px}
+.newchat.on{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.45)}
+.side-nav{display:flex;flex-direction:column;gap:1px}
+.olex .nav-a{padding:8px 12px;font-size:14.5px;border-radius:12px;gap:12px}
+.olex .nav-a svg{width:19px;height:19px}
+.olex .nav-a:hover{background:rgba(242,239,233,.05)}
+.olex .nav-a[aria-current=page]{background:var(--on);box-shadow:var(--on-sh);color:var(--paper)}
+.olex .nav-a .count{font-size:11.5px;padding:0 7px}
+.side-chats{flex:1;min-height:0;overflow-y:auto;margin:16px -4px 8px;padding:0 4px;scrollbar-width:thin;scrollbar-color:rgba(242,239,233,.15) transparent}
+.side-label{margin:0 12px 6px;font-size:12.5px;font-weight:700;color:var(--faint)}
+.side-empty{margin:0 12px;font-size:13px;color:var(--faint)}
+.side-chats ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.side-chats li{display:flex;align-items:center;border-radius:10px}
+.side-chats li a{flex:1;min-width:0;padding:8px 12px;font-size:14px;color:var(--dim);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-chats li button{appearance:none;border:0;background:none;color:var(--faint);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;cursor:pointer;opacity:0;flex:none}
+.side-chats li button svg{width:15px;height:15px}
+.side-chats li:hover{background:rgba(242,239,233,.045)}
+.side-chats li:hover button,.side-chats li button:focus-visible,.side-chats li.on button{opacity:1}
+.side-chats li button:hover{color:var(--bad)}
+.side-chats li.on{background:var(--on);box-shadow:var(--on-sh)}.side-chats li.on a{color:var(--paper)}
+@media (hover:none){.side-chats li button{opacity:1}}
+.side-foot{border-top:1px solid var(--line);padding-top:6px;display:grid;gap:2px}
+.olex .side-foot .fresh-side{margin-top:0}
+.olex .side .me{margin:0;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;color:var(--dim);font-size:13.5px;text-decoration:none}
+.olex .side .me:hover{background:rgba(242,239,233,.05);color:var(--paper)}
+.olex .side .me img{width:30px;height:30px}
+.scrim{display:none}
+
+.stage{flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;min-height:56px;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px}
+.topbar-t{font-family:var(--display);font-weight:800;font-stretch:100%;font-size:17px;display:none}
+.topbar-end{margin-left:auto;display:flex;align-items:center;gap:4px}
+.topbar .opener,.topbar-end>.icon-btn{display:none}
+.olex.side-closed .topbar .opener,.olex.side-closed .topbar-end>.icon-btn{display:grid}
+.olex.side-closed .topbar-t{display:block}
+.phone-only{display:none}
+.olex .fresh-btn{appearance:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;cursor:pointer;color:var(--dim);background:none;border:0}
+.olex .main{max-width:none;padding:0;flex:1;display:flex;flex-direction:column;min-width:0}
+.page{width:100%;max-width:980px;margin:0 auto;padding:6px clamp(18px,4vw,48px) 120px}
+.main-chat{min-height:0}
+
+/* notices sit at the top, so they never cover the message box */
+.olex .toast{top:calc(env(safe-area-inset-top,0px) + 14px);bottom:auto!important;transform:translate(-50%,-16px)}
+.olex .toast.on{transform:translate(-50%,0)}
+.olex .fresh-new{border-radius:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
+
+/* ---------- the chat ---------- */
+.chat-wrap{flex:1;display:flex;flex-direction:column;width:100%;min-height:0}
+.chat-wrap.fresh{justify-content:center;padding-bottom:6vh}
+.thread{flex:1;width:100%;max-width:800px;margin:0 auto;padding:8px 22px 28px;display:flex;flex-direction:column;gap:28px}
+.hello{width:100%;max-width:800px;margin:0 auto;padding:0 22px 22px}
+.hello img{width:40px;height:47px;display:block;margin-bottom:18px}
+.hello h1{margin:0;font-weight:800;font-stretch:76%;font-size:clamp(40px,6.4vw,68px);line-height:.92;letter-spacing:-.025em}
+.hello h1 span{color:var(--faint)}
+.turn.me{display:flex;justify-content:flex-end}
+.bubble{max-width:min(82%,620px);padding:11px 16px;border-radius:22px 22px 6px 22px;background:var(--sf2);box-shadow:var(--on-sh);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}
+.olex:not([data-style]) .bubble,.olex[data-style=glass] .bubble{border:1px solid rgba(255,255,255,.08)}
+.turn.ai{display:grid;grid-template-columns:24px minmax(0,1fr);gap:14px}
+.ai-mark{width:20px;height:24px;margin-top:2px}
+.ai-body{min-width:0;font-size:15.5px}
+.ai-body .md{gap:12px}
+.typing{display:flex;gap:5px;align-items:center;height:26px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--dim);animation:typing 1.2s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+.olex .draftcard{display:grid;gap:4px;padding:12px 14px;border-radius:14px;text-decoration:none;color:inherit;margin-top:12px}
+.dock{position:sticky;bottom:0;z-index:5;width:100%;padding:10px 18px calc(env(safe-area-inset-bottom,0px) + 10px);
+  background:linear-gradient(to bottom,transparent,var(--dock,var(--page)) 30%)}
+.dock>*{max-width:764px;margin-left:auto;margin-right:auto}
+.olex:not([data-style]),.olex[data-style=glass]{--dock:rgba(7,9,8,.92)}
+.chat-wrap.fresh .dock{position:static;background:none}
+.olex .composer{border-radius:var(--r-lg);padding:12px 10px 8px 18px}
+.composer textarea{display:block;width:100%;background:none;border:0;outline:none;resize:none;color:var(--paper);font-size:16px;line-height:1.5;padding:4px 6px 6px 0;max-height:220px;min-height:28px}
+.composer textarea::placeholder{color:var(--faint)}
+.composer:focus-within{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.35)}
+.olex[data-style=neu] .composer{box-shadow:var(--ps)}
+.olex[data-style=neu] .composer:focus-within{box-shadow:var(--ps),inset 0 0 0 1px rgba(143,227,106,.35)}
+.olex[data-style=clay] .bubble{border-radius:26px 26px 8px 26px;box-shadow:var(--ss)}
+.composer-row{display:flex;align-items:center;gap:4px}
+.composer-hint{flex:1;min-width:0;font-size:12.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sendbtn{background:var(--green);color:var(--ink);border-radius:50%;box-shadow:var(--btn-sh)}
+.sendbtn:hover{background:#a5ec84;color:var(--ink)}
+.sendbtn:disabled{background:rgba(242,239,233,.12);color:var(--faint);box-shadow:none}
+.mic.busy{color:var(--green);animation:micPulse 1s ease-in-out infinite}
+.rec{display:inline-flex;align-items:center;gap:4px;padding:0 2px 0 0;border-radius:999px;background:rgba(239,122,106,.1)}
+.rec-dot{width:9px;height:9px;border-radius:50%;background:var(--bad);animation:recBlink 1.1s ease-in-out infinite}
+.rec-t{font-family:var(--display);font-weight:700;font-size:14px;min-width:34px;font-variant-numeric:tabular-nums}
+.rec-stop{color:var(--bad)}
+@keyframes recBlink{50%{opacity:.25}}
+@keyframes micPulse{50%{opacity:.4}}
+.ideas{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;align-items:start}
+.olex .ideas button{appearance:none;text-align:left;cursor:pointer;padding:12px 14px;border-radius:16px;display:grid;gap:2px;align-content:start;height:100%;color:var(--paper);transition:transform .15s}
+.ideas button:hover{transform:translateY(-1px)}
+.ideas button:disabled{opacity:.5;cursor:default;transform:none}
+.ideas b{font-size:14px}.ideas span{font-size:13px;color:var(--dim);line-height:1.4}
+.fine{margin:10px 0 0;text-align:center;font-size:12px;color:var(--faint)}
+.chat-empty{max-width:620px;margin:auto;padding:40px 22px;text-align:left}
+.chat-empty h1{font-weight:800;font-stretch:78%;font-size:44px;line-height:.95;margin:18px 0 10px}
+.chat-empty p{color:var(--dim)}
+.olex .md-pre{background:rgba(0,0,0,.4)}
+
+/* ---------- the Look picker (Settings) ---------- */
+.looks{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.olex .look{appearance:none;text-align:left;cursor:pointer;padding:14px;display:grid;gap:4px;color:var(--paper);border-radius:var(--r)}
+.look[aria-checked=true]{box-shadow:var(--ss),inset 0 0 0 2px var(--green)!important}
+.look b{font-size:15px}.look>span:last-child{font-size:13px;color:var(--dim);line-height:1.4}
+.look-sw{display:flex;gap:8px;height:58px;padding:10px;border-radius:12px;margin-bottom:8px;background:#121513}
+.look-sw i{flex:1;border-radius:10px}
+.look-glass .look-sw{background:radial-gradient(80% 90% at 10% 0%,rgba(143,227,106,.35),transparent 70%),#0b0d0c}
+.look-glass .look-sw i{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(6px)}
+.look-clay .look-sw i{background:#1d221e;border-radius:14px;box-shadow:4px 5px 10px rgba(0,0,0,.55),inset -3px -3px 6px rgba(0,0,0,.4),inset 3px 3px 6px rgba(255,255,255,.07)}
+.look-neu .look-sw{background:#161917}.look-neu .look-sw i{background:#161917;box-shadow:4px 4px 8px #0b0d0b,-4px -4px 8px #222622}
+.look-neu .look-sw i:last-child{box-shadow:inset 3px 3px 6px #0b0d0b,inset -3px -3px 6px #222622}
+
+/* ---------- phones and small tablets: the sidebar becomes a drawer ---------- */
+@media (max-width:900px){
+  .olex .side{position:fixed;left:0;top:0;bottom:0;z-index:50;width:min(300px,86vw);margin-left:0!important;transform:translateX(-102%);transition:transform .38s var(--ease);
+    padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);background:var(--page)}
+  .olex[data-style=glass] .side,.olex:not([data-style]) .side{background:rgba(10,12,11,.9)}
+  .olex.drawer-on .side{transform:none}
+  .scrim{display:block;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .3s}
+  .olex.drawer-on .scrim{opacity:1;pointer-events:auto}
+  .topbar .opener,.topbar-end>.icon-btn{display:grid}
+  .topbar-t{display:block}
+  .phone-only{display:block}
+  .olex .main{padding-top:0}
+  .page{padding-top:2px}
+  .thread{padding:4px 16px 24px}.hello{padding:0 16px 18px}.dock{padding-left:10px;padding-right:10px}
+  .chat-wrap.fresh{justify-content:flex-end;padding-bottom:0}
+  .chat-wrap.fresh .dock{position:sticky}
+  .chat-wrap.fresh .hello{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .composer-hint{display:none}.composer-row{justify-content:flex-end}
+  .looks{grid-template-columns:1fr}
+  .olex .fresh-btn{width:38px;height:38px}
+}
+@media (max-width:560px){.ideas{grid-template-columns:1fr 1fr}.ideas span{display:none}}
+@media (prefers-reduced-motion:reduce){.olex .side,.typing span,.rec-dot,.mic.busy{transition:none;animation:none}}
+
+/* AI providers list (Olex Assistant → How it works) */
+.prov{grid-template-columns:auto minmax(0,1fr) auto}
+.prov .row-s{white-space:normal}
+.prov-dot{width:10px;height:10px;border-radius:50%;background:rgba(242,239,233,.2);margin:0 4px}
+.prov-dot.ready{background:var(--green);box-shadow:0 0 10px rgba(143,227,106,.6)}.prov-dot.not-used-yet{background:#9ec5ff}.prov-dot.resting{background:var(--warn)}
+
+/* ---------- code in answers: Copy, Download, Run ---------- */
+.cblock{border-radius:14px;overflow:hidden;background:rgba(0,0,0,.42);border:1px solid rgba(242,239,233,.09)}
+.olex[data-style=neu] .cblock{border:0;box-shadow:var(--ps)}
+.olex[data-style=clay] .cblock{border:0;box-shadow:inset 4px 5px 10px rgba(0,0,0,.55)}
+.code-bar{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 14px;border-bottom:1px solid rgba(242,239,233,.07);font-size:12.5px}
+.code-name{flex:1;min-width:0;color:var(--dim);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.code-acts{display:flex;gap:2px}
+.code-acts button{appearance:none;border:0;background:none;color:var(--dim);font:inherit;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:9px;cursor:pointer}
+.code-acts button:hover{background:rgba(242,239,233,.08);color:var(--paper)}
+.code-acts button:first-child[title^="Run"]{color:var(--green)}
+.code-acts button:disabled{opacity:.6;cursor:default}
+.code-acts svg{width:15px;height:15px}
+.olex .cblock .md-pre{margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;max-height:520px;overflow:auto}
+.code-out{border-top:1px solid rgba(143,227,106,.25);background:rgba(143,227,106,.04)}
+.code-out.bad{border-top-color:rgba(239,122,106,.35);background:rgba(239,122,106,.05)}
+.code-out-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 0 14px;font-size:12px;font-weight:700;color:var(--dim)}
+.code-out-bar button{appearance:none;border:0;background:none;color:var(--faint);width:28px;height:28px;border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.code-out-bar svg{width:14px;height:14px}
+.code-out pre{margin:0;padding:6px 14px 12px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.o-err{color:#f4a497}
+.code-zip{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 16px;border-radius:14px;background:var(--sf);box-shadow:var(--ss);border:var(--sb)}
+.code-zip span{font-size:14px;color:var(--dim)}.code-zip b{color:var(--paper)}
+.code-zip .btn{padding:9px 14px;font-size:13.5px;gap:8px;display:inline-flex;align-items:center}.code-zip svg{width:16px;height:16px}
+.attach{position:relative;overflow:hidden}
+.attach input{position:absolute;inset:0;opacity:0;cursor:pointer}
+@media (max-width:560px){.sr-wide{display:none}}
+
+.bubble.has-code{white-space:normal;max-width:min(92%,720px);width:100%}
+.bubble.has-code .md{gap:10px}

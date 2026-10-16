@@ -1,9 +1,8 @@
-import Link from 'next/link'
-import { requireUser, ownerOnly, can } from '@/lib/admin/auth'
+import { requireUser } from '@/lib/admin/auth'
 import { q } from '@/lib/admin/db'
 import { SignOut, SignOutOthers } from '@/components/admin/Actions'
-import { Icon } from '@/components/admin/icons'
-export const metadata = { title: 'More' }
+import Appearance from '@/components/admin/Appearance'
+export const metadata = { title: 'Settings' }
 const when = (d) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })
 const device = (ua = '') => /iphone/i.test(ua) ? 'iPhone' : /ipad/i.test(ua) ? 'iPad' : /android/i.test(ua) ? 'Android phone' : /windows/i.test(ua) ? 'Windows computer' : /mac os/i.test(ua) ? 'Mac' : 'Browser'
 
@@ -11,16 +10,10 @@ export default async function More() {
   const u = await requireUser()
   const sessions = (await q('select id_hash, last_seen, user_agent from sessions where user_id = $1 and expires_at > now() order by last_seen desc', [u.id])).rows
   const signins = (await q("select action, at from audit_log where user_id = $1 and action in ('signed_in', 'sign_in_failed') order by at desc limit 6", [u.id])).rows
-  const people = ownerOnly(u) ? (await q("select name, email, role from admin_users where role in ('owner', 'editor') and disabled_at is null order by role desc, created_at")).rows : []
   const r = (await q('select coalesce(array_length(recovery_hashes, 1), 0) as n from admin_users where id = $1', [u.id])).rows[0]
   return (<>
-    <div className="top"><h1 className="d">More</h1></div>
-    <ul className="rows">
-      {can(u, 'ventures') ? <li><Link href="/admin/ventures" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.ventures}</span><span><span className="row-t">Ventures</span><span className="row-s">Elvanex Digital, Needar, Aviirel</span></span><span className="pill">Edit</span></Link></li> : null}
-      {ownerOnly(u) ? <li><Link href="/admin/bin" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.bin}</span><span><span className="row-t">Bin</span><span className="row-s">Deleted items, kept for 30 days</span></span><span className="pill">Open</span></Link></li> : null}
-    </ul>
-    {ownerOnly(u) ? (<ul className="rows"><li><Link href="/admin/leads" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.person}</span><span><span className="row-t">Leads</span><span className="row-s">Project enquiries from your site, and WhatsApp taps by page.</span></span></Link></li></ul>) : null}
-    {ownerOnly(u) ? (<ul className="rows"><li><Link href="/admin/people" className="row click" style={{ textDecoration: 'none' }}><span className="ic">{Icon.person}</span><span><span className="row-t">People</span><span className="row-s">{people.map((p) => p.name + (p.role === 'owner' ? ' (owner)' : '')).join(', ')}. Invite editors and choose what they can do.</span></span><span className="pill">{people.length}</span></Link></li></ul>) : null}
+    <div className="top"><h1 className="d">Settings</h1></div>
+    <Appearance />
     <h2 className="section-t">Security</h2>
     <div className="sec-row"><span><b>Two-step sign-in</b><span>A code from your authenticator app is needed every time you sign in</span></span><span className="ok">On</span></div>
     <div className="sec-row"><span><b>Signed-in devices</b><span>{sessions.map((s) => device(s.user_agent) + (s.id_hash === u.sessionHash ? ' (this device)' : '')).join(', ') || 'None'}</span></span><SignOutOthers /></div>

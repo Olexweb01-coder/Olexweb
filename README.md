@@ -36,3 +36,22 @@ A site plays live on the monitor only if its own server allows framing. `embed: 
 ## Music
 
 The room plays `public/studio/music.mp3` on a loop after the visitor's first click, with its own on/off button beside the speaker and the same volume slider. Put your track there (it must be one you have the rights to use on a public website), or set `music: null` in `content/site.js` for no music. If the file is missing the music button simply hides itself.
+
+## Olex AI: free AI providers
+
+Olex AI answers from a pool of free providers. Add any of these keys to `.env.local` and to Vercel (Settings → Environment Variables). Each one you add joins automatically; you need at least one.
+
+| Key | Where to get it (free) |
+|---|---|
+| `GROQ_API_KEY` | console.groq.com (also powers voice input) |
+| `CEREBRAS_API_KEY` | cloud.cerebras.ai |
+| `OPENROUTER_API_KEY` | openrouter.ai (only its free models are used) |
+| `MISTRAL_API_KEY` | console.mistral.ai (free Experiment plan) |
+| `GITHUB_MODELS_TOKEN` | a GitHub fine-grained token with the "Models: read" permission |
+| `NVIDIA_API_KEY` | build.nvidia.com |
+| `GEMINI_API_KEY` | aistudio.google.com |
+| `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` | dash.cloudflare.com → Workers AI |
+
+Each provider finds its own models. To force a model, set for example `GROQ_MODEL` (everyday chat) or `GROQ_MODEL_STRONG` (code and long work).
+Provider status, speed and resting times are in the admin under **Olex Assistant → How it works**.
+Free plans may use what you send to improve their models, so keep confidential client details out of chats.

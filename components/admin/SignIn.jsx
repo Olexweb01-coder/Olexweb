@@ -23,7 +23,7 @@ export default function SignIn() {
     const r = await send('/admin/api/verify-code', { code: f.get('code') })
     if (r.error) { setError(r.error); if (r.restart) setStep('password') } else window.location.assign('/admin')
   }
-  const mark = <div className="auth-mark"><img src="/studio/mark.png" alt="" width="26" height="30" />Olexweb</div>
+  const mark = <div className="auth-mark"><img src="/studio/mark.png" alt="" width="26" height="30" />Olex AI</div>
   return (
     <main className="auth">
       {step === 'password' ? (

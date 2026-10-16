@@ -25,7 +25,7 @@ export default function BlogAnalytics({ data, isOwner, search = null }) {
       <span style={{ textAlign: 'right', color: 'var(--dim)' }}>{fmt(r.n)}</span></div>)) }
   const empty = !t.view
   return (<>
-    <div className="top"><h1 className="d">Blog</h1></div>
+    <div className="top"><h1 className="d">Olex Blog</h1></div>
     <BlogTabs current="analytics" />
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
       <div className="seg" role="group" aria-label="Period" style={{ margin: 0 }}>

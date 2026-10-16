@@ -313,3 +313,7 @@ create table if not exists gsc_queries (                                        
 );
 create table if not exists gsc_state (id int primary key default 1 check (id = 1), last_fetch timestamptz, last_error text, rows int not null default 0);
 insert into gsc_state (id) values (1) on conflict do nothing;
+
+-- ---------- Olex AI provider pool: who is resting, speed and record (safe to run again) ----------
+create table if not exists ai_providers (id text primary key, rest_until timestamptz, last_error text, wins int not null default 0, fails int not null default 0,
+  avg_first_ms int, last_ok timestamptz, last_model text, updated_at timestamptz not null default now());

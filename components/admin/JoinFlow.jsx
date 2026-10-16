@@ -17,7 +17,7 @@ export default function JoinFlow({ token, email }) {
     setBusy(true); setErr(''); const r = await call('/admin/api/join/finish', { token, code: f.get('code') }); setBusy(false)
     if (r.error) setErr(r.error); else { setCodes(r.recovery); setStep('done') }
   }
-  const mark = <div className="auth-mark"><img src="/studio/mark.png" alt="" width="26" height="30" />Olexweb</div>
+  const mark = <div className="auth-mark"><img src="/studio/mark.png" alt="" width="26" height="30" />Olex AI</div>
   return (<main className="auth">
     {step === 'account' ? (<form key="a" className="auth-box" onSubmit={account} noValidate>{mark}
       <h1 className="d">Join the Olexweb admin.</h1><p className="lead">You’re invited as an editor, as {email}.</p>

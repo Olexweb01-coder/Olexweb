@@ -39,7 +39,7 @@ export function middleware(request) {
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'no-referrer')
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=(), payment=()')
   response.headers.set('Cache-Control', 'no-store')
   response.headers.set('X-Robots-Tag', 'noindex, nofollow')
   if (!dev) response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains')

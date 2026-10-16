@@ -1,7 +1,11 @@
 'use client'
 // Renders Olex AI's Markdown as React elements. No raw HTML is ever inserted, so nothing in an answer can run as code.
 // Supports: headings, paragraphs, bold, italics, inline code, code blocks, bullet and numbered lists, tables, quotes, rules, links.
+// Code blocks get Copy, Download and Run; answers with two or more named files also get "Download all as ZIP".
 import { Fragment } from 'react'
+import CodeBlock from './CodeBlock'
+import { makeZip, download } from './zip'
+import { Icon } from './icons'
 
 const safeHref = (u) => (/^(https?:\/\/|mailto:)/i.test(u) || /^\/[a-z0-9\-/?=&#._]*$/i.test(u) ? u : null)
 
@@ -23,14 +27,33 @@ function inline(text, key = 'i') {
   return out
 }
 
-export default function Markdown({ text }) {
-  const lines = String(text || '').replace(/\r/g, '').split('\n'), blocks = []
+// The fence's info line: a language and/or a file path ("jsx app/page.jsx", "title=app.py", "app.py").
+// A file name written on its own line just above the block (like **app/page.jsx**) counts too.
+const isPath = (t) => /^[\w@.\-/[\]()]+\.[\w]{1,10}$/.test(t) || /^[\w.\-]+\/[\w@.\-/[\]()]+$/.test(t) || /^(Dockerfile|Makefile|Procfile|\.env[\w.]*|\.gitignore)$/.test(t)
+function fence(info, blocks) {
+  const tok = info.replace(/(title|file|filename|path)\s*=\s*/gi, ' ').replace(/["'{}]/g, ' ').trim().split(/\s+/).filter(Boolean)
+  let lang = '', path = ''
+  for (const t of tok) { if (!path && isPath(t) && !/^https?:/i.test(t)) path = t; else if (!lang) lang = t.toLowerCase() }
+  if (!path && blocks.length) {
+    const prev = blocks[blocks.length - 1]
+    const t = prev && prev.props && prev.props['data-plain']
+    if (t && isPath(t)) { path = t; blocks.pop() }
+  }
+  if (!lang && path) lang = (path.split('.').pop() || '').toLowerCase()
+  return { lang, path }
+}
+
+export default function Markdown({ text, streaming = false }) {
+  const lines = String(text || '').replace(/\r/g, '').split('\n'), blocks = [], files = []
   for (let i = 0; i < lines.length;) {
     const l = lines[i]
-    if (/^```/.test(l)) {                                                         // code block
+    if (/^\s*```/.test(l)) {                                                      // code block, optionally named: ```jsx app/page.jsx
+      const { lang, path } = fence(l.trim().slice(3), blocks)
       const body = []; i++
-      while (i < lines.length && !/^```/.test(lines[i])) body.push(lines[i++])
-      i++; blocks.push(<pre key={i} className="md-pre"><code>{body.join('\n')}</code></pre>); continue
+      while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) body.push(lines[i++])
+      i++; const code = body.join('\n')
+      if (path) files.push({ path, text: code })
+      blocks.push(<CodeBlock key={i} lang={lang} path={path} code={code} />); continue
     }
     if (/^\s*$/.test(l)) { i++; continue }
     let m
@@ -53,7 +76,10 @@ export default function Markdown({ text }) {
       blocks.push(<blockquote key={i} className="md-quote">{inline(q.join(' '), 'q' + i)}</blockquote>); continue }
     const para = [l]; i++                                                          // paragraph
     while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|```|\s*([-*•])\s|\s*\d+[.)]\s|\s*>|\s*\|.*\|\s*$)/.test(lines[i])) para.push(lines[i++])
-    blocks.push(<p key={i} className="md-p">{para.map((p, j) => <Fragment key={j}>{j ? <br /> : null}{inline(p, `p${i}${j}`)}</Fragment>)}</p>)
+    const plain = para.length === 1 ? para[0].trim().replace(/^(\*\*|`|#+\s*)+|(\*\*|`|:)+$/g, '').replace(/^(File|Filename|Path)\s*:\s*/i, '').replace(/`/g, '') : null
+    blocks.push(<p key={i} className="md-p" data-plain={plain || undefined}>{para.map((p, j) => <Fragment key={j}>{j ? <br /> : null}{inline(p, `p${i}${j}`)}</Fragment>)}</p>)
   }
+  if (files.length >= 2 && !streaming) blocks.push(<div key="zip" className="code-zip"><span><b>{files.length} files</b> in this answer</span>
+    <button type="button" className="btn btn-line" onClick={() => download(makeZip(files), 'olex-ai-files.zip')}>{Icon.download}Download all as ZIP</button></div>)
   return <div className="md">{blocks}</div>
 }

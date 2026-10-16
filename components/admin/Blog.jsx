@@ -16,7 +16,7 @@ export default function BlogBoard({ items, canPublish, isOwner }) {
   const close = useCallback(() => setEdit(null), [])
   useEffect(() => { const id = Number(new URLSearchParams(window.location.search).get('open')); const it = items.find((x) => x.id === id); if (it) setEdit({ data: it }) }, [items])   // links from Olex AI open the draft
   return (<>
-    <div className="top"><h1 className="d">Blog</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { body: [{ type: 'p', text: '' }], seo: {} } })}>Write</button></div>
+    <div className="top"><h1 className="d">Olex Blog</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { body: [{ type: 'p', text: '' }], seo: {} } })}>Write</button></div>
     <BlogTabs current="articles" />
     <Notice />
     <ul className="rows">{items.map((p) => (
