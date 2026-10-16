@@ -60,16 +60,19 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
 
 function Settings({ settings, busy, setBusy, speed, providers }) {
   const router = useRouter()
-  const [mode, setMode] = useState(settings.mode), [pace, setPace] = useState(settings.pace), [topics, setTopics] = useState(settings.topics), [t, setT] = useState('')
+  const [mode, setMode] = useState(settings.mode), [pace, setPace] = useState(settings.pace), [hours, setHours] = useState(settings.review_hours || 24), [topics, setTopics] = useState(settings.topics), [t, setT] = useState('')
   const [socials, setSocials] = useState({ linkedin: '', x: '', facebook: '', ...settings.socials }), [err, setErr] = useState('')
-  async function save() { setErr(''); const r = await call({ action: 'settings', mode, pace, topics, socials }); if (r.error) setErr(r.error); else { toast('Settings saved.'); router.refresh() } }
+  async function save() { setErr(''); const r = await call({ action: 'settings', mode, pace, hours, topics, socials }); if (r.error) setErr(r.error); else { toast('Settings saved.'); router.refresh() } }
   async function runNow() { if (busy) return; setBusy('Running today\u2019s work: research, then a draft if your pace allows\u2026'); const r = await call({ action: 'run' }); setBusy(''); if (r.error) toast(r.error); else { toast(r.drafted ? 'A new draft is ready.' : 'Done. Nothing new was due today.'); router.refresh() } }
   const add = () => { const x = t.trim(); if (x && !topics.includes(x) && topics.length < 8) setTopics([...topics, x]); setT('') }
   return (<>
     <h2 className="section-t" style={{ marginTop: 0 }}>How it publishes</h2>
     <div className="radio">
       <label><input type="radio" name="mode" checked={mode === 'approval'} onChange={() => setMode('approval')} /><span><b>Drafts wait for me</b><span>You read, edit and publish. Recommended while you get to know its writing.</span></span></label>
-      <label><input type="radio" name="mode" checked={mode === 'autopilot'} onChange={() => setMode('autopilot')} /><span><b>Autopilot, with 24 hours for you</b><span>Each draft waits 24 hours for your review. If you don’t review it in time, Olex AI removes anything it couldn’t confirm, re-checks everything (all checks, working links, originality), then publishes and tells you. You can unpublish with one tap.</span></span></label></div>
+      <label><input type="radio" name="mode" checked={mode === 'autopilot'} onChange={() => setMode('autopilot')} /><span><b>Autopilot, with {hours} hours for you</b><span>Each draft waits {hours} hours for your review. About an hour before, you get a notification. If you don’t review it in time, Olex AI removes anything it couldn’t confirm, re-checks everything and publishes only if every check passes; otherwise it holds it back and tells you.</span></span></label></div>
+    {mode === 'autopilot' ? <><h2 className="section-t">Review window</h2>
+      <div className="seg" role="group" aria-label="Hours before a draft publishes">{[7, 12, 24].map((h) => <button key={h} aria-pressed={hours === h} onClick={() => setHours(h)}>{h} hours</button>)}</div>
+      <p className="note">You can also tell Olex AI in chat: “hold this draft”, “give it 12 more hours” or “publish it now”.</p></> : null}
     <h2 className="section-t">Pace</h2><div className="seg" role="group" aria-label="Articles a week">{[1, 2, 3].map((n) => <button key={n} aria-pressed={pace === n} onClick={() => setPace(n)}>{n} a week</button>)}</div>
     <h2 className="section-t">Topics it researches</h2>
     <div className="chips">{topics.map((x) => <span className="chip" key={x}>{x}<button aria-label={'Remove ' + x} onClick={() => setTopics(topics.filter((y) => y !== x))}>&times;</button></span>)}</div>

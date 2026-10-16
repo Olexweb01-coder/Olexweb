@@ -8,6 +8,7 @@ import { refreshResearch } from '@/lib/assistant/research'
 import { writeArticle } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
 import { cancelScheduled } from '@/lib/assistant/schedule'
+import { ensureTools } from '@/lib/assistant/tools'
 export const dynamic = 'force-dynamic'
 // Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
 export const fetchCache = 'force-no-store'
@@ -23,7 +24,7 @@ export async function POST(request) {
     if (b.action === 'message') return handleMessage(b.chatId ? id(b.chatId) : null, b.text)
     if (b.action === 'chats') return { chats: await chats() }
     if (b.action === 'chat') return { messages: await chatMessages(id(b.chatId)) }
-    if (b.action === 'confirm') return confirm(id(b.messageId))
+    if (b.action === 'confirm') return confirm(id(b.messageId), u)
     if (b.action === 'cancel') return cancel(id(b.messageId))
     if (b.action === 'delete-chat') return deleteChat(id(b.chatId))
     if (b.action === 'unschedule') return cancelScheduled(id(b.id))
@@ -36,11 +37,12 @@ export async function POST(request) {
     }
     if (b.action === 'run') return dailyRun()
     if (b.action === 'settings') {
-      const mode = b.mode === 'autopilot' ? 'autopilot' : 'approval', pace = Math.min(3, Math.max(1, Number(b.pace) || 2))
+      const mode = b.mode === 'autopilot' ? 'autopilot' : 'approval', pace = Math.min(3, Math.max(1, Number(b.pace) || 2)), hours = [7, 12, 24].includes(Number(b.hours)) ? Number(b.hours) : 24
       const topics = (Array.isArray(b.topics) ? b.topics : []).map((t) => String(t).trim()).filter((t) => TOPIC.test(t)).slice(0, 8)
       if (!topics.length) throw new Refused('Add at least one topic.')
       const socials = {}; for (const k of ['linkedin', 'x', 'facebook']) { const v = String((b.socials || {})[k] || '').trim(); if (v && !/^https:\/\/[^\s<>"]{4,200}$/.test(v)) throw new Refused('Social links need to start with https://'); socials[k] = v }
-      await q('update assistant_settings set mode = $1, pace = $2, topics = $3, socials = $4, updated_at = now() where id = 1', [mode, pace, JSON.stringify(topics), JSON.stringify(socials)])
+      await ensureTools()
+      await q('update assistant_settings set mode = $1, pace = $2, topics = $3, socials = $4, review_hours = $5, updated_at = now() where id = 1', [mode, pace, JSON.stringify(topics), JSON.stringify(socials), hours])
       if (mode === 'approval') await q("update posts set auto_publish_at = null where origin = 'assistant' and status = 'waiting'")
       await audit(u.id, 'assistant_settings_changed', { mode, pace }, clientIp())
       return { ok: true }

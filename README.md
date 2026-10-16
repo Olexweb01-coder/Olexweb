@@ -58,3 +58,14 @@ GitHub Models was shut down in July 2026; `GITHUB_MODELS_TOKEN` is no longer use
 Each provider finds its own models. To force one, set for example `GROQ_MODEL` (everyday chat) or `GROQ_MODEL_STRONG` (code and long work).
 Provider status, speed and resting times are in the admin under **Olex Assistant → How it works**.
 Free plans may use what you send to improve their models, so keep confidential client details out of chats.
+
+## Olex AI: review windows on time (free pinger)
+
+Vercel's scheduler runs Olex AI twice a day. So that 7, 12 and 24-hour review windows, and the "goes live soon" reminders, happen on time, let a free pinger call the quick run every 10 minutes:
+
+1. Sign up at https://cron-job.org (free).
+2. Create a cron job: URL `https://olexweb.com/api/assistant/cron?run=due`, every 10 minutes.
+3. Under Advanced → Headers, add `Authorization` with the value `Bearer ` followed by your `CRON_SECRET` (from Vercel's environment variables).
+4. Save, then use "Test run": the response starts with `{"run":"quick"`.
+
+The quick run only sends reminders, publishes drafts whose window has run out (after the safety pass), and carries out scheduled items. Without the secret it does nothing.

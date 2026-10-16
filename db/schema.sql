@@ -317,3 +317,7 @@ insert into gsc_state (id) values (1) on conflict do nothing;
 -- ---------- Olex AI provider pool: who is resting, speed and record (safe to run again) ----------
 create table if not exists ai_providers (id text primary key, rest_until timestamptz, last_error text, wins int not null default 0, fails int not null default 0,
   avg_first_ms int, last_ok timestamptz, last_model text, updated_at timestamptz not null default now());
+
+-- ---------- Olex AI review windows (safe to run again) ----------
+alter table assistant_settings add column if not exists review_hours int not null default 24;   -- 7, 12 or 24 hours before an Autopilot draft publishes
+alter table posts add column if not exists reminded_at timestamptz;                              -- the "goes live soon" reminder was sent
