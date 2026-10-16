@@ -330,3 +330,8 @@ alter table assistant_messages add column if not exists feedback text;
 alter table assistant_messages add column if not exists memory jsonb;
 alter table ai_providers add column if not exists ups int not null default 0;
 alter table ai_providers add column if not exists downs int not null default 0;
+
+-- ---------- Olex AI documents (safe to run again) ----------
+create table if not exists chat_docs (id serial primary key, chat_id int references assistant_chats(id) on delete cascade, name text not null, kind text not null,
+  pages int, chars int not null, text text not null, note text, created_at timestamptz not null default now());
+alter table assistant_messages add column if not exists docs jsonb;

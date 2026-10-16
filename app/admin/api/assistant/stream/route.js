@@ -4,19 +4,20 @@ import { refuse, readJson } from '@/lib/admin/respond'
 import { handleMessage } from '@/lib/assistant/chat'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
-export const maxDuration = 120
+export const maxDuration = 300
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const u = await currentUser(); if (!u) return refuse('Sign in again.', 401)
   if (!ownerOnly(u)) return refuse('Only Olaitan can use Olex AI.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
-  const text = String(b.text || '').trim(); if (!text) return refuse('Write a message first.', 400)
+  const docIds = Array.isArray(b.docIds) ? b.docIds : []
+  const text = String(b.text || '').trim() || (docIds.length ? 'Here is a document. Read it and give me a short summary of what it is and what matters in it.' : ''); if (!text) return refuse('Write a message first.', 400)
   const chatId = Number.isInteger(Number(b.chatId)) && Number(b.chatId) > 0 ? Number(b.chatId) : null
   const enc = new TextEncoder()
   const body = new ReadableStream({
     async start(c) {
       const send = (event, data) => { try { c.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)) } catch {} }
-      try { const r = await handleMessage(chatId, text, (chunk) => send('delta', { text: chunk }), { voice: b.voice === true }); send('done', r) }
+      try { const r = await handleMessage(chatId, text, (chunk) => send('delta', { text: chunk }), { voice: b.voice === true, docIds: Array.isArray(b.docIds) ? b.docIds : null, userId: u.id, onStatus: (t) => send('status', { text: t }) }); send('done', r) }
       catch (e) { send('error', { error: e && e.message ? e.message : 'Something went wrong. Try again.' }) }
       c.close()
     },

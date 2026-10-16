@@ -69,3 +69,13 @@ Vercel's scheduler runs Olex AI twice a day. So that 7, 12 and 24-hour review wi
 4. Save, then use "Test run": the response starts with `{"run":"quick"`.
 
 The quick run only sends reminders, publishes drafts whose window has run out (after the safety pass), and carries out scheduled items. Without the secret it does nothing.
+
+## Olex AI: documents and images
+
+**Reading documents.** Attach PDF, Word (.docx), Excel (.xlsx, .xls, .ods), CSV, scans and photos with the paperclip. The text and tables are taken out in your browser by code (pdf.js, mammoth, SheetJS), so files of any size work and nothing is guessed. Scanned pages and photos are read by an AI vision model (Gemini, then free OpenRouter and Z.ai models). Documents stay with the chat; each question gets the most relevant parts.
+
+**Creating documents.** Ask for a letter, proposal, invoice, CV or table. Under the answer, tap **Word**, **PDF** (your device's "Save as PDF") or **Excel** (from its tables). Files are built in your browser.
+
+**Creating images.** Ask for an image, banner or illustration. Free services are used in turn: Cloudflare Workers AI (FLUX.1 schnell, then SDXL Lightning, using your Cloudflare keys), then Pollinations. Images are saved to your private image storage and shown in the chat with Download.
+
+These features need `npm install` once after updating (new packages: pdfjs-dist, mammoth, docx, xlsx).

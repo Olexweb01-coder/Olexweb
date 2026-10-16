@@ -33,5 +33,6 @@ export const Icon = {
   up: <svg {...P}><path d="M7 11v9H4v-9zM7 11l4-7a2.2 2.2 0 0 1 3 2.2L13.4 10H19a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.8 20H7" /></svg>,
   down: <svg {...P}><path d="M7 13V4H4v9zM7 13l4 7a2.2 2.2 0 0 0 3-2.2l-.6-3.8H19a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 17.8 4H7" /></svg>,
   memory: <svg {...P}><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a3 3 0 0 0-3-1zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1" /></svg>,
+  file: <svg {...P}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></svg>,
   dots: <svg {...P}><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></svg>,
 }

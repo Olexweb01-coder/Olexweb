@@ -56,6 +56,8 @@ export default function Markdown({ text, streaming = false }) {
       blocks.push(<CodeBlock key={i} lang={lang} path={path} code={code} />); continue
     }
     if (/^\s*$/.test(l)) { i++; continue }
+    const pic = l.trim().match(/^!\[([^\]]*)\]\((\/media\/img\/[a-f0-9]{24}\.webp)\)$/)                // an image Olex AI made (only from your own storage)
+    if (pic) { blocks.push(<figure key={i} className="md-img"><img src={pic[2]} alt={pic[1]} loading="lazy" /><figcaption><a href={pic[2]} download={(pic[1] || 'olex-ai-image').slice(0, 60).replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') + '.webp'}>Download</a><a href={pic[2]} target="_blank" rel="noopener">Open full size</a></figcaption></figure>); i++; continue }
     let m
     if ((m = l.match(/^(#{1,4})\s+(.*)$/))) { const H = m[1].length <= 2 ? 'h3' : 'h4'; blocks.push(<H key={i} className="md-h">{inline(m[2], 'h' + i)}</H>); i++; continue }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { blocks.push(<hr key={i} className="md-hr" />); i++; continue }

@@ -368,3 +368,24 @@
 .mem-acts .btn{padding:7px 12px;font-size:13px;display:inline-flex;align-items:center}
 .mem-acts .btn svg{width:15px;height:15px}
 @media (max-width:640px){.olex .row.mem{grid-template-columns:auto minmax(0,1fr)}.mem-acts{grid-column:1 / -1;justify-content:flex-start}}
+
+/* ===================== Documents and images ===================== */
+.doc-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.doc-chips.mine{justify-content:flex-end;margin:0 0 6px}
+.turn.me{flex-direction:column;align-items:flex-end}
+.doc-chip{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:8px 8px 8px 12px;border-radius:14px;background:var(--sf2);border:1px solid var(--line)}
+.doc-chip>svg{width:20px;height:20px;color:var(--green);flex:none}
+.doc-chip span{display:grid;min-width:0}.doc-chip b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.doc-chip small{font-size:12px;color:var(--faint)}
+.doc-chip button{appearance:none;border:0;background:none;color:var(--faint);width:26px;height:26px;border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.doc-chip button svg{width:14px;height:14px}
+.doc-chip.reading b{font-weight:600;color:var(--dim)}
+.doc-chip.reading svg{animation:micPulse 1s ease-in-out infinite}
+.fb-save{display:inline-flex;gap:2px;margin-right:6px;padding-right:6px;border-right:1px solid var(--line)}
+.fb-save button{appearance:none;border:0;background:none;color:var(--dim);font:inherit;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border-radius:8px;cursor:pointer}
+.fb-save button:hover{color:var(--paper);background:rgba(var(--fg),.07)}
+.fb-save svg{width:14px;height:14px}
+.md-img{margin:4px 0;display:grid;gap:6px;justify-items:start}
+.md-img img{max-width:min(100%,560px);border-radius:16px;display:block;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.md-img figcaption{display:flex;gap:14px;font-size:13px}
+.md-img a{color:var(--green);font-weight:700;text-decoration:none}

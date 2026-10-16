@@ -14,8 +14,11 @@
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
     "aws4fetch": "^1.0.20",
+    "docx": "9.0.2",
+    "mammoth": "1.8.0",
     "next": "^14.2.35",
     "otpauth": "^9.5.2",
+    "pdfjs-dist": "3.11.174",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "react": "18.3.1",
@@ -23,6 +26,7 @@
     "server-only": "^0.0.1",
     "sharp": "^0.33.5",
     "three": "0.128.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }
