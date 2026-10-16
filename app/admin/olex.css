@@ -341,3 +341,30 @@
 
 .modebtn{appearance:none;border:0;background:none;width:100%;text-align:left;cursor:pointer;color:var(--dim);font:inherit}
 .modebtn:hover{color:var(--paper)}
+
+/* ===================== Feedback and memory ===================== */
+.fb{display:flex;align-items:center;gap:2px;margin-top:8px;flex-wrap:wrap}
+.fb>button{appearance:none;border:0;background:none;color:var(--faint);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.fb>button svg{width:16px;height:16px}
+.fb>button:hover{color:var(--paper);background:rgba(var(--fg),.07)}
+.fb>button[aria-pressed=true]{color:var(--green)}
+.fb-why{display:flex;gap:8px;flex:1 1 100%;margin-top:6px}
+.fb-why .input{flex:1;min-width:0;padding:9px 12px;font-size:14px}
+.fb-why .btn{padding:8px 14px;font-size:13.5px}
+.learned{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.learned-chip{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;max-width:100%;padding:6px 6px 6px 10px;border-radius:12px;font-size:13px;color:var(--dim);background:rgba(143,227,106,.08);border:1px solid rgba(143,227,106,.28)}
+.learned-chip svg{width:15px;height:15px;color:var(--green);flex:none}
+.learned-chip span{min-width:0}
+.learned-chip button{appearance:none;border:0;background:none;color:var(--paper);font-weight:700;font-size:12.5px;cursor:pointer;padding:3px 8px;border-radius:8px}
+.learned-chip button:hover{background:rgba(var(--fg),.08)}
+.mem-add,.mem-edit{display:flex;gap:8px;flex-wrap:wrap}
+.mem-add select,.mem-edit select{flex:0 0 150px}
+.mem-add input,.mem-edit input{flex:1 1 260px;min-width:0}
+.mem-edit{flex:1}
+.olex .row.mem{grid-template-columns:auto minmax(0,1fr) auto;align-items:center}
+.row.mem .row-s{white-space:normal}
+.row.mem.off .row-t{opacity:.5;text-decoration:line-through}
+.mem-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mem-acts .btn{padding:7px 12px;font-size:13px;display:inline-flex;align-items:center}
+.mem-acts .btn svg{width:15px;height:15px}
+@media (max-width:640px){.olex .row.mem{grid-template-columns:auto minmax(0,1fr)}.mem-acts{grid-column:1 / -1;justify-content:flex-start}}

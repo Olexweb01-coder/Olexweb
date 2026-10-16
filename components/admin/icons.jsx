@@ -30,5 +30,8 @@ export const Icon = {
   wave: <svg {...P}><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" /></svg>,
   pause: <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5" /><rect x="14" y="5" width="4" height="14" rx="1.5" /></svg>,
   sun: <svg {...P}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>,
+  up: <svg {...P}><path d="M7 11v9H4v-9zM7 11l4-7a2.2 2.2 0 0 1 3 2.2L13.4 10H19a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 17.8 20H7" /></svg>,
+  down: <svg {...P}><path d="M7 13V4H4v9zM7 13l4 7a2.2 2.2 0 0 0 3-2.2l-.6-3.8H19a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 17.8 4H7" /></svg>,
+  memory: <svg {...P}><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a3 3 0 0 0-3-1zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1" /></svg>,
   dots: <svg {...P}><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></svg>,
 }

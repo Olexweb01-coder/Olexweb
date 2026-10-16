@@ -16,6 +16,7 @@ export default async function AppLayout({ children }) {
   const nav = [
     ['/admin/overview', 'home', 'Overview'],
     owner && ['/admin/assistant', 'assistant', 'Olex Assistant'],
+    owner && ['/admin/memory', 'memory', 'Memory'],
     ['/admin/blog', 'blog', 'Olex Blog'],
     ['/admin/projects', 'work', 'Projects'],
     ['/admin/reviews', 'reviews', 'Reviews', c.waiting],

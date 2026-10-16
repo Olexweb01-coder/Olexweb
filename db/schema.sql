@@ -321,3 +321,12 @@ create table if not exists ai_providers (id text primary key, rest_until timesta
 -- ---------- Olex AI review windows (safe to run again) ----------
 alter table assistant_settings add column if not exists review_hours int not null default 24;   -- 7, 12 or 24 hours before an Autopilot draft publishes
 alter table posts add column if not exists reminded_at timestamptz;                              -- the "goes live soon" reminder was sent
+
+-- ---------- Olex AI memory and feedback (safe to run again) ----------
+create table if not exists ai_memory (id serial primary key, kind text not null default 'rule', text text not null, source text not null default 'chat',
+  active boolean not null default true, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+alter table assistant_messages add column if not exists rating smallint;
+alter table assistant_messages add column if not exists feedback text;
+alter table assistant_messages add column if not exists memory jsonb;
+alter table ai_providers add column if not exists ups int not null default 0;
+alter table ai_providers add column if not exists downs int not null default 0;

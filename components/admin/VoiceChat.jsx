@@ -12,7 +12,7 @@ const SILENCE_MS = 1300
 const RATES = [['Slower', 0.9], ['Normal', 1.05], ['Faster', 1.25]]
 const store = { get: (k) => { try { return localStorage.getItem(k) } catch { return null } }, set: (k, v) => { try { localStorage.setItem(k, v) } catch {} } }
 // What gets read aloud: never code, links, Markdown symbols or the hidden action line.
-const speakable = (t) => String(t || '').split(MARK)[0].split('<<<ACTION')[0]
+const speakable = (t) => String(t || '').split(MARK)[0].split('<<<')[0]
   .replace(/```[\s\S]*?(```|$)/g, ' ').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/https?:\/\/\S+/g, 'the link')
   .replace(/[*_#>`|~]/g, '').replace(/^\s*[-•]\s+/gm, '').replace(/\s+/g, ' ')
 

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import Markdown from './Markdown'
+import { copyText } from './CodeBlock'
 import Voice from './Voice'
 import VoiceChat from './VoiceChat'
 import { Icon } from './icons'
@@ -40,7 +41,7 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
     const mine = { id: 'me' + Date.now(), role: 'you', text: t }, live = { id: 'live', role: 'assistant', text: '' }
     setMsgs((m) => [...m, mine]); setText(''); setBusy('Thinking\u2026')
     let full = '', done = null, failed = null
-    const show = () => { let v = full.split('<<<ACTION')[0]; v = v.replace(/<{1,3}A?C?T?I?O?N?$/, ''); setMsgs((m) => [...m.filter((x) => x.id !== 'live'), { ...live, text: v }]) }
+    const show = () => { let v = full.split('<<<')[0]; v = v.replace(/<{1,3}[A-Z]*$/, ''); setMsgs((m) => [...m.filter((x) => x.id !== 'live'), { ...live, text: v }]) }
     try {
       const r = await fetch('/admin/api/assistant/stream', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ chatId, text: t }) })
       if (r.status === 401) { window.location.assign('/admin/login'); return }
@@ -118,6 +119,10 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
   if (!ready) return (<div className="chat-empty"><img src="/studio/mark.png" alt="" width="44" height="52" /><h1 className="d">Switch Olex AI on.</h1>
     <p>Olex AI needs at least one free AI key, for example GROQ_API_KEY from Groq or GEMINI_API_KEY from Google AI Studio. Add it in Vercel and in .env.local, then restart.</p></div>)
 
+  async function forget(m, l) {
+    const r = await call({ action: 'memory-delete', id: l.id }); if (r.error) { toast(r.error); return }
+    setMsgs((all) => all.map((x) => (x.id === m.id ? { ...x, memory: (x.memory || []).filter((y) => y.id !== l.id) } : x))); toast('Forgotten.')
+  }
   const endTalk = (id, added) => {
     setTalk(false)
     if (added && added.length) setMsgs((m) => [...m, ...added])
@@ -136,6 +141,8 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
                 : <p className="actstate">{{ running: 'Working on it\u2026', done: 'Done', cancelled: 'Cancelled', failed: 'Didn\u2019t work' }[m.action_state] || ''}</p>}
             </div> : null}
             {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}
+            {m.memory && m.memory.length ? <div className="learned">{m.memory.map((l) => <span key={l.id} className="learned-chip">{Icon.memory}<span>Remembered: {l.text}</span><button type="button" onClick={() => forget(m, l)}>Undo</button></span>)}</div> : null}
+            {m.id !== 'live' && !String(m.id).startsWith('me') ? <Feedback m={m} onRated={(r) => setMsgs((all) => all.map((x) => (x.id === m.id ? { ...x, rating: r } : x)))} /> : null}
             {m.written_by && m.ms_first != null ? <p className="msgmeta">{m.written_by}, first words in {(m.ms_first / 1000).toFixed(1)} s</p> : null}
           </div></div>)}
       {busy && !msgs.some((m) => m.id === 'live' && m.text) ? <div className="turn ai"><img className="ai-mark" src="/studio/mark.png" alt="" width="20" height="24" /><div className="typing" role="status" aria-label={busy}><span /><span /><span /></div></div> : null}
@@ -149,5 +156,27 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
       {!msgs.length ? <div className="ideas">{IDEAS.map(([l, p]) => <button key={l} type="button" onClick={() => send(null, p)} disabled={!!busy}><b>{l}</b><span>{p}</span></button>)}</div> : null}
       <p className="fine">Olex AI can get things wrong, so check what matters. Nothing on your site changes until you tap Do it.</p>
     </div>
+  </div>)
+}
+
+// Copy, thumbs up, thumbs down (with an optional reason that becomes a lesson).
+function Feedback({ m, onRated }) {
+  const [asking, setAsking] = useState(false), [note, setNote] = useState(''), [copied, setCopied] = useState(false)
+  async function send(r, why) {
+    const res = await call({ action: 'rate', messageId: m.id, rating: r, note: why || undefined })
+    if (res.error) { toast(res.error); return }
+    onRated(res.rating); setAsking(false); setNote('')
+    if (res.lesson) toast('Thanks. Olex AI will remember: ' + res.lesson.text.replace(/^From his feedback: /, ''))
+    else if (r === 1) toast('Thanks. Olex AI will use answers like this as an example.')
+  }
+  function down() { if (m.rating === -1) { send(0); return } setAsking(true); send(-1) }
+  return (<div className="fb">
+    <button type="button" onClick={async () => { if (await copyText(m.text.replace(/<<<[\s\S]*$/, ''))) { setCopied(true); setTimeout(() => setCopied(false), 1500) } }} aria-label="Copy the answer" title="Copy">{copied ? Icon.check : Icon.copy}</button>
+    <button type="button" aria-pressed={m.rating === 1} onClick={() => send(m.rating === 1 ? 0 : 1)} aria-label="Good answer" title="Good answer">{Icon.up}</button>
+    <button type="button" aria-pressed={m.rating === -1} onClick={down} aria-label="Bad answer" title="Bad answer">{Icon.down}</button>
+    {asking ? <form className="fb-why" onSubmit={(e) => { e.preventDefault(); if (note.trim()) send(-1, note.trim()); else setAsking(false) }}>
+      <input className="input" autoFocus value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} placeholder="What was wrong? Olex AI will remember it (optional)" aria-label="What was wrong" />
+      <button type="submit" className="btn btn-line">{note.trim() ? 'Save' : 'Skip'}</button>
+    </form> : null}
   </div>)
 }

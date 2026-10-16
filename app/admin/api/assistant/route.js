@@ -9,6 +9,7 @@ import { writeArticle } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
 import { cancelScheduled } from '@/lib/assistant/schedule'
 import { ensureTools } from '@/lib/assistant/tools'
+import { rate, listLessons, saveLesson, deleteLesson, feedbackStats } from '@/lib/assistant/memory'
 export const dynamic = 'force-dynamic'
 // Never let Next.js cache outside requests made here (it caches fetch in some routes by default).
 export const fetchCache = 'force-no-store'
@@ -35,6 +36,10 @@ export async function POST(request) {
       const s = (await q('select mode from assistant_settings where id = 1')).rows[0]
       return writeArticle(item, { mode: s.mode })
     }
+    if (b.action === 'rate') return rate(id(b.messageId), b.rating, b.note)
+    if (b.action === 'memory') return { lessons: await listLessons(), stats: await feedbackStats() }
+    if (b.action === 'memory-save') { try { return await saveLesson({ id: b.id ? id(b.id) : null, kind: b.kind, text: b.text, active: b.active }) } catch (e) { throw new Refused(e.message) } }
+    if (b.action === 'memory-delete') return deleteLesson(id(b.id))
     if (b.action === 'run') return dailyRun()
     if (b.action === 'settings') {
       const mode = b.mode === 'autopilot' ? 'autopilot' : 'approval', pace = Math.min(3, Math.max(1, Number(b.pace) || 2)), hours = [7, 12, 24].includes(Number(b.hours)) ? Number(b.hours) : 24
