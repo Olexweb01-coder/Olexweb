@@ -12,7 +12,7 @@ export async function POST(request) {
   if (!sameOrigin(request)) return no('Request refused.', 403)
   const u = await currentUser(); if (!u) return no('Sign in again.', 401)
   if (!ownerOnly(u)) return no('Only Olaitan can use Olex AI.', 403)
-  if (!voiceReady()) return no('Voice needs GROQ_API_KEY (free from Groq), or the Cloudflare keys Olex AI already uses.', 503)
+  if (!voiceReady()) return no('Voice needs GROQ_API_KEY or GEMINI_API_KEY.', 503)
   let form; try { form = await request.formData() } catch { return no('No recording received.', 400) }
   const file = form.get('audio')
   if (!file || typeof file === 'string' || !file.size) return no('No recording received.', 400)

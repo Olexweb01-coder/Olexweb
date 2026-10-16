@@ -10,12 +10,26 @@ import Freshness, { RefreshButton } from './Freshness'
 
 const setCookie = (k, v) => { document.cookie = `${k}=${v}; path=/admin; max-age=31536000; samesite=strict${location.protocol === 'https:' ? '; secure' : ''}` }
 
-export default function Shell({ name, owner, nav, chats = [], style = 'glass', collapsed = false, version, children }) {
+export default function Shell({ name, owner, nav, chats = [], style = 'glass', mode = 'dark', collapsed = false, version, children }) {
   const path = usePathname(), params = useSearchParams(), router = useRouter()
   const [closed, setClosed] = useState(collapsed), [drawer, setDrawer] = useState(false), [list, setList] = useState(chats)
   useEffect(() => { setList(chats) }, [chats])
   useEffect(() => { setDrawer(false) }, [path, params])                    // a drawer closes once you've picked something
   useEffect(() => { const k = (e) => { if (e.key === 'Escape') setDrawer(false) }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [])
+  // The page behind everything (seen when scrolling past the edges) follows the light or dark mode too.
+  useEffect(() => {
+    const paint = () => { const el = document.querySelector('.olex'); if (!el) return; const cs = getComputedStyle(el)
+      document.documentElement.style.background = cs.getPropertyValue('--page').trim() || ''; document.documentElement.style.colorScheme = cs.getPropertyValue('color-scheme') || 'dark' }
+    paint(); const mq = window.matchMedia('(prefers-color-scheme: light)'); mq.addEventListener('change', paint); window.addEventListener('olex-look', paint)
+    return () => { mq.removeEventListener('change', paint); window.removeEventListener('olex-look', paint) }
+  }, [])
+  const [md, setMd] = useState(mode)
+  function flipMode() {                                                   // quick light/dark switch (Settings → Look has "Match this device")
+    const now = md === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : md
+    const next = now === 'light' ? 'dark' : 'light'
+    setCookie('olex_mode', next); setMd(next); const el = document.querySelector('.olex'); if (el) el.dataset.mode = next
+    setTimeout(() => window.dispatchEvent(new Event('olex-look')), 0)
+  }
   const isChat = owner && path === '/admin', openChat = isChat ? Number(params.get('c')) || null : null
   const here = (href) => path === href || path.startsWith(href + '/')
   function toggle() {
@@ -30,7 +44,7 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', c
     if (openChat === c.id) router.replace('/admin'); else router.refresh()
   }
   return (
-    <div className={'olex' + (closed ? ' side-closed' : '') + (drawer ? ' drawer-on' : '')} data-style={style}>
+    <div className={'olex' + (closed ? ' side-closed' : '') + (drawer ? ' drawer-on' : '')} data-style={style} data-mode={mode}>
       <div className="olex-bg" aria-hidden="true" />
       <div className="app">
         <aside className="side" aria-label="Olex AI">
@@ -54,6 +68,7 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', c
           </div> : <div className="side-chats" />}
           <div className="side-foot">
             <RefreshButton side />
+            <button type="button" className="nav-a modebtn" onClick={flipMode}>{Icon.sun}<span>Light or dark</span></button>
             <Link href="/admin/more" className="me"><img src="/v2/photos/p2.webp" alt="" width="30" height="30" /><span>{name}</span></Link>
           </div>
         </aside>

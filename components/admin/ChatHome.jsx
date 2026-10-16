@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import Markdown from './Markdown'
 import Voice from './Voice'
+import VoiceChat from './VoiceChat'
 import { Icon } from './icons'
 
 async function call(payload) {
@@ -26,7 +27,7 @@ const IDEAS = [
 
 export default function ChatHome({ chatId: openId, messages, first, greet, ready }) {
   const router = useRouter()
-  const [chatId, setChatId] = useState(openId), [msgs, setMsgs] = useState(messages), [text, setText] = useState(''), [busy, setBusy] = useState('')
+  const [talk, setTalk] = useState(false), [chatId, setChatId] = useState(openId), [msgs, setMsgs] = useState(messages), [text, setText] = useState(''), [busy, setBusy] = useState('')
   const end = useRef(null), box = useRef(null), current = useRef(openId)
   // Picking another chat in the sidebar (or New chat) swaps the conversation; a refresh of the same chat updates it.
   useEffect(() => { if (openId !== current.current) { current.current = openId; setChatId(openId); setMsgs(messages); setText('') } else if (!busy) setMsgs(messages) }, [openId, messages])
@@ -90,7 +91,17 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
     setText((t) => { const next = (t.trimEnd() + add).trimStart(); if (next.length > MAX_TEXT) { toast('That’s more than fits in one message. Attach fewer or smaller files.'); return t } return next })
     setTimeout(() => box.current && box.current.focus(), 0)
   }
-  const addSpoken = (words) => { setText((t) => (t.trim() ? t.trimEnd() + ' ' : '') + words); setTimeout(() => box.current && box.current.focus(), 0) }
+  // Voice: live words show while you speak (on top of what you'd already typed); the final transcript replaces them.
+  const liveBase = useRef(null)
+  const join = (a, b) => (a && a.trim() ? a.trimEnd() + ' ' : '') + (b || '')
+  const onLive = (words) => {
+    if (words === null) { if (liveBase.current !== null) setText(liveBase.current); liveBase.current = null; return }
+    setText((t) => { if (liveBase.current === null) liveBase.current = t; return join(liveBase.current, words) })
+  }
+  const addSpoken = (words) => {
+    setText((t) => { const base = liveBase.current !== null ? liveBase.current : t; liveBase.current = null; return join(base, words) })
+    setTimeout(() => box.current && box.current.focus(), 0)
+  }
 
   const composer = (<form className="composer" onSubmit={send}>
     <textarea ref={box} rows={1} value={text} onChange={(e) => setText(e.target.value)} maxLength={MAX_TEXT} placeholder="Message Olex AI" aria-label="Message Olex AI"
@@ -98,7 +109,8 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
     <div className="composer-row">
       <label className="icon-btn attach" title="Attach code or text files" aria-label="Attach code or text files">{Icon.clip}<input type="file" multiple onChange={attach} disabled={!!busy} /></label>
       <span className="composer-hint">{busy || 'Enter to send, Shift + Enter for a new line'}</span>
-      <Voice onText={addSpoken} disabled={!!busy} />
+      <Voice onText={addSpoken} onLive={onLive} disabled={!!busy} />
+      <button type="button" className="icon-btn talkbtn" onClick={() => setTalk(true)} disabled={!!busy} aria-label="Talk with Olex AI" title="Talk with Olex AI">{Icon.wave}</button>
       <button type="submit" className="icon-btn sendbtn" disabled={!!busy || !text.trim()} aria-label="Send">{Icon.send}</button>
     </div>
   </form>)
@@ -106,7 +118,14 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
   if (!ready) return (<div className="chat-empty"><img src="/studio/mark.png" alt="" width="44" height="52" /><h1 className="d">Switch Olex AI on.</h1>
     <p>Olex AI needs at least one free AI key, for example GROQ_API_KEY from Groq or GEMINI_API_KEY from Google AI Studio. Add it in Vercel and in .env.local, then restart.</p></div>)
 
+  const endTalk = (id, added) => {
+    setTalk(false)
+    if (added && added.length) setMsgs((m) => [...m, ...added])
+    if (id && id !== chatId) { current.current = id; setChatId(id); router.replace('/admin?c=' + id, { scroll: false }) }
+    router.refresh()
+  }
   return (<div className={'chat-wrap' + (msgs.length ? '' : ' fresh')}>
+    {talk ? <VoiceChat chatId={chatId} first={first} onClose={endTalk} /> : null}
     {msgs.length ? <div className="thread">
       {msgs.map((m) => m.role === 'you' ? <div key={m.id} className="turn me"><div className={'bubble' + (/```/.test(m.text) ? ' has-code' : '')}>{/```/.test(m.text) ? <Markdown text={m.text} /> : m.text}</div></div>
         : <div key={m.id} className="turn ai"><img className="ai-mark" src="/studio/mark.png" alt="" width="20" height="24" />

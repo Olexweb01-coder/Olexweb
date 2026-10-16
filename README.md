@@ -39,19 +39,22 @@ The room plays `public/studio/music.mp3` on a loop after the visitor's first cli
 
 ## Olex AI: free AI providers
 
-Olex AI answers from a pool of free providers. Add any of these keys to `.env.local` and to Vercel (Settings → Environment Variables). Each one you add joins automatically; you need at least one.
+Olex AI answers from a pool of free providers. Add any of these keys to `.env.local` and to Vercel (Settings → Environment Variables). Each one you add joins automatically; you need at least one. Checked October 2026; free plans change often.
 
-| Key | Where to get it (free) |
-|---|---|
-| `GROQ_API_KEY` | console.groq.com (also powers voice input) |
-| `CEREBRAS_API_KEY` | cloud.cerebras.ai |
-| `OPENROUTER_API_KEY` | openrouter.ai (only its free models are used) |
-| `MISTRAL_API_KEY` | console.mistral.ai (free Experiment plan) |
-| `GITHUB_MODELS_TOKEN` | a GitHub fine-grained token with the "Models: read" permission |
-| `NVIDIA_API_KEY` | build.nvidia.com |
-| `GEMINI_API_KEY` | aistudio.google.com |
-| `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` | dash.cloudflare.com → Workers AI |
+| Key | Where to get it (free, no card) | Notes |
+|---|---|---|
+| `GROQ_API_KEY` | https://console.groq.com/keys | Fastest. Also powers voice input. |
+| `GEMINI_API_KEY` | https://aistudio.google.com/apikey | Best all-round; also voice backup. |
+| `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_TOKEN` | https://dash.cloudflare.com/profile/api-tokens | 10,000 free Neurons a day. |
+| `OPENROUTER_API_KEY` | https://openrouter.ai/settings/keys | Free models only, 50 requests a day. |
+| `NVIDIA_API_KEY` | https://build.nvidia.com | Needs a verified account. |
+| `ZAI_API_KEY` | https://z.ai/manage-apikey/apikey-list | GLM Flash models are free. |
+| `MISTRAL_API_KEY` | https://console.mistral.ai/api-keys | Free mode, if your account offers it. |
+| `COHERE_API_KEY` | https://dashboard.cohere.com/api-keys | Trial key: 1,000 calls a month, non-commercial. |
+| `DEEPGRAM_API_KEY` | https://console.deepgram.com | Optional, voice only. |
+| `CEREBRAS_API_KEY` | https://cloud.cerebras.ai | Now a paid trial; skip unless you add a card. |
 
-Each provider finds its own models. To force a model, set for example `GROQ_MODEL` (everyday chat) or `GROQ_MODEL_STRONG` (code and long work).
+GitHub Models was shut down in July 2026; `GITHUB_MODELS_TOKEN` is no longer used.
+Each provider finds its own models. To force one, set for example `GROQ_MODEL` (everyday chat) or `GROQ_MODEL_STRONG` (code and long work).
 Provider status, speed and resting times are in the admin under **Olex Assistant → How it works**.
 Free plans may use what you send to improve their models, so keep confidential client details out of chats.

@@ -91,7 +91,7 @@ function Settings({ settings, busy, setBusy, speed, providers }) {
   </>)
 }
 
-const STATE = { ready: ['live', 'Ready'], 'not used yet': ['res', 'Connected'], resting: ['draft', 'Resting'], 'no key': ['', 'No key'] }
+const STATE = { ready: ['live', 'Ready'], 'not used yet': ['res', 'Connected'], resting: ['draft', 'Resting'], 'no key': ['', 'No key'], retired: ['', 'Shut down'] }
 function Providers({ list }) {
   if (!list.length) return null
   const on = list.filter((p) => p.key).length
@@ -99,6 +99,6 @@ function Providers({ list }) {
     <p className="note" style={{ marginTop: 0 }}>{on} of {list.length} connected. Olex AI sends each message to the fastest one that suits it; if one is busy or at its free limit, it rests and the next one answers.</p>
     <ul className="rows">{list.map((p) => <li key={p.id} className="row prov">
       <span className={'prov-dot ' + p.state.replace(/ /g, '-')} aria-hidden="true" />
-      <span><span className="row-t">{p.label}</span><span className="row-s">{!p.key ? `Add ${p.env} to switch it on` : p.state === 'resting' ? `Resting until ${new Date(p.restUntil).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })}${p.lastError ? ': ' + p.lastError : ''}` : p.firstMs ? `First words in about ${(p.firstMs / 1000).toFixed(1)} s${p.model ? ', ' + p.model : ''}. Answered ${p.wins} time${p.wins === 1 ? '' : 's'}` : 'Ready for its first message'}</span></span>
+      <span><span className="row-t">{p.label}</span><span className="row-s">{p.state === 'retired' ? 'GitHub shut this service down in July 2026. You can delete GITHUB_MODELS_TOKEN.' : !p.key ? `Add ${p.env} to switch it on` : p.state === 'resting' ? `Resting until ${new Date(p.restUntil).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })}${p.lastError ? ': ' + p.lastError : ''}` : p.firstMs ? `First words in about ${(p.firstMs / 1000).toFixed(1)} s${p.model ? ', ' + p.model : ''}. Answered ${p.wins} time${p.wins === 1 ? '' : 's'}` : 'Ready for its first message'}</span></span>
       <span className={'pill ' + STATE[p.state][0]}>{STATE[p.state][1]}</span></li>)}</ul></section>)
 }

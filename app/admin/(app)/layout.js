@@ -26,5 +26,6 @@ export default async function AppLayout({ children }) {
     ['/admin/more', 'gear', 'Settings'],
   ].filter(Boolean)
   const jar = cookies(), style = STYLES.includes(jar.get('olex_style')?.value) ? jar.get('olex_style').value : 'glass'
-  return <Shell name={u.name} owner={owner} nav={nav} chats={chats} style={style} collapsed={jar.get('olex_side')?.value === 'closed'} version={adminVersion()}>{children}</Shell>
+  const mode = ['light', 'dark', 'system'].includes(jar.get('olex_mode')?.value) ? jar.get('olex_mode').value : 'dark'
+  return <Shell name={u.name} owner={owner} nav={nav} chats={chats} style={style} mode={mode} collapsed={jar.get('olex_side')?.value === 'closed'} version={adminVersion()}>{children}</Shell>
 }

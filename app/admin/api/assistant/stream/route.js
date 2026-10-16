@@ -16,7 +16,7 @@ export async function POST(request) {
   const body = new ReadableStream({
     async start(c) {
       const send = (event, data) => { try { c.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)) } catch {} }
-      try { const r = await handleMessage(chatId, text, (chunk) => send('delta', { text: chunk })); send('done', r) }
+      try { const r = await handleMessage(chatId, text, (chunk) => send('delta', { text: chunk }), { voice: b.voice === true }); send('done', r) }
       catch (e) { send('error', { error: e && e.message ? e.message : 'Something went wrong. Try again.' }) }
       c.close()
     },

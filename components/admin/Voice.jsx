@@ -1,6 +1,7 @@
 'use client'
-// Speak instead of typing: records on this device, then Olex AI turns it into text (Whisper on Groq, Cloudflare as backup).
-// The words go into the message box for you to check; nothing is sent until you tap Send. Audio is not kept.
+// Speak instead of typing: records on this device, then Olex AI turns it into text (Groq, Gemini, Deepgram or Cloudflare).
+// While you speak, the browser's own speech recognition shows your words live (Chrome, Edge, Safari); when you stop,
+// the more accurate transcript replaces them. If every service is busy, the live words are kept. They go into the message box to check; nothing is sent until you tap Send.
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './icons'
 import { toast } from './ui'
@@ -9,9 +10,9 @@ const MAX_S = 180                                                          // 3 
 const TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
 const mm = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
-export default function Voice({ onText, disabled }) {
+export default function Voice({ onText, onLive = () => {}, disabled }) {
   const [ok, setOk] = useState(false), [state, setState] = useState('idle'), [secs, setSecs] = useState(0)
-  const rec = useRef(null), chunks = useRef([]), timer = useRef(0), cancelled = useRef(false), stream = useRef(null)
+  const rec = useRef(null), chunks = useRef([]), timer = useRef(0), cancelled = useRef(false), stream = useRef(null), live = useRef(null), heard = useRef('')
   useEffect(() => { setOk(typeof window !== 'undefined' && !!(navigator.mediaDevices && window.MediaRecorder)) }, [])
   useEffect(() => () => { clearInterval(timer.current); stream.current && stream.current.getTracks().forEach((t) => t.stop()) }, [])
   if (!ok) return null
@@ -26,12 +27,21 @@ export default function Voice({ onText, disabled }) {
     r.ondataavailable = (e) => { if (e.data && e.data.size) chunks.current.push(e.data) }
     r.onstop = () => { s.getTracks().forEach((t) => t.stop()); clearInterval(timer.current); if (!cancelled.current) send(new Blob(chunks.current, { type: r.mimeType || type || 'audio/webm' })); else setState('idle') }
     rec.current = r; r.start(1000); setSecs(0); setState('rec')
+    heard.current = ''; live.current = null
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SR) { try {                                                        // the backup listener
+      const sr = new SR(); sr.continuous = true; sr.interimResults = true; sr.lang = navigator.language || 'en-NG'
+      sr.onresult = (ev) => { let t = ''; for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript; heard.current = t.trim(); onLive(heard.current) }   // words appear as you speak
+      sr.onerror = () => {}; sr.onend = () => { if (live.current === sr && rec.current && rec.current.state === 'recording') { try { sr.start() } catch {} } }
+      sr.start(); live.current = sr
+    } catch { live.current = null } }
     timer.current = setInterval(() => setSecs((x) => { if (x + 1 >= MAX_S) stop(); return x + 1 }), 1000)
   }
-  function stop() { if (rec.current && rec.current.state !== 'inactive') rec.current.stop() }
-  function cancel() { cancelled.current = true; stop() }
+  function stopLive() { const sr = live.current; live.current = null; if (sr) try { sr.stop() } catch {} }
+  function stop() { if (rec.current && rec.current.state !== 'inactive') rec.current.stop(); setTimeout(stopLive, 400) }
+  function cancel() { cancelled.current = true; heard.current = ''; onLive(null); stop() }
   async function send(blob) {
-    if (blob.size < 1500) { setState('idle'); toast('That was too short to hear. Try again.'); return }
+    if (blob.size < 1500) { setState('idle'); if (heard.current) onText(heard.current); else toast('That was too short to hear. Try again.'); return }
     setState('busy')
     const fd = new FormData(); fd.append('audio', blob, 'voice.' + (/mp4/.test(blob.type) ? 'm4a' : /ogg/.test(blob.type) ? 'ogg' : 'webm'))
     try {
@@ -39,8 +49,11 @@ export default function Voice({ onText, disabled }) {
       if (r.status === 401) { window.location.assign('/admin/login'); return }
       const j = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(j.error || 'Olex AI couldn’t turn that into text. Try again.')
-      if (j.text) onText(j.text); else toast('No words were heard. Try again closer to the mic.')
-    } catch (e) { toast(e.message || 'No connection. Try again.') } finally { setState('idle') }
+      if (j.text) onText(j.text); else if (heard.current) onText(heard.current); else toast('No words were heard. Try again closer to the mic.')
+    } catch (e) {
+      if (heard.current) { onText(heard.current); toast('The voice services were busy, so your browser’s own listening was used. Check the words.') }
+      else toast(e.message || 'No connection. Try again.')
+    } finally { setState('idle') }
   }
 
   if (state === 'rec') return (<span className="rec" role="status" aria-live="polite">
