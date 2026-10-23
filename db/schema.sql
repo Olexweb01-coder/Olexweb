@@ -391,3 +391,6 @@ alter table yt_scripts add column if not exists uploaded_at timestamptz;
 alter table yt_scripts add column if not exists render_detail text;       -- the admin-side reason when something fails (shown only in the admin)
 create table if not exists yt_pieces (script_id int not null references yt_scripts(id) on delete cascade, n int not null, data bytea not null,
   saved_at timestamptz not null default now(), primary key (script_id, n));  -- backup for video pieces when the bucket refuses; emptied after upload
+
+-- ---------- YouTube data rules (safe to run again) ----------
+alter table yt_account add column if not exists revoked_at timestamptz;   -- when Google stopped accepting the sign-in: its data is deleted within 30 days

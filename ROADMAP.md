@@ -53,8 +53,10 @@ redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, Y
       same session). Private by default (YouTube forces it until the audit); "Scheduled" publishes at the next chosen
       Lagos time. Not made for kids, Science & Technology, tags from the hashtags. After upload: link + Studio link,
       stored copy deleted, idea marked made. Autopilot uploads finished videos itself.
-      NEXT: submit the YouTube API audit (form: support.google.com/youtube/contact/yt_api_form) with a short
-      screen recording of connect → script → factory → upload; add a YouTube data section to olexweb.com/privacy first.
+- [x] Compliance with YouTube's data rules: privacy section (/privacy#youtube) and terms section (/terms#youtube);
+      Disconnect deletes all stored YouTube data; access revoked at Google → data deleted within 30 days; daily
+      housekeeping keeps channel analytics to 92 days (re-fetched daily), snapshots and coverage counts to 30 days.
+      NEXT: submit the audit using AUDIT.md (prepared answers and what to show in the screen recording).
 - [ ] Part 6: Learning loop: 24 h and 72 h results feed back into topic, hook and posting-time choices. Shorts
       cut-downs and the weekly long video (needed for monetisation: from 1 Feb 2027 new channels need 8,000 watch
       hours in 12 months, or 20 million Shorts views in 90 days).

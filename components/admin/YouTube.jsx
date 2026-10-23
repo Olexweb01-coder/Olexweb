@@ -36,7 +36,7 @@ export default function YouTube({ data, note }) {
   useEffect(() => { if (note) window.history.replaceState(null, '', '/admin/youtube' + (d.days !== 28 ? '?days=' + d.days : '')) }, [note, d.days])
 
   async function act(action) {
-    if (action === 'disconnect' && !window.confirm('Disconnect YouTube? The numbers already here stay; nothing new arrives until you connect again.')) return
+    if (action === 'disconnect' && !window.confirm('Disconnect YouTube? Google’s access is withdrawn and, as YouTube’s rules require, the channel numbers stored here are deleted. Your ideas, scripts and videos stay.')) return
     setBusy(action); setMsg(null)
     try {
       const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action }) })
@@ -57,7 +57,7 @@ export default function YouTube({ data, note }) {
   const connect = (again) => (<section style={{ ...card, marginBottom: 12, borderColor: 'rgba(143,227,106,.35)' }} aria-labelledby="ytC">
     <h2 id="ytC" style={{ ...h2, marginBottom: 8 }}>{again ? 'Connect YouTube again' : 'Connect your channel'}</h2>
     <p style={{ margin: '0 0 6px', fontSize: 14.5, lineHeight: 1.6, ...dim }}>Google will ask you to choose an account: pick the one that owns the channel. Because this is your own private app, Google first shows “Google hasn’t verified this app”. Click <b>Advanced</b>, then <b>Go to Olexweb</b>, and leave every permission ticked.</p>
-    <p style={{ margin: '0 0 14px', fontSize: 13.5, lineHeight: 1.55, ...dim }}>The admin can read your channel and its analytics, and (later, when the factory is ready) upload. The sign-in is stored encrypted; Disconnect removes it from Google too.</p>
+    <p style={{ margin: '0 0 14px', fontSize: 13.5, lineHeight: 1.55, ...dim }}>The admin can read your channel and its analytics, and upload the videos you approve. The sign-in is stored encrypted; Disconnect withdraws it at Google and deletes the channel data kept here. By connecting you agree to the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Terms of Service</a>, <a href="/privacy#youtube" target="_blank">Olexweb’s Privacy Policy</a> and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
     <a className="btn btn-green" href="/admin/api/youtube/connect">Connect YouTube</a>
   </section>)
 
@@ -146,6 +146,6 @@ export default function YouTube({ data, note }) {
           <td style={{ padding: '10px 0 10px 8px', textAlign: 'right' }}>{v.shares == null ? '–' : fmt(v.shares)}</td></tr> })}</tbody>
       </table></div> : <p style={{ margin: 0, ...dim }}>No uploads here yet.</p>}
     </section>
-    <p className="note">Straight from YouTube (the Data API and YouTube Analytics), fetched with each daily run or when you press Fetch now. “Last day” compares today’s totals with yesterday’s, so it fills in after the second day. Shorts are uploads of 3 minutes or less.</p>
+    <p className="note">Data from YouTube (the YouTube Data API and YouTube Analytics API), fetched with each daily run or when you press Fetch now, and kept only as long as YouTube’s rules allow. “Last day” compares today’s totals with yesterday’s, so it fills in after the second day. Shorts are uploads of 3 minutes or less.</p>
   </>)
 }
