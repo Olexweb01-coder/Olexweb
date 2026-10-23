@@ -350,3 +350,12 @@ create table if not exists yt_daily (day date primary key, views int not null de
   subs_gained int not null default 0, subs_lost int not null default 0, likes int not null default 0, shares int not null default 0);  -- the channel, per day
 create table if not exists yt_snap (day date not null, video_id text not null, views bigint not null default 0, likes int not null default 0, comments int not null default 0,
   primary key (day, video_id));                                                     -- each video's totals once a day: how fast a new video grows
+
+-- ---------- YouTube ideas: goldmine websites, tools and updates, checked and scored (safe to run again) ----------
+create table if not exists yt_ideas (id serial primary key, key text not null unique, name text not null, url text not null, source text not null, signal text,
+  kind text, category text, what text, hook text, why text, risks text, scores jsonb, coverage jsonb, score int not null default 0, page_title text,
+  status text not null default 'new' check (status in ('new', 'picked', 'skipped', 'passed', 'made')),   -- passed = judged and turned down, kept so it isn't judged again
+  created_at timestamptz not null default now(), decided_at timestamptz);
+create index if not exists yt_ideas_status on yt_ideas(status, score desc);
+create table if not exists yt_idea_runs (id int primary key default 1 check (id = 1), last_run timestamptz, last_report jsonb, running_until timestamptz);
+insert into yt_idea_runs (id) values (1) on conflict do nothing;

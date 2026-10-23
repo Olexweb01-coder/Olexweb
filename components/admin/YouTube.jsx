@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
+import { YouTubeTabs } from './YouTubeIdeas'
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-GB')
 const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border: '1px solid var(--line)' }
@@ -60,7 +61,7 @@ export default function YouTube({ data, note }) {
     <a className="btn btn-green" href="/admin/api/youtube/connect">Connect YouTube</a>
   </section>)
 
-  if (!a || !a.channel_id) return (<><div className="top"><h1 className="d">YouTube</h1></div>{banner}{connect(false)}</>)
+  if (!a || !a.channel_id) return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="analytics" />{banner}{connect(false)}</>)
 
   const t = d.totals || {}, b = d.before || {}, series = d.series || [], max = Math.max(1, ...series.map((s) => s.views))
   const change = (now, then) => (then ? Math.round(((now - then) / then) * 100) : null)
@@ -73,6 +74,7 @@ export default function YouTube({ data, note }) {
 
   return (<>
     <div className="top"><h1 className="d">YouTube</h1></div>
+    <YouTubeTabs current="analytics" />
     {banner}
     {!d.connected ? connect(true) : null}
     <section style={{ ...card, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 12 }} aria-label="Channel">
@@ -97,10 +99,10 @@ export default function YouTube({ data, note }) {
     </div>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 42%), 1fr))', gap: 10 }}>
       {[['Views', fmt(t.views), ch === null ? (t.views ? 'First period with data' : 'No views counted yet') : `${ch >= 0 ? ch + '% more' : -ch + '% fewer'} than the ${d.days} days before`],
-        ['Watch time', hours(t.minutes) + ' h', `${fmt(Math.round(t.minutes || 0))} minutes`],
+        ['Watch time', hours(t.minutes) + ' h', `${fmt(Math.round(t.minutes || 0))} minute${Math.round(t.minutes || 0) === 1 ? '' : 's'}`],
         ['Watched on average', pctTxt(t.avg_pct), 'Of each video, weighted by views'],
         ['Subscribers', (t.gained - t.lost >= 0 ? '+' : '') + fmt((t.gained || 0) - (t.lost || 0)), `${fmt(t.gained)} gained, ${fmt(t.lost)} lost`],
-        ['Likes', fmt(t.likes), b.likes != null ? `${fmt(b.likes)} the period before` : ''],
+        ['Likes', fmt(Math.max(0, t.likes || 0)), b.likes != null ? `${fmt(Math.max(0, b.likes))} the period before` : ''],
         ['Shares', fmt(t.shares), 'People sending your videos on']].map(([k, v, n]) => (
         <div key={k} style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}><span style={{ fontSize: 13.5, fontWeight: 600, ...dim }}>{k}</span>
           <strong className="d" style={{ fontSize: 32, lineHeight: 1, fontWeight: 800 }}>{v}</strong><span style={{ fontSize: 12.5, ...dim }}>{n}</span></div>))}
