@@ -2,7 +2,8 @@
 // (The session itself is fully checked against the database on the server; this is the fast first gate.)
 import { NextResponse } from 'next/server'
 
-const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join', '/admin/sw.js']
+const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join', '/admin/sw.js',
+  '/admin/api/youtube/callback']   // Google's way back: proven by a one-time state, not the (Strict) session cookie
 const PUBLIC = ['/review', '/api/review']      // clients' review pages: strict headers, no sign-in
 
 export function middleware(request) {
@@ -13,7 +14,7 @@ export function middleware(request) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://i.ytimg.com https://yt3.ggpht.com https://yt3.googleusercontent.com",   // YouTube thumbnails and the channel picture
     "font-src 'self'",
     "connect-src 'self'",
     "worker-src 'self'",                                   // the notification helper (/admin/sw.js), from this site only

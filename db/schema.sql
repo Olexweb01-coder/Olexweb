@@ -335,3 +335,18 @@ alter table ai_providers add column if not exists downs int not null default 0;
 create table if not exists chat_docs (id serial primary key, chat_id int references assistant_chats(id) on delete cascade, name text not null, kind text not null,
   pages int, chars int not null, text text not null, note text, created_at timestamptz not null default now());
 alter table assistant_messages add column if not exists docs jsonb;
+
+-- ---------- YouTube: the channel connection and its numbers (safe to run again) ----------
+-- The channel sign-in (a Google refresh token) is stored AES-256-GCM encrypted, like the two-step secrets.
+create table if not exists yt_account (id int primary key default 1 check (id = 1), channel_id text, title text, handle text, thumb text,
+  refresh_enc text, scopes text, connected_at timestamptz, subscribers int, views bigint, videos int, last_sync timestamptz, last_error text);
+insert into yt_account (id) values (1) on conflict do nothing;
+create table if not exists yt_oauth_states (state_hash text primary key, user_id uuid not null references admin_users(id) on delete cascade,
+  verifier_enc text not null, expires_at timestamptz not null);                    -- one-time, 10 minutes: proves a sign-in to Google was started here
+create table if not exists yt_videos (video_id text primary key, title text not null, published_at timestamptz, duration_s int, is_short boolean not null default false,
+  thumb text, privacy text, views bigint not null default 0, likes int not null default 0, comments int not null default 0,
+  minutes real, avg_view_pct real, shares int, subs_gained int, updated_at timestamptz not null default now());
+create table if not exists yt_daily (day date primary key, views int not null default 0, minutes real not null default 0, avg_view_pct real,
+  subs_gained int not null default 0, subs_lost int not null default 0, likes int not null default 0, shares int not null default 0);  -- the channel, per day
+create table if not exists yt_snap (day date not null, video_id text not null, views bigint not null default 0, likes int not null default 0, comments int not null default 0,
+  primary key (day, video_id));                                                     -- each video's totals once a day: how fast a new video grows
