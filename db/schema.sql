@@ -371,3 +371,6 @@ create table if not exists yt_scripts (id serial primary key, idea_id int unique
   writer text, mention boolean not null default false, part int,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now(), approved_at timestamptz);
 alter table yt_ideas add column if not exists script_tried_at timestamptz;
+
+-- ---------- live progress for long YouTube jobs, and how long each stage took last time (safe to run again) ----------
+create table if not exists yt_jobs (kind text primary key, started_at timestamptz, updated_at timestamptz, finished_at timestamptz, state jsonb, history jsonb not null default '{}');

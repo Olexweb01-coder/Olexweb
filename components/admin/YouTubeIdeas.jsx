@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
+import JobProgress from './JobProgress'
 
 const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border: '1px solid var(--line)' }
 const dim = { color: 'var(--dim)' }
@@ -45,12 +46,13 @@ export default function YouTubeIdeas({ data }) {
       <div className="seg" role="group" aria-label="Show" style={{ margin: 0, maxWidth: '100%' }}>
         {[['new', 'New'], ['picked', 'Picked'], ['skipped', 'Skipped']].map(([k, l]) => <a key={k} href={'/admin/youtube?view=ideas' + (k === 'new' ? '' : '&status=' + k)} aria-pressed={d.status === k} className="segl">{l}{c[k] ? ` (${c[k]})` : ''}</a>)}
       </div>
-      <button className="btn btn-green" disabled={!!busy} onClick={find}>{busy === 'find' ? 'Searching… (up to 2 minutes)' : 'Find ideas now'}</button>
+      <button className="btn btn-green" disabled={!!busy} onClick={find}>{busy === 'find' ? 'Searching…' : 'Find ideas now'}</button>
     </div>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>
       Found on Show HN, Hacker News, GitHub and from Olex AI’s evergreen picks. Every site is opened live and judged on what its page actually says; anything unsafe or thin is turned down. Searched automatically once a day.
       {d.run && d.run.last ? ` Last search ${when(rep && rep.at ? rep.at : d.run.last)}${rep && rep.loaded != null ? `: ${rep.found} found, ${rep.loaded} loaded, ${rep.saved} kept` : ''}${rep && rep.error ? ` (failed: ${rep.error})` : ''}.` : ''}
     </p>
+    <JobProgress kind="ideas" title="Finding ideas" watch={busy === 'find'} onDone={() => router.refresh()} />
     {err ? <p className="err" role="alert" style={{ margin: '0 0 12px' }}>{err}</p> : null}
     {rep && rep.notes && rep.notes.length ? <p style={{ margin: '0 0 12px', fontSize: 12.5, ...dim }}>{rep.notes.join(' · ')}</p> : null}
     {d.ideas.length ? <div style={{ display: 'grid', gap: 12 }}>{d.ideas.map((it) => {

@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
+import JobProgress from './JobProgress'
 
 const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border: '1px solid var(--line)' }
 const dim = { color: 'var(--dim)' }
@@ -28,12 +29,13 @@ export default function YouTubeScripts({ data }) {
   }
   return (<>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>Each picked idea gets a 20–35 second script. The checks run in code: a short hook first, one cut per line, real footage of the site, no year numbers, and every fact backed by a quote from the site’s own page. In Autopilot, a script that passes everything is approved by itself.</p>
+    <JobProgress kind="script" title="Writing the script" watch={/^[wr]\d/.test(busy || '')} onDone={() => router.refresh()} />
     {err ? <p className="err" role="alert" style={{ margin: '0 0 12px' }}>{err}</p> : null}
     {data.waiting.length ? <section style={{ ...card, marginBottom: 12 }} aria-label="Waiting for a script">
       <h2 style={{ ...h3, fontSize: 16 }}>Picked, waiting for a script</h2>
       <div style={{ display: 'grid', gap: 8 }}>{data.waiting.map((w) => <div key={w.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <span><b>{w.name}</b> <span style={dim}>· {w.score}/100</span></span>
-        <button className="btn btn-green" disabled={!!busy} onClick={() => run('w' + w.id, { action: 'write-script', id: w.id }, (j) => j.status === 'needs_review' ? 'Written, but it needs your eye.' : 'Script written.')}>{busy === 'w' + w.id ? 'Writing… (about a minute)' : 'Write script now'}</button>
+        <button className="btn btn-green" disabled={!!busy} onClick={() => run('w' + w.id, { action: 'write-script', id: w.id }, (j) => j.status === 'needs_review' ? 'Written, but it needs your eye.' : 'Script written.')}>{busy === 'w' + w.id ? 'Writing…' : 'Write script now'}</button>
       </div>)}</div>
     </section> : null}
     {data.scripts.length ? <div style={{ display: 'grid', gap: 12 }}>{data.scripts.map((s) => <Script key={s.id} s={s} busy={busy} run={run} />)}</div>

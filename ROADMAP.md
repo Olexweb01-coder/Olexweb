@@ -27,7 +27,9 @@ redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, Y
 - [x] Part 2: Ideas: curated sources (Recomendo, Cool Tools, Kottke, Waxy, Open Culture, Free Tech 4 Teachers,
       Sidebar), plus Show HN, Hacker News, GitHub and evergreen picks; every site opened live; scored out of 100
       (value 30, wow 20, reach 15, fresh on YouTube 15, free 10, easy to show 10); unsafe or thin ideas turned down;
-      at most 2 of a kind per search; daily, with Find ideas now.
+      at most 2 of a kind per search; daily, with Find ideas now. Sources, sites (12 at a time), judging and YouTube
+      checks run in parallel; a live progress panel shows each stage, counts, countdown (learned from the last run),
+      server download speed and a heartbeat (also for script writing).
 - [x] Part 3: Script writer (admin → YouTube → Scripts): a picked idea becomes the factory's scene list (hook, demo
       with what to film, infographic, talk, url, cta; stickman pose per scene), plus 3 titles, description, hashtags,
       and an olexweb.com mention in every 4th description. Checked in code: 20–35 s, 6–10 scenes, hook ≤ 12 words,

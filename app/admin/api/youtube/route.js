@@ -5,6 +5,7 @@ import { Refused } from '@/lib/admin/content'
 import { syncYouTube, disconnect, YtError } from '@/lib/site/youtube'
 import { findIdeas, decideIdea } from '@/lib/site/ideas'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
+import { progressOf } from '@/lib/site/progress'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -34,4 +35,13 @@ export async function POST(request) {
     }
     throw new Refused('Unknown action.')
   })
+}
+
+// Live progress of a long job (ideas or script), read about once a second by the admin.
+export async function GET(request) {
+  const u = await currentUser(); if (!u) return refuse('Sign in again.', 401)
+  if (!ownerOnly(u)) return refuse('Only Olaitan can do this.', 403)
+  const kind = new URL(request.url).searchParams.get('progress')
+  if (!['ideas', 'script'].includes(kind)) return refuse('Request refused.', 400)
+  return respond(async () => ({ progress: await progressOf(kind) }))
 }
