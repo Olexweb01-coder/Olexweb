@@ -1,0 +1,15 @@
+. /home/claude/yt-test/fenv.sh
+SESS='const pg=require("pg"),c=require("crypto");(async()=>{const d=new pg.Client({connectionString:"postgres://olex:olex@localhost/olexweb"});await d.connect();const u=(await d.query("select id from admin_users where email=$1",[process.argv[1]])).rows[0];const t=c.randomBytes(32).toString("base64url");await d.query("insert into sessions (id_hash,user_id,expires_at) values ($1,$2,now()+interval '"'"'1 day'"'"')",[c.createHash("sha256").update(t).digest("hex"),u.id]);console.log(t);await d.end()})()'
+OWNER=$(node -e "$SESS" owner@test.local); echo "$OWNER" > /tmp/ftok; EDITOR=$(node -e "$SESS" editor@test.local)
+LOC=$(curl -s -o /dev/null -D - -H "cookie: __Host-olex_sess=$OWNER" http://localhost:3000/admin/api/youtube/connect | grep -i '^location' | tr -d '\r' | cut -d' ' -f2)
+STATE=$(echo "$LOC" | sed -E 's/.*[?&]state=([^&]*).*/\1/'); BACK=$(curl -s -o /dev/null -D - "$LOC" | grep -i '^location' | tr -d '\r' | cut -d' ' -f2)
+echo "YouTube: $(curl -s -H "cookie: olex_yt_state=$STATE" "$BACK" | grep -o 'yt=[a-z_]*' | head -1)"
+node fA.mjs > /tmp/fa.log || { cat /tmp/fa.log; exit 1; }
+OWNER=$(cat /tmp/ftok); ID=$(cat /tmp/fid); H="cookie: __Host-olex_sess=$OWNER"
+(cd /home/claude/olexweb-factory && node worker/run.mjs --id $ID --step job,upload 2>&1 | tail -1)
+send() { curl -s -X POST -H "$H" -H "Origin: http://localhost:3000" -H "Content-Type: application/json" -d "{\"action\":\"send-to-factory\",\"id\":$1}" http://localhost:3000/admin/api/youtube > /dev/null; cd /home/claude/olexweb-factory && node worker/run.mjs --id $1 --step job,upload 2>&1 | tail -1; cd /home/claude/yt-test; }
+node fD.mjs "$EDITOR" || exit 1
+ID2=$(psql postgres://olex:olex@localhost/olexweb -qtAc "insert into yt_scripts (idea_id, status, script, package, approved_at) select (select id from yt_ideas where name ilike 'tldraw%' limit 1), 'approved', script, package, now() from yt_scripts where id=$ID on conflict (idea_id) do update set status='approved', part=null, upload=null, yt_video_id=null returning id")
+echo "$ID2" > /tmp/fid2
+send $ID2
+node fD2.mjs

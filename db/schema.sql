@@ -379,3 +379,15 @@ create table if not exists yt_jobs (kind text primary key, started_at timestampt
 alter table yt_scripts add column if not exists video jsonb;                 -- while rendering: {pieces: {n: size}}; when done: {pieces, bytes, seconds, width, height}
 alter table yt_scripts add column if not exists render_error text;
 alter table yt_scripts add column if not exists render_started_at timestamptz;
+
+-- ---------- publishing to YouTube (safe to run again) ----------
+alter table yt_settings add column if not exists publish_mode text not null default 'private';   -- private until Google's audit; then scheduled
+alter table yt_settings add column if not exists publish_time text not null default '18:00';    -- Lagos time
+alter table yt_scripts add column if not exists upload jsonb;                                    -- the resumable session, so an interrupted upload carries on
+alter table yt_scripts add column if not exists yt_video_id text;
+alter table yt_scripts add column if not exists uploaded_at timestamptz;
+
+-- ---------- factory resilience (safe to run again) ----------
+alter table yt_scripts add column if not exists render_detail text;       -- the admin-side reason when something fails (shown only in the admin)
+create table if not exists yt_pieces (script_id int not null references yt_scripts(id) on delete cascade, n int not null, data bytea not null,
+  saved_at timestamptz not null default now(), primary key (script_id, n));  -- backup for video pieces when the bucket refuses; emptied after upload

@@ -30,6 +30,8 @@ export default function YouTubeScripts({ data }) {
   return (<>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>Each picked idea gets a 20–35 second script. The checks run in code: a short hook first, one cut per line, real footage of the site, no year numbers, and every fact backed by a quote from the site’s own page. In Autopilot, a script that passes everything is approved by itself.</p>
     <JobProgress kind="script" title="Writing the script" watch={/^[wr]\d/.test(busy || '')} onDone={() => router.refresh()} />
+    <JobProgress kind="upload" title="Uploading to YouTube" watch={/^u\d/.test(busy || '')} onDone={() => router.refresh()} />
+    <Publishing st={data.settings} run={run} busy={busy} />
     <JobProgress kind="render" title="Making the video" watch={data.scripts.some((x) => x.status === 'rendering') || /^f\d/.test(busy || '')} onDone={() => router.refresh()} />
     {!data.settings.factory ? <p style={{ ...card, margin: '0 0 12px', padding: '12px 16px', fontSize: 13.5, lineHeight: 1.55, ...dim }}>The video factory isn’t connected yet: it needs FACTORY_SECRET in Vercel and in the factory’s GitHub secrets (see the setup steps).</p> : null}
     {err ? <p className="err" role="alert" style={{ margin: '0 0 12px' }}>{err}</p> : null}
@@ -67,9 +69,13 @@ function Script({ s, busy, run, factory, rendering }) {
       <div style={{ fontSize: 14, lineHeight: 1.6, ...dim, flex: '1 1 200px' }}>
         <b style={{ color: 'var(--paper)', fontSize: 16 }}>Part {s.part} is ready</b><br />
         {Math.round(s.video.seconds || 0)} seconds · {s.video.width}×{s.video.height} · {(s.video.bytes / 1048576).toFixed(1)} MB<br />
-        Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Uploading to YouTube comes in the next step.
+        Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
+        <div style={{ marginTop: 10 }}><button className="btn btn-green" disabled={!!busy} onClick={() => run('u' + s.id, { action: 'upload', id: s.id }, (j) => j.publishAt ? 'Uploaded and scheduled.' : 'Uploaded to YouTube (private).')}>{busy === 'u' + s.id ? 'Uploading…' : s.upload ? 'Carry on uploading' : 'Upload to YouTube'}</button></div>
       </div>
     </section> : null}
+    {s.status === 'uploaded' ? <p style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(143,227,106,.35)', fontSize: 14, lineHeight: 1.6 }}>
+      <b>On YouTube as part {s.part}</b> · {s.upload && s.upload.done ? s.upload.done.replace('until', 'until').replace(/T(\d\d:\d\d).*$/, ' $1 UTC') : 'private'} ·{' '}
+      <a href={'https://youtube.com/shorts/' + s.yt_video_id} target="_blank" rel="noopener noreferrer">watch</a> · <a href={'https://studio.youtube.com/video/' + s.yt_video_id + '/edit'} target="_blank" rel="noopener noreferrer">open in YouTube Studio</a></p> : null}
     {s.status === 'failed' ? <p role="alert" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(255,107,107,.45)', fontSize: 14, lineHeight: 1.5 }}><b>The factory stopped:</b> {s.render_error || 'unknown reason'}</p> : null}
     {['approved', 'failed', 'rendered'].includes(s.status) ? <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
       <button className={s.status === 'rendered' ? 'btn btn-line' : 'btn btn-green'} disabled={!!busy || !factory || rendering} onClick={() => { if (s.status !== 'rendered' || window.confirm('Make this video again? The current one is replaced.')) run('f' + s.id, { action: 'send-to-factory', id: s.id }, (j) => `Sent to the factory as part ${j.part}.`) }}>
@@ -133,4 +139,19 @@ function Script({ s, busy, run, factory, rendering }) {
       </>}
     </div> : null}
   </article>)
+}
+
+function Publishing({ st, run, busy }) {
+  const [mode, setMode] = useState(st.publish_mode), [time, setTime] = useState(st.publish_time)
+  const changed = mode !== st.publish_mode || time !== st.publish_time
+  return (<section style={{ ...card, marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }} aria-label="Publishing">
+    <b style={{ fontSize: 14.5 }}>Publishing</b>
+    <div className="seg" role="group" aria-label="How videos go up" style={{ margin: 0 }}>
+      <button type="button" aria-pressed={mode === 'private'} onClick={() => setMode('private')}>Private</button>
+      <button type="button" aria-pressed={mode === 'scheduled'} onClick={() => setMode('scheduled')}>Scheduled</button>
+    </div>
+    {mode === 'scheduled' ? <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>daily at <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: 120 }} /> Lagos</label> : null}
+    {changed ? <button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time }, 'Publishing settings saved.')}>Save</button> : null}
+    <span style={{ fontSize: 12.5, flexBasis: '100%', ...dim }}>{mode === 'private' ? 'Until Google’s audit approves the app, YouTube keeps every upload private anyway. Switch to Scheduled once it’s approved.' : 'Each video is uploaded private and goes public by itself at the next ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
+  </section>)
 }

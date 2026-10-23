@@ -1,6 +1,12 @@
 # Olexweb roadmap
 
-Paste this file into a new chat with Claude to continue exactly where we left off.
+## How to continue in a new chat
+
+1. Start a normal (not incognito) chat, ideally inside a Claude Project called "Olexweb" with this file added to
+   the project's knowledge, so every chat there starts with it.
+2. Upload this file plus a zip of the project (without node_modules and .next). The main repo is private, so Claude
+   can't read it from GitHub; the factory repo (Olexweb01-coder/olexweb-factory) is public.
+3. Say: "Continue from ROADMAP.md." Tests are in tests/youtube (see its README); run them before handing anything over.
 
 Working rules (from HANDOFF.md): every change is built and tested before handover; Olaitan's machine is
 Windows (PowerShell in VS Code); show a preview before download; be honest about limits. Changes arrive as a zip
@@ -43,8 +49,12 @@ redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, Y
       Every call is signed with FACTORY_SECRET (Vercel + factory GitHub secret); nothing secret in the public run
       inputs. Live progress for every stage. A silent run is marked stopped after 25 minutes.
 - [ ] Part 4b: ACE-Step music library (generated on GitHub's larger machines; first run there is the test).
-- [ ] Part 5: Upload + schedule (private until the YouTube API audit passes; submit the audit right after the first
-      private upload works; add a YouTube data section to olexweb.com/privacy first).
+- [x] Part 5: Upload to YouTube (resumable, fed from the stored 4 MiB pieces; an interrupted upload carries on in the
+      same session). Private by default (YouTube forces it until the audit); "Scheduled" publishes at the next chosen
+      Lagos time. Not made for kids, Science & Technology, tags from the hashtags. After upload: link + Studio link,
+      stored copy deleted, idea marked made. Autopilot uploads finished videos itself.
+      NEXT: submit the YouTube API audit (form: support.google.com/youtube/contact/yt_api_form) with a short
+      screen recording of connect → script → factory → upload; add a YouTube data section to olexweb.com/privacy first.
 - [ ] Part 6: Learning loop: 24 h and 72 h results feed back into topic, hook and posting-time choices. Shorts
       cut-downs and the weekly long video (needed for monetisation: from 1 Feb 2027 new channels need 8,000 watch
       hours in 12 months, or 20 million Shorts views in 90 days).

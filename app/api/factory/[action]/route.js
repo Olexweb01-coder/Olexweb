@@ -2,6 +2,7 @@
 // signature made with FACTORY_SECRET over its method, path and body (see lib/site/factory.js). Anything else gets 401.
 import { NextResponse } from 'next/server'
 import { verify, jobFor, report, savePiece, finish } from '@/lib/site/factory'
+import { q } from '@/lib/admin/db'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 60
@@ -20,5 +21,10 @@ export async function POST(request, { params }) {
     if (action === 'job') { const j = await jobFor(id); return j ? NextResponse.json(j) : no(409, 'This video isn’t waiting for the factory.') }
     if (action === 'report') return (await report(id, body)) ? NextResponse.json({ ok: true }) : no(409, 'This video isn’t being rendered.')
     const f = await finish(id, body); return f.ok ? NextResponse.json({ ok: true }) : no(409, f.why)
-  } catch (e) { console.error('factory call failed', action, e); return no(500, 'Something went wrong.') }
+  } catch (e) {
+    console.error('factory call failed', action, e)
+    // the reason stays private (the admin shows it to you); the public GitHub log only sees "500"
+    await q('update yt_scripts set render_detail = $2 where id = $1', [id, (action + ': ' + String(e && e.message || e)).slice(0, 300)]).catch(() => {})
+    return no(500, 'Something went wrong.')
+  }
 }
