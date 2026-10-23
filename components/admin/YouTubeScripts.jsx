@@ -9,7 +9,7 @@ import JobProgress from './JobProgress'
 const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border: '1px solid var(--line)' }
 const dim = { color: 'var(--dim)' }
 const h3 = { margin: '0 0 8px', fontSize: 14, fontWeight: 700 }
-const STATUS = { needs_review: ['Needs your eye', 'draft'], draft: ['Ready for review', 'res'], approved: ['Approved for the factory', 'live'], rendering: ['In the factory', 'res'], rendered: ['Rendered', 'live'], uploaded: ['Uploaded', 'live'], failed: ['Failed', 'draft'] }
+const STATUS = { needs_review: ['Needs your eye', 'draft'], draft: ['Ready for review', 'res'], approved: ['Approved for the factory', 'live'], rendering: ['In the factory', 'res'], rendered: ['Video ready', 'live'], uploaded: ['Uploaded', 'live'], failed: ['The factory stopped', 'draft'] }
 const TYPE = { hook: 'Hook', demo: 'The site', infographic: 'Infographic', talk: 'Talk', url: 'Address', cta: 'Follow' }
 const POSE = { shocked: '😮', pointing: '👉', thinking: '🤔', dancing: '🕺', waving: '👋', idle: '🙂' }
 
@@ -30,6 +30,8 @@ export default function YouTubeScripts({ data }) {
   return (<>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>Each picked idea gets a 20–35 second script. The checks run in code: a short hook first, one cut per line, real footage of the site, no year numbers, and every fact backed by a quote from the site’s own page. In Autopilot, a script that passes everything is approved by itself.</p>
     <JobProgress kind="script" title="Writing the script" watch={/^[wr]\d/.test(busy || '')} onDone={() => router.refresh()} />
+    <JobProgress kind="render" title="Making the video" watch={data.scripts.some((x) => x.status === 'rendering') || /^f\d/.test(busy || '')} onDone={() => router.refresh()} />
+    {!data.settings.factory ? <p style={{ ...card, margin: '0 0 12px', padding: '12px 16px', fontSize: 13.5, lineHeight: 1.55, ...dim }}>The video factory isn’t connected yet: it needs FACTORY_SECRET in Vercel and in the factory’s GitHub secrets (see the setup steps).</p> : null}
     {err ? <p className="err" role="alert" style={{ margin: '0 0 12px' }}>{err}</p> : null}
     {data.waiting.length ? <section style={{ ...card, marginBottom: 12 }} aria-label="Waiting for a script">
       <h2 style={{ ...h3, fontSize: 16 }}>Picked, waiting for a script</h2>
@@ -38,12 +40,12 @@ export default function YouTubeScripts({ data }) {
         <button className="btn btn-green" disabled={!!busy} onClick={() => run('w' + w.id, { action: 'write-script', id: w.id }, (j) => j.status === 'needs_review' ? 'Written, but it needs your eye.' : 'Script written.')}>{busy === 'w' + w.id ? 'Writing…' : 'Write script now'}</button>
       </div>)}</div>
     </section> : null}
-    {data.scripts.length ? <div style={{ display: 'grid', gap: 12 }}>{data.scripts.map((s) => <Script key={s.id} s={s} busy={busy} run={run} />)}</div>
+    {data.scripts.length ? <div style={{ display: 'grid', gap: 12 }}>{data.scripts.map((s) => <Script key={s.id} s={s} busy={busy} run={run} factory={data.settings.factory} rendering={data.scripts.some((x) => x.status === 'rendering')} />)}</div>
       : !data.waiting.length ? <section style={card}><p style={{ margin: 0, lineHeight: 1.6, ...dim }}>No scripts yet. Pick an idea with “Make a video” on the Ideas tab and its script appears here.</p></section> : null}
   </>)
 }
 
-function Script({ s, busy, run }) {
+function Script({ s, busy, run, factory, rendering }) {
   const sc = s.script.scenes, pk = s.package, [st, pill] = STATUS[s.status] || [s.status, 'draft']
   const editable = ['draft', 'needs_review', 'approved'].includes(s.status)
   const [edit, setEdit] = useState(null)
@@ -55,10 +57,25 @@ function Script({ s, busy, run }) {
       <div style={{ minWidth: 0 }}>
         <h2 id={'sc' + s.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21 }}>{s.name || s.script.site.name}</h2>
         <div style={{ fontSize: 13, marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', ...dim }}>
-          <span className={'pill ' + pill}>{st}</span><span>{s.seconds}s · {sc.length} scenes</span>{s.writer ? <span>· written by {s.writer}</span> : null}{s.mention ? <span>· mentions olexweb.com</span> : null}
+          <span className={'pill ' + pill}>{st}</span>{s.part ? <span>Part {s.part}</span> : null}<span>{s.seconds}s · {sc.length} scenes</span>{s.writer ? <span>· written by {s.writer}</span> : null}{s.mention ? <span>· mentions olexweb.com</span> : null}
         </div>
       </div>
     </div>
+
+    {s.status === 'rendered' && s.video ? <section aria-label="The finished video" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <video controls preload="metadata" playsInline src={'/admin/api/youtube/video?id=' + s.id} style={{ width: 'min(100%, 300px)', aspectRatio: '9 / 16', borderRadius: 16, background: '#000', border: '1px solid var(--line)' }} />
+      <div style={{ fontSize: 14, lineHeight: 1.6, ...dim, flex: '1 1 200px' }}>
+        <b style={{ color: 'var(--paper)', fontSize: 16 }}>Part {s.part} is ready</b><br />
+        {Math.round(s.video.seconds || 0)} seconds · {s.video.width}×{s.video.height} · {(s.video.bytes / 1048576).toFixed(1)} MB<br />
+        Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Uploading to YouTube comes in the next step.
+      </div>
+    </section> : null}
+    {s.status === 'failed' ? <p role="alert" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(255,107,107,.45)', fontSize: 14, lineHeight: 1.5 }}><b>The factory stopped:</b> {s.render_error || 'unknown reason'}</p> : null}
+    {['approved', 'failed', 'rendered'].includes(s.status) ? <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <button className={s.status === 'rendered' ? 'btn btn-line' : 'btn btn-green'} disabled={!!busy || !factory || rendering} onClick={() => { if (s.status !== 'rendered' || window.confirm('Make this video again? The current one is replaced.')) run('f' + s.id, { action: 'send-to-factory', id: s.id }, (j) => `Sent to the factory as part ${j.part}.`) }}>
+        {busy === 'f' + s.id ? 'Sending…' : s.status === 'rendered' ? 'Make it again' : s.status === 'failed' ? 'Try again' : 'Send to the factory'}</button>
+      {rendering && s.status !== 'rendering' ? <span style={{ fontSize: 13, ...dim }}>The factory makes one video at a time; this one can go next.</span> : null}
+    </div> : null}
 
     <div style={{ display: 'grid', gap: 8 }} role="list" aria-label="Scenes">
       {sc.map((x, i) => <div key={x.id} role="listitem" style={{ display: 'grid', gridTemplateColumns: '30px minmax(0,1fr)', gap: 10, padding: '10px 12px', borderRadius: 14, background: 'rgba(242,239,233,.04)', border: '1px solid var(--line)' }}>

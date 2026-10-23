@@ -6,6 +6,7 @@ import { syncYouTube, disconnect, YtError } from '@/lib/site/youtube'
 import { findIdeas, decideIdea } from '@/lib/site/ideas'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
 import { progressOf } from '@/lib/site/progress'
+import { sendToFactory } from '@/lib/site/factory'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -21,6 +22,10 @@ export async function POST(request) {
     if (body.action === 'decide') {
       if (!['picked', 'skipped', 'new'].includes(body.status) || !Number.isInteger(body.id)) throw new Refused('Request refused.')
       const r = await decideIdea(body.id, body.status); if (!r) throw new Refused('That idea is no longer there.'); return r
+    }
+    if (body.action === 'send-to-factory') {
+      if (!Number.isInteger(body.id)) throw new Refused('Request refused.')
+      try { return await sendToFactory(body.id) } catch (e) { throw new Refused(e.message) }
     }
     if (['write-script', 'save-script', 'approve-script', 'drop-script'].includes(body.action)) {
       if (!Number.isInteger(body.id)) throw new Refused('Request refused.')
@@ -42,6 +47,6 @@ export async function GET(request) {
   const u = await currentUser(); if (!u) return refuse('Sign in again.', 401)
   if (!ownerOnly(u)) return refuse('Only Olaitan can do this.', 403)
   const kind = new URL(request.url).searchParams.get('progress')
-  if (!['ideas', 'script'].includes(kind)) return refuse('Request refused.', 400)
+  if (!['ideas', 'script', 'render'].includes(kind)) return refuse('Request refused.', 400)
   return respond(async () => ({ progress: await progressOf(kind) }))
 }

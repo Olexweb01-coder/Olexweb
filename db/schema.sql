@@ -374,3 +374,8 @@ alter table yt_ideas add column if not exists script_tried_at timestamptz;
 
 -- ---------- live progress for long YouTube jobs, and how long each stage took last time (safe to run again) ----------
 create table if not exists yt_jobs (kind text primary key, started_at timestamptz, updated_at timestamptz, finished_at timestamptz, state jsonb, history jsonb not null default '{}');
+
+-- ---------- the render factory (safe to run again) ----------
+alter table yt_scripts add column if not exists video jsonb;                 -- while rendering: {pieces: {n: size}}; when done: {pieces, bytes, seconds, width, height}
+alter table yt_scripts add column if not exists render_error text;
+alter table yt_scripts add column if not exists render_started_at timestamptz;

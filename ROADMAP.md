@@ -36,8 +36,13 @@ redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, Y
       2+ scenes of the real site, no years, every number and claim backed by a quote from the site's page (fetched
       fresh). One automatic repair pass; still failing → "Needs your eye" (Edit, or Approve anyway with confirmation).
       Autopilot approves passing scripts itself; the frequent run writes one picked idea's script at a time.
-- [ ] Part 4: Render worker on GitHub Actions (olexweb-factory): site capture → Kokoro voice → exact word timings →
-      ACE-Step music library → Remotion render in chunks → upload back. Admin shows each video's stage.
+- [x] Part 4: Render factory (repo olexweb-factory, GitHub Actions workflow render.yml). Approved script → "Send to
+      the factory" (Autopilot sends the next one itself, one at a time) → GitHub runs: film the real site (wheel
+      scrolling, pop-ups cleared) → Kokoro voice → synthesised music (key/tempo vary by part) → Remotion render →
+      MP4 sent back in 4 MiB signed pieces, stored in the private bucket, playable in the admin with seeking.
+      Every call is signed with FACTORY_SECRET (Vercel + factory GitHub secret); nothing secret in the public run
+      inputs. Live progress for every stage. A silent run is marked stopped after 25 minutes.
+- [ ] Part 4b: ACE-Step music library (generated on GitHub's larger machines; first run there is the test).
 - [ ] Part 5: Upload + schedule (private until the YouTube API audit passes; submit the audit right after the first
       private upload works; add a YouTube data section to olexweb.com/privacy first).
 - [ ] Part 6: Learning loop: 24 h and 72 h results feed back into topic, hook and posting-time choices. Shorts
