@@ -6,3 +6,4 @@ export FACTORY_SECRET=factory-secret-for-tests-0123456789abcdef FACTORY_GH_TOKEN
 export STORAGE_ENDPOINT=http://localhost:4560 STORAGE_BUCKET=olex STORAGE_ACCESS_KEY_ID=key STORAGE_SECRET_ACCESS_KEY=secret STORAGE_REGION=us-east-1
 export OLEX_API=http://localhost:3000
 export YT_UPLOAD_BASE=http://localhost:4555
+export STORAGE_TIMEOUT_MS=1500
