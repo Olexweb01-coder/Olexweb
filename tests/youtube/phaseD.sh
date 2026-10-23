@@ -4,6 +4,7 @@ OWNER=$(node -e "$SESS" owner@test.local); echo "$OWNER" > /tmp/ftok; EDITOR=$(n
 LOC=$(curl -s -o /dev/null -D - -H "cookie: __Host-olex_sess=$OWNER" http://localhost:3000/admin/api/youtube/connect | grep -i '^location' | tr -d '\r' | cut -d' ' -f2)
 STATE=$(echo "$LOC" | sed -E 's/.*[?&]state=([^&]*).*/\1/'); BACK=$(curl -s -o /dev/null -D - "$LOC" | grep -i '^location' | tr -d '\r' | cut -d' ' -f2)
 echo "YouTube: $(curl -s -H "cookie: olex_yt_state=$STATE" "$BACK" | grep -o 'yt=[a-z_]*' | head -1)"
+psql postgres://olex:olex@localhost/olexweb -qc "update yt_scripts set status = 'failed' where status in ('rendering', 'rendered', 'approved')"   # a clean start: no leftovers from earlier runs
 node fA.mjs > /tmp/fa.log || { cat /tmp/fa.log; exit 1; }
 OWNER=$(cat /tmp/ftok); ID=$(cat /tmp/fid); H="cookie: __Host-olex_sess=$OWNER"
 (cd /home/claude/olexweb-factory && node worker/run.mjs --id $ID --step job,upload 2>&1 | tail -1)
@@ -12,4 +13,6 @@ node fD.mjs "$EDITOR" || exit 1
 ID2=$(psql postgres://olex:olex@localhost/olexweb -qtAc "insert into yt_scripts (idea_id, status, script, package, approved_at) select (select id from yt_ideas where name ilike 'tldraw%' limit 1), 'approved', script, package, now() from yt_scripts where id=$ID on conflict (idea_id) do update set status='approved', part=null, upload=null, yt_video_id=null returning id")
 echo "$ID2" > /tmp/fid2
 send $ID2
-node fD2.mjs
+node fD2.mjs private
+send $ID2
+node fD2.mjs scheduled

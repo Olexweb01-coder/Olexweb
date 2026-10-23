@@ -143,15 +143,25 @@ function Script({ s, busy, run, factory, rendering }) {
 
 function Publishing({ st, run, busy }) {
   const [mode, setMode] = useState(st.publish_mode), [time, setTime] = useState(st.publish_time)
-  const changed = mode !== st.publish_mode || time !== st.publish_time
-  return (<section style={{ ...card, marginBottom: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }} aria-label="Publishing">
-    <b style={{ fontSize: 14.5 }}>Publishing</b>
-    <div className="seg" role="group" aria-label="How videos go up" style={{ margin: 0 }}>
-      <button type="button" aria-pressed={mode === 'private'} onClick={() => setMode('private')}>Private</button>
-      <button type="button" aria-pressed={mode === 'scheduled'} onClick={() => setMode('scheduled')}>Scheduled</button>
+  const [series, setSeries] = useState(st.series), [inTitle, setInTitle] = useState(st.series_in_title !== false), [intro, setIntro] = useState(st.spoken_intro !== false)
+  const changed = mode !== st.publish_mode || time !== st.publish_time || series !== st.series || inTitle !== (st.series_in_title !== false) || intro !== (st.spoken_intro !== false)
+  const tick = (v, set, label) => <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--green)' }} />{label}</label>
+  const sample = (series || '').replace(/\b\w/g, (c) => c.toUpperCase())
+  return (<section style={{ ...card, marginBottom: 12, display: 'grid', gap: 10 }} aria-label="Publishing">
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+      <b style={{ fontSize: 14.5 }}>Publishing</b>
+      <div className="seg" role="group" aria-label="How videos go up" style={{ margin: 0 }}>
+        <button type="button" aria-pressed={mode === 'private'} onClick={() => setMode('private')}>Private</button>
+        <button type="button" aria-pressed={mode === 'scheduled'} onClick={() => setMode('scheduled')}>Scheduled</button>
+      </div>
+      {mode === 'scheduled' ? <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>daily at <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: 120 }} /> Lagos</label> : null}
     </div>
-    {mode === 'scheduled' ? <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>daily at <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: 120 }} /> Lagos</label> : null}
-    {changed ? <button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time }, 'Publishing settings saved.')}>Save</button> : null}
-    <span style={{ fontSize: 12.5, flexBasis: '100%', ...dim }}>{mode === 'private' ? 'Until Google’s audit approves the app, YouTube locks API uploads as private, possibly for good. So Autopilot keeps finished videos here as a backlog and uploads nothing. Switch to Scheduled once the audit is approved: it then posts one a day.' : 'Autopilot uploads one finished video a day, which goes public by itself at ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
+    <span style={{ fontSize: 12.5, ...dim }}>{mode === 'private' ? 'Autopilot uploads one finished video a day as Private; your phone tells you, and you make it Public in YouTube Studio (one tap from its card here). After Google’s audit, switch to Scheduled and it goes public by itself.' : 'Autopilot uploads one finished video a day, and it goes public by itself at ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+      <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>Series <input className="input" value={series} onChange={(e) => setSeries(e.target.value)} maxLength={50} style={{ width: 280 }} /></label>
+      {tick(inTitle, setInTitle, 'In every title')}{tick(intro, setIntro, 'Said at the start of each video')}
+    </div>
+    {inTitle ? <span style={{ fontSize: 12.5, ...dim }}>Titles look like: “{sample} (Part 12) | This free site turns photos into palettes”</span> : null}
+    {changed ? <div><button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time, series, inTitle, intro }, 'Publishing settings saved.')}>Save</button></div> : null}
   </section>)
 }

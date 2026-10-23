@@ -4,12 +4,18 @@ const APP = 'http://localhost:3000', G = 'http://localhost:4555'
 const db = new pg.Client({ connectionString: 'postgres://olex:olex@localhost/olexweb' }); await db.connect()
 let pass = 0, failn = 0
 const check = (ok, what, extra = '') => { if (ok) { pass++; console.log('  ✓ ' + what) } else { failn++; console.log('  ✗ ' + what + (extra ? '  → ' + extra : '')) } }
-const ID2 = Number(fs.readFileSync('/tmp/fid2', 'utf8'))
+const ID2 = Number(fs.readFileSync('/tmp/fid2', 'utf8')), phase = process.argv[2] || 'all'
 await db.query("update assistant_settings set mode = 'autopilot'"); await db.query("update yt_idea_runs set last_run = now()")
+if (phase !== 'scheduled') {
 await db.query("update yt_settings set publish_mode = 'private'")
+await db.query("update yt_scripts set uploaded_at = now() - interval '1 day' where status = 'uploaded'")   // yesterday's upload
 let r0 = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }), j0 = await r0.json()
-const held = (await db.query('select status from yt_scripts where id = $1', [ID2])).rows[0].status
-check(!j0.uploaded && held === 'rendered', 'while publishing is Private (before the audit), Autopilot keeps the finished video as a backlog and uploads nothing')
+const S0 = await (await fetch(G + '/_state')).json(), m0 = S0.sessions[S0.sessions.length - 1].meta
+const st0 = (await db.query('select status from yt_scripts where id = $1', [ID2])).rows[0].status
+check(j0.uploaded && st0 === 'uploaded' && m0.status.privacyStatus === 'private' && !m0.status.publishAt, 'before the audit (Private): Autopilot still uploads one finished video a day, as Private, for you to make Public in Studio')
+await db.query("update yt_scripts set status = 'rendered', upload = null, yt_video_id = null where id = $1", [ID2])   // make it again for the scheduled check
+}
+if (phase === 'private') { await db.query("update yt_scripts set status = 'approved', upload = null, yt_video_id = null where id = $1", [ID2]); console.log(`  (${pass} passed, ${failn} failed)`); await db.end(); process.exit(failn ? 1 : 0) }
 await db.query("update yt_settings set publish_mode = 'scheduled', publish_time = '18:30'")
 await db.query("update yt_scripts set uploaded_at = now() - interval '1 day' where status = 'uploaded'")   // yesterday's upload
 const t0 = Date.now(), r = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }), j = await r.json()

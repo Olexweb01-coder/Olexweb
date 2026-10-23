@@ -25,6 +25,10 @@ r = await post({ action: 'upload', id: ID }); j = await r.json(); const S = awai
 check(r.status === 200 && j.video === 'ytNew' + S.sessions.length && S.sessions.length === 1, `pressing Upload again carried on from ${(sent1 / 1048576).toFixed(1)} MB in the same session (no second upload)`, JSON.stringify(j))
 check(S.uploadMd5 === md5, 'YouTube received the video byte-for-byte as the factory made it')
 const m = S.sessions[0].meta
+const part = (await db.query('select part from yt_scripts where id = $1', [ID])).rows[0].part
+check(m.snippet.title.startsWith(`Secret Websites You Should Know (Part ${part}) | `) && m.snippet.title.length <= 100, 'the title carries the series and part: “' + m.snippet.title + '”')
+const job = JSON.parse(fs.readFileSync('/home/claude/olexweb-factory/work/job.json', 'utf8'))
+check(job.intro === `Secret websites you should know, part ${part}.`, 'the factory was told to open with “' + job.intro + '”')
 check(m.status.privacyStatus === 'private' && !m.status.publishAt && m.status.selfDeclaredMadeForKids === false && m.status.containsSyntheticMedia === false && m.snippet.categoryId === '28' && m.snippet.tags.every((t) => !t.startsWith('#')), 'sent as private, not made for kids, Science & Technology, tags without #')
 row = (await db.query('select s.status, s.yt_video_id, i.status as idea from yt_scripts s join yt_ideas i on i.id = s.idea_id where s.id = $1', [ID])).rows[0]
 const made1 = (await db.query('select made from yt_settings')).rows[0].made
@@ -36,8 +40,11 @@ check(html.includes('On YouTube as part') && html.includes('studio.youtube.com/v
 r = await post({ action: 'upload', id: ID }); check(r.status === 400, 'it can’t be uploaded twice')
 
 console.log('\n38. Scheduled publishing, by Autopilot')
-r = await post({ action: 'publish-settings', mode: 'scheduled', time: '25:00' }); check(r.status === 400, 'a nonsense time is refused')
-r = await post({ action: 'publish-settings', mode: 'scheduled', time: '18:30' }); j = await r.json(); check(r.status === 200 && j.publish_mode === 'scheduled', 'scheduled daily at 18:30 Lagos')
+r = await post({ action: 'publish-settings', mode: 'scheduled', time: '25:00', series: 'Secret websites you should know' }); check(r.status === 400, 'a nonsense time is refused')
+r = await post({ action: 'publish-settings', mode: 'private', time: '18:00', series: 'ab' }); check(r.status === 400, 'a too-short series name is refused')
+r = await post({ action: 'publish-settings', mode: 'scheduled', time: '18:30', series: 'Powerful websites you should know', inTitle: true, intro: true }); j = await r.json()
+check(r.status === 200 && j.publish_mode === 'scheduled' && j.series === 'Powerful websites you should know', 'scheduled daily at 18:30 Lagos, and the series renamed to “Powerful websites you should know”')
+await post({ action: 'publish-settings', mode: 'scheduled', time: '18:30', series: 'Secret websites you should know', inTitle: true, intro: true })
 fs.writeFileSync('/tmp/fid2', '')
 console.log(`  (${pass} passed, ${failn} failed so far)`)
 await db.end(); process.exit(failn ? 1 : 0)

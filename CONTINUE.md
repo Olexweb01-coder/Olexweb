@@ -3,7 +3,7 @@
 Paste this whole file into a new chat with Claude and say: **"Continue from CONTINUE.md."**
 (Optionally also upload a zip of the `olexweb-site` folder without `node_modules` and `.next`: the main repo is
 private, so Claude can't read it from GitHub. The factory repo is public: github.com/Olexweb01-coder/olexweb-factory.)
-Last updated: 23 October 2026.
+Last updated: 23 October 2026 (evening).
 
 ---
 
@@ -96,26 +96,33 @@ Last updated: 23 October 2026.
 
 ## 6. Where things stand right now
 
-- The whole pipeline worked on the real system: idea → script → factory on GitHub → video back in the admin →
-  **first video uploaded to YouTube (Private)** — "Epson International Pano Awards Winners Gallery", Part 9.
-- Uploads stay **private until Google's audit passes** (unaudited projects; such videos may be locked private for good).
-- Things to confirm at the start of the next chat:
-  1. `olexweb-youtube-backlog.zip` installed? (holds uploads while Private). If not, install it first.
-  2. `FACTORY_SECRET` replaced in **both** Vercel and GitHub after it appeared in chat? (then Vercel redeployed)
-  3. In YouTube Studio, can the first video be switched to Public, or is it "locked"?
+- The whole pipeline works on the real system: idea → script → factory on GitHub → video → YouTube.
+- **Two videos are live** (72 and 28 views at last check). Uploads from the app arrive Private, but **Olex can switch
+  them to Public himself in YouTube Studio** (they are not locked). Until Google's audit passes: Autopilot uploads one
+  finished video a day as Private, his phone is notified, he taps Public in Studio. After the audit: Publishing →
+  Scheduled, fully automatic, one a day at the chosen Lagos time.
+- Series format (his request): every title is "Secret Websites You Should Know (Part N) | <hook title>", the voice
+  opens with "Secret websites you should know, part N.", and a big PART N stamp shows for the first 1.5 s. The series
+  name is a setting (he mentioned "Powerful websites you should know" as an alternative); parts continue from 9.
+- Endings now ask viewers to comment (the site they want next, or whether they knew it) and follow for the next part.
+- The factory uses the **full-precision Kokoro model** (the compact int8 one garbled some lines on some processors)
+  and checks every recorded line; one broken video can no longer block the upload queue.
+- To confirm at the start of the next chat: latest website and factory zips installed (`olexweb-youtube-series.zip`,
+  `olexweb-factory-series.zip`), and `FACTORY_SECRET` replaced in both Vercel and GitHub.
 
 ## 7. Next steps, in order
 
-1. **Record the screen video and submit the audit** (his chosen next action). Shot list and answers: `AUDIT.md`.
+1. **Record the screen video and submit the audit** (his chosen next action, after the current builds). Shot list and answers: `AUDIT.md`.
    Form: support.google.com/youtube/contact/yt_api_form, signed in as olexweb01@gmail.com; first question: "Complete a
    compliance audit to request for additional quota", explaining the aim is lifting the private-only restriction.
    Upload the recording by hand in YouTube Studio as Unlisted. After approval: Scripts → Publishing → **Scheduled**.
 2. Keep making videos meanwhile (backlog).
-3. **Weekly long video** (6–10 min "finds of the week" from the week's scripts and footage) — for monetisation.
-4. **Part 6 learning loop** once 5–10 videos are up: 24 h / 72 h views and percentage watched feed topic and hook
+3. **More views:** the learning loop (item 4) plus the weekly long video; keep posting daily.
+4. **Weekly long video** (6–10 min "finds of the week" from the week's scripts and footage) — for monetisation.
+5. **Part 6 learning loop** once 5–10 videos are up: 24 h / 72 h views and percentage watched feed topic and hook
    choice (keep stored YouTube stats within the 30-day rule; store only our own derived signals).
-5. Better filming (act out each scene's "what to film"), Part 4b ACE-Step music, exact word timings for captions.
-6. Investigate why the storage bucket hangs on uploads from Vercel (the database backup covers it for now).
+6. Better filming (act out each scene's "what to film"), Part 4b ACE-Step music, exact word timings for captions.
+7. Investigate why the storage bucket hangs on uploads from Vercel (the database backup covers it for now).
 
 ## 8. Phase 2 (after YouTube): Olex AI upgrade
 
