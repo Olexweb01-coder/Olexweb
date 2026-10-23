@@ -152,6 +152,6 @@ function Publishing({ st, run, busy }) {
     </div>
     {mode === 'scheduled' ? <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>daily at <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} style={{ width: 120 }} /> Lagos</label> : null}
     {changed ? <button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time }, 'Publishing settings saved.')}>Save</button> : null}
-    <span style={{ fontSize: 12.5, flexBasis: '100%', ...dim }}>{mode === 'private' ? 'Until Google’s audit approves the app, YouTube keeps every upload private anyway. Switch to Scheduled once it’s approved.' : 'Each video is uploaded private and goes public by itself at the next ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
+    <span style={{ fontSize: 12.5, flexBasis: '100%', ...dim }}>{mode === 'private' ? 'Until Google’s audit approves the app, YouTube locks API uploads as private, possibly for good. So Autopilot keeps finished videos here as a backlog and uploads nothing. Switch to Scheduled once the audit is approved: it then posts one a day.' : 'Autopilot uploads one finished video a day, which goes public by itself at ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
   </section>)
 }

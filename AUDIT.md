@@ -16,6 +16,12 @@ Form: YouTube API Services – Audit and Quota Extension Form (support.google.co
    - Send to the factory → the finished video → **Upload to YouTube** → the video in YouTube Studio;
    - **Disconnect**, with its message saying the stored YouTube data is deleted.
 
+## The form's first question
+
+It asks what you're requesting. Choose **"Complete a compliance audit to request for additional quota"** (the other
+option is only for re-audits). Then, in the use-case explanation, say plainly that the main purpose is to pass the
+compliance audit so uploads are no longer restricted to private, and that the default quota is enough.
+
 ## Answers
 
 **Organisation / developer:** Olexweb (sole proprietor: Olaitan Adebayo), Nigeria. Contact: info@olexweb.com.
@@ -59,6 +65,9 @@ own metric names, unmodified.
 **Privacy policy:** https://olexweb.com/privacy (section "YouTube and Google data": links the Google Privacy Policy
 and explains revoking access at https://security.google.com/settings/security/permissions).
 **Terms of service:** https://olexweb.com/terms (section "YouTube": users agree to the YouTube Terms of Service).
+
+**Why we're applying:** Uploads from this project are restricted to private because it hasn't been audited. We ask for
+the audit so approved videos can be published (scheduled at a set time). We don't need more than the default quota.
 
 **Quota:** About one upload a day (videos.insert), about 1,000 units a day for searches and video look-ups,
 and a few units for the daily channel sync. The default quota is enough; this audit is to lift the private-only
