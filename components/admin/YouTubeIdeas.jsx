@@ -15,6 +15,7 @@ export function YouTubeTabs({ current }) {
   return (<div className="seg" role="tablist" aria-label="YouTube" style={{ marginBottom: 14 }}>
     <a href="/admin/youtube" role="tab" aria-selected={current === 'analytics'} aria-pressed={current === 'analytics'} className="segl">Analytics</a>
     <a href="/admin/youtube?view=ideas" role="tab" aria-selected={current === 'ideas'} aria-pressed={current === 'ideas'} className="segl">Ideas</a>
+    <a href="/admin/youtube?view=scripts" role="tab" aria-selected={current === 'scripts'} aria-pressed={current === 'scripts'} className="segl">Scripts</a>
   </div>)
 }
 
@@ -85,7 +86,7 @@ export default function YouTubeIdeas({ data }) {
           {it.status !== 'new' ? <button className="btn btn-line" disabled={!!busy} onClick={() => decide(it.id, 'new', it.name)}>Back to New</button> : null}
         </div>
       </article>)
-    })}</div> : <section style={card}><p style={{ margin: 0, lineHeight: 1.6, ...dim }}>{d.status === 'new' ? 'No new ideas yet. Press Find ideas now, or wait for the daily search.' : d.status === 'picked' ? 'Nothing picked yet. Ideas you choose with “Make a video” wait here for the script writer (the next step).' : 'Nothing skipped.'}</p></section>}
+    })}</div> : <section style={card}><p style={{ margin: 0, lineHeight: 1.6, ...dim }}>{d.status === 'new' ? 'No new ideas yet. Press Find ideas now, or wait for the daily search.' : d.status === 'picked' ? 'Nothing picked yet. Ideas you choose with “Make a video” go to the script writer (see Scripts).' : 'Nothing skipped.'}</p></section>}
     <p className="note">Score out of 100: real value {d.weights.value}, instant wow {d.weights.wow}, who can use it {d.weights.reach}, fresh on YouTube {d.weights.fresh}, free to try {d.weights.free}, easy to show {d.weights.demo}. Anything not safe to recommend, or without real value, never reaches this list.</p>
   </>)
 }

@@ -359,3 +359,15 @@ create table if not exists yt_ideas (id serial primary key, key text not null un
 create index if not exists yt_ideas_status on yt_ideas(status, score desc);
 create table if not exists yt_idea_runs (id int primary key default 1 check (id = 1), last_run timestamptz, last_report jsonb, running_until timestamptz);
 insert into yt_idea_runs (id) values (1) on conflict do nothing;
+
+-- ---------- YouTube scripts: a picked idea becomes the factory's scene-by-scene script (safe to run again) ----------
+create table if not exists yt_settings (id int primary key default 1 check (id = 1), series text not null default 'Secret websites you should know',
+  next_part int not null default 9, mention_every int not null default 4, made int not null default 0, voice text not null default 'am_michael');
+insert into yt_settings (id) values (1) on conflict do nothing;
+create table if not exists yt_scripts (id serial primary key, idea_id int unique references yt_ideas(id) on delete cascade,
+  status text not null default 'draft' check (status in ('draft', 'needs_review', 'approved', 'rendering', 'rendered', 'uploaded', 'failed')),
+  script jsonb not null, package jsonb not null, claims jsonb not null default '[]', checks jsonb not null default '[]', seconds real,
+  page text,                                       -- the site's own words when the script was written: what every claim is checked against
+  writer text, mention boolean not null default false, part int,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), approved_at timestamptz);
+alter table yt_ideas add column if not exists script_tried_at timestamptz;

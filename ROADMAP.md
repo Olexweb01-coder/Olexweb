@@ -28,8 +28,12 @@ redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, Y
       Sidebar), plus Show HN, Hacker News, GitHub and evergreen picks; every site opened live; scored out of 100
       (value 30, wow 20, reach 15, fresh on YouTube 15, free 10, easy to show 10); unsafe or thin ideas turned down;
       at most 2 of a kind per search; daily, with Find ideas now.
-- [ ] Part 3: Script writer: a picked idea becomes the scene-by-scene script (hook in the first second, cuts every
-      1.5–3 s, 20–35 s, loop ending), plus title options, description, hashtags, occasional olexweb.com mention.
+- [x] Part 3: Script writer (admin → YouTube → Scripts): a picked idea becomes the factory's scene list (hook, demo
+      with what to film, infographic, talk, url, cta; stickman pose per scene), plus 3 titles, description, hashtags,
+      and an olexweb.com mention in every 4th description. Checked in code: 20–35 s, 6–10 scenes, hook ≤ 12 words,
+      2+ scenes of the real site, no years, every number and claim backed by a quote from the site's page (fetched
+      fresh). One automatic repair pass; still failing → "Needs your eye" (Edit, or Approve anyway with confirmation).
+      Autopilot approves passing scripts itself; the frequent run writes one picked idea's script at a time.
 - [ ] Part 4: Render worker on GitHub Actions (olexweb-factory): site capture → Kokoro voice → exact word timings →
       ACE-Step music library → Remotion render in chunks → upload back. Admin shows each video's stage.
 - [ ] Part 5: Upload + schedule (private until the YouTube API audit passes; submit the audit right after the first

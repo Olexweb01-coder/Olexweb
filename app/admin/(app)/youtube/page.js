@@ -2,13 +2,19 @@ import { redirect } from 'next/navigation'
 import { requireUser, ownerOnly } from '@/lib/admin/auth'
 import { youtubeData } from '@/lib/site/youtube'
 import { ideasData } from '@/lib/site/ideas'
+import { scriptsData } from '@/lib/site/scripts'
 import YouTube from '@/components/admin/YouTube'
 import YouTubeIdeas, { YouTubeTabs } from '@/components/admin/YouTubeIdeas'
+import YouTubeScripts from '@/components/admin/YouTubeScripts'
 export const metadata = { title: 'YouTube' }
 export const dynamic = 'force-dynamic'
 export default async function YouTubePage({ searchParams }) {
   const u = await requireUser(); if (!ownerOnly(u)) redirect('/admin/more')
   const sp = searchParams || {}
+  if (sp.view === 'scripts') {
+    const data = await scriptsData()
+    return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="scripts" /><YouTubeScripts data={JSON.parse(JSON.stringify(data))} /></>)
+  }
   if (sp.view === 'ideas') {
     const data = await ideasData(typeof sp.status === 'string' ? sp.status : 'new')
     return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="ideas" /><YouTubeIdeas data={JSON.parse(JSON.stringify(data))} /></>)
