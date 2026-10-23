@@ -1,5 +1,7 @@
 # Olexweb roadmap
 
+> The full context (decisions, setup, status, next steps) is in **CONTINUE.md**. Start a new chat from that file.
+
 ## How to continue in a new chat
 
 1. Start a normal (not incognito) chat, ideally inside a Claude Project called "Olexweb" with this file added to
