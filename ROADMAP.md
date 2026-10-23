@@ -1,0 +1,47 @@
+# Olexweb roadmap
+
+Paste this file into a new chat with Claude to continue exactly where we left off.
+
+Working rules (from HANDOFF.md): every change is built and tested before handover; Olaitan's machine is
+Windows (PowerShell in VS Code); show a preview before download; be honest about limits. Changes arrive as a zip
+of only the changed files, extracted over the project, then `npm run build`, `npm run admin:setup` (database), push.
+
+## Phase 1: faceless YouTube automation (in progress)
+
+Channel: youtube.com/@olexweb (owned by adebayoolaitan204@gmail.com). Niche: goldmine websites, tools, ideas and
+tech that people thank you for. Creativity, productivity, learning, ideas, fun, everyday life, useful AI and tech;
+for curious people of every kind, not only developers. Fully autopilot, steady pace (about one Short a day plus a
+weekly long video), never mass posting.
+
+Factory style (approved): stickman host drawn in code (green glasses), word-by-word captions in green, real screen
+recordings of the site, infographics, synthesised sound effects, music from ACE-Step (open source, commercial use
+allowed; never MusicGen or free Suno/Udio, which forbid commercial use). Prototype: olexweb-factory-prototype.zip.
+
+Setup done (Phase 0): Google Cloud project "Olexweb Factory" (olexweb01@gmail.com, no organization), YouTube Data API
+v3 and YouTube Analytics API enabled, consent screen External + In production, OAuth client "Olexweb Admin" with
+redirect https://olexweb.com/admin/api/youtube/callback. Vercel: YT_CLIENT_ID, YT_CLIENT_SECRET, FACTORY_GH_TOKEN
+(fine-grained, Actions read/write on olexweb-factory only, yearly expiry). GitHub repo Olexweb01-coder/olexweb-factory
+(public, for unlimited free Actions minutes).
+
+- [x] Part 1: Connect YouTube + Analytics (admin → YouTube). Live and connected.
+- [x] Part 2: Ideas: curated sources (Recomendo, Cool Tools, Kottke, Waxy, Open Culture, Free Tech 4 Teachers,
+      Sidebar), plus Show HN, Hacker News, GitHub and evergreen picks; every site opened live; scored out of 100
+      (value 30, wow 20, reach 15, fresh on YouTube 15, free 10, easy to show 10); unsafe or thin ideas turned down;
+      at most 2 of a kind per search; daily, with Find ideas now.
+- [ ] Part 3: Script writer: a picked idea becomes the scene-by-scene script (hook in the first second, cuts every
+      1.5–3 s, 20–35 s, loop ending), plus title options, description, hashtags, occasional olexweb.com mention.
+- [ ] Part 4: Render worker on GitHub Actions (olexweb-factory): site capture → Kokoro voice → exact word timings →
+      ACE-Step music library → Remotion render in chunks → upload back. Admin shows each video's stage.
+- [ ] Part 5: Upload + schedule (private until the YouTube API audit passes; submit the audit right after the first
+      private upload works; add a YouTube data section to olexweb.com/privacy first).
+- [ ] Part 6: Learning loop: 24 h and 72 h results feed back into topic, hook and posting-time choices. Shorts
+      cut-downs and the weekly long video (needed for monetisation: from 1 Feb 2027 new channels need 8,000 watch
+      hours in 12 months, or 20 million Shorts views in 90 days).
+
+## Phase 2: Olex AI upgrade (after Phase 1)
+
+- Voice chat rebuilt: professional, accurate replies with deeper thinking while staying fast (better speech
+  recognition and voice, and routing quick questions to fast models, harder ones to stronger reasoning).
+- Much wider abilities: create and edit images, search and read websites, schedules, alarms and reminders that
+  notify the phone, meetings with people (to be scoped: booking and invites first; joining calls is a bigger piece),
+  and more, listed and ranked together when this phase starts.
