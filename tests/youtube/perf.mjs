@@ -15,14 +15,13 @@ const t0 = Date.now(); await p.goto('http://localhost:3000/aoc', { waitUntil: 'l
 await p.waitForTimeout(3500)
 const fps = async (label, from) => { const r = await p.evaluate((from) => { const f = __m.frames.filter((t) => t >= from); const gaps = f.slice(1).map((t, i) => t - f[i]); return { fps: Math.round((f.length - 1) / ((f.at(-1) - f[0]) / 1000)), worst: Math.round(Math.max(...gaps)), janky: gaps.filter((g) => g > 50).length } }, from); console.log(`  ${label.padEnd(26)} ${r.fps} fps · slowest frame ${r.worst} ms · frames over 50 ms: ${r.janky}`) }
 console.log('Budget phone (CPU 4× slower):'); console.log(`  page loaded in ${loadMs} ms`)
-const go = await p.evaluate(() => __m.go || 0); console.log(`  opening starts at ${Math.round(go)} ms`)
-await fps('opening animation (from start)', go)
+await fps('first 3.5 s after load', 0)
 let mark = await p.evaluate(() => performance.now())
 for (let i = 0; i < 8; i++) { await p.evaluate(() => scrollBy({ top: 220, behavior: 'smooth' })); await p.waitForTimeout(350) }
 await fps('scrolling', mark)
 await p.evaluate(() => document.getElementById('access').scrollIntoView({ block: 'start' })); await p.waitForTimeout(400)
-await p.fill('input[autocomplete=name]', 'Ada Okafor'); await p.check('input[type=checkbox]', { force: true })
-mark = await p.evaluate(() => performance.now()); await p.click('button[type=submit]'); await p.waitForTimeout(2500)
+await p.fill('input[autocomplete=name]', 'Ada Okafor'); await p.check('.tick input', { force: true })
+mark = await p.evaluate(() => performance.now()); await p.click('#access .btn.g'); await p.waitForTimeout(2500)
 await fps('joining (welcome, bulb lights)', mark)
 await p.evaluate(() => { const a = document.querySelector('audio'); a.muted = true }); mark = await p.evaluate(() => performance.now())
 await p.click('.pbtn'); await p.waitForTimeout(3000); await fps('player drawing (as if playing)', mark)
