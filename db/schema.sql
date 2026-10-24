@@ -398,3 +398,12 @@ alter table yt_account add column if not exists revoked_at timestamptz;   -- whe
 -- ---------- series format (safe to run again) ----------
 alter table yt_settings add column if not exists series_in_title boolean not null default true;   -- "Secret Websites You Should Know (Part 10) | …"
 alter table yt_settings add column if not exists spoken_intro boolean not null default true;      -- the voice opens with "…, part ten."
+
+-- ---------- long videos, twice a week (safe to run again) ----------
+alter table yt_scripts add column if not exists kind text not null default 'short';     -- short | long
+alter table yt_scripts add column if not exists items jsonb;                            -- long: the ideas it covers
+alter table yt_settings add column if not exists long_days text not null default 'tue,fri';
+alter table yt_settings add column if not exists long_count int not null default 6;
+alter table yt_settings add column if not exists long_volume int not null default 1;
+create table if not exists yt_long_items (script_id int not null references yt_scripts(id) on delete cascade, idea_id int not null references yt_ideas(id) on delete cascade,
+  primary key (script_id, idea_id));

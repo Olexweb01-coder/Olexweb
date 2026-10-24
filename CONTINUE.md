@@ -3,7 +3,7 @@
 Paste this whole file into a new chat with Claude and say: **"Continue from CONTINUE.md."**
 (Optionally also upload a zip of the `olexweb-site` folder without `node_modules` and `.next`: the main repo is
 private, so Claude can't read it from GitHub. The factory repo is public: github.com/Olexweb01-coder/olexweb-factory.)
-Last updated: 23 October 2026 (evening).
+Last updated: 24 October 2026.
 
 ---
 
@@ -110,9 +110,18 @@ Last updated: 23 October 2026 (evening).
 - To confirm at the start of the next chat: latest website and factory zips installed (`olexweb-youtube-series.zip`,
   `olexweb-factory-series.zip`), and `FACTORY_SECRET` replaced in both Vercel and GitHub.
 
+- **Audit submitted** (24 Oct 2026) through the form, with the screencast (youtu.be/JDN4bR8BTRo, unlisted), an
+  evidence image, architecture and user-flow diagrams and a supporting PDF. No verification email had arrived yet: if
+  none comes, resubmit signed in as olexweb01@gmail.com (in Edge; Chrome extensions blocked the form's reCAPTCHA).
+  When approved: Scripts → Publishing → Scheduled.
+- **Long videos, twice a week** (Tue and Fri by default; settings on the Scripts tab): Autopilot writes a landscape
+  video from the latest finds that already went out as Shorts (4–8 sites, a checked 45–75 s chapter each, intro and
+  outro), titled "N Secret Websites You Should Know (Vol. V)"; the factory renders 1920×1080 (`src/Long.jsx`) and
+  sends chapter times back; the YouTube description gets chapters. A long upload can go out on the same day as a Short.
+
 ## 7. Next steps, in order
 
-1. **Record the screen video and submit the audit** (his chosen next action, after the current builds). Shot list and answers: `AUDIT.md`.
+1. **Wait for Google's audit reply** (olexweb01@gmail.com); answer any questions with help. Shot list and answers: `AUDIT.md`.
    Form: support.google.com/youtube/contact/yt_api_form, signed in as olexweb01@gmail.com; first question: "Complete a
    compliance audit to request for additional quota", explaining the aim is lifting the private-only restriction.
    Upload the recording by hand in YouTube Studio as Unlisted. After approval: Scripts → Publishing → **Scheduled**.
@@ -124,14 +133,22 @@ Last updated: 23 October 2026 (evening).
 6. Better filming (act out each scene's "what to film"), Part 4b ACE-Step music, exact word timings for captions.
 7. Investigate why the storage bucket hangs on uploads from Vercel (the database backup covers it for now).
 
-## 8. Phase 2 (after YouTube): Olex AI upgrade
+## 8. Planned after the audit: a second channel (children's songs)
+
+He has a children's-songs channel (under olexweb01@gmail.com). The same Google Cloud project can connect it (no new
+setup), but the admin must support several channels (per-channel ideas, scripts, settings), and the factory needs a
+new style: original songs (melody, lyrics, singing voice — e.g. ACE-Step, commercial use allowed), cartoon visuals,
+"made for kids" rules (comments off, lower ad income) and care about YouTube's crackdown on mass-produced AI kids'
+content. Add it after the audit is approved, since the audit describes one channel.
+
+## 9. Phase 2 (after YouTube): Olex AI upgrade
 
 - Voice chat rebuilt: professional, accurate, deeper thinking, still fast (better speech recognition and voice;
   route quick questions to fast models, hard ones to stronger reasoning).
 - Wider abilities: create and edit images, search and read websites, schedules, alarms and reminders that notify the
   phone, meetings with people (scope first: booking and invites; joining calls is bigger), and more, ranked together.
 
-## 9. Lessons learned (don't repeat)
+## 10. Lessons learned (don't repeat)
 
 - Incognito chats aren't saved: keep this file and `ROADMAP.md` in the repo.
 - Run commands from the right folder; the one-block installer handles this now. (Once Part 5 went into the factory

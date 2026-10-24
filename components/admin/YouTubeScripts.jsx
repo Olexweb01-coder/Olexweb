@@ -57,24 +57,24 @@ function Script({ s, busy, run, factory, rendering }) {
   return (<article style={{ ...card, display: 'grid', gap: 14, borderColor: s.status === 'needs_review' ? 'rgba(255,209,102,.45)' : 'var(--line)' }} aria-labelledby={'sc' + s.id}>
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0 }}>
-        <h2 id={'sc' + s.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21 }}>{s.name || s.script.site.name}</h2>
+        <h2 id={'sc' + s.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21 }}>{s.kind === 'long' ? `Long video · Vol. ${s.script.volume}` : s.name || s.script.site.name}</h2>
         <div style={{ fontSize: 13, marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', ...dim }}>
-          <span className={'pill ' + pill}>{st}</span>{s.part ? <span>Part {s.part}</span> : null}<span>{s.seconds}s · {sc.length} scenes</span>{s.writer ? <span>· written by {s.writer}</span> : null}{s.mention ? <span>· mentions olexweb.com</span> : null}
+          <span className={'pill ' + pill}>{st}</span>{s.part ? <span>Part {s.part}</span> : null}<span>{s.kind === 'long' ? `about ${Math.round(s.seconds / 60 * 10) / 10} min · ${(s.script.chapters || []).filter((c) => c.site).length} sites` : `${s.seconds}s · ${sc.length} scenes`}</span>{s.writer ? <span>· written by {s.writer}</span> : null}{s.mention ? <span>· mentions olexweb.com</span> : null}
         </div>
       </div>
     </div>
 
     {s.status === 'rendered' && s.video ? <section aria-label="The finished video" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-      <video controls preload="metadata" playsInline src={'/admin/api/youtube/video?id=' + s.id} style={{ width: 'min(100%, 300px)', aspectRatio: '9 / 16', borderRadius: 16, background: '#000', border: '1px solid var(--line)' }} />
+      <video controls preload="metadata" playsInline src={'/admin/api/youtube/video?id=' + s.id} style={{ width: s.kind === 'long' ? 'min(100%, 560px)' : 'min(100%, 300px)', aspectRatio: s.kind === 'long' ? '16 / 9' : '9 / 16', borderRadius: 16, background: '#000', border: '1px solid var(--line)' }} />
       <div style={{ fontSize: 14, lineHeight: 1.6, ...dim, flex: '1 1 200px' }}>
-        <b style={{ color: 'var(--paper)', fontSize: 16 }}>Part {s.part} is ready</b><br />
+        <b style={{ color: 'var(--paper)', fontSize: 16 }}>{s.kind === 'long' ? `Vol. ${s.script.volume} is ready` : `Part ${s.part} is ready`}</b><br />
         {Math.round(s.video.seconds || 0)} seconds · {s.video.width}×{s.video.height} · {(s.video.bytes / 1048576).toFixed(1)} MB<br />
         Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
         <div style={{ marginTop: 10 }}><button className="btn btn-green" disabled={!!busy} onClick={() => run('u' + s.id, { action: 'upload', id: s.id }, (j) => j.publishAt ? 'Uploaded and scheduled.' : 'Uploaded to YouTube (private).')}>{busy === 'u' + s.id ? 'Uploading…' : s.upload ? 'Carry on uploading' : 'Upload to YouTube'}</button></div>
       </div>
     </section> : null}
     {s.status === 'uploaded' ? <p style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(143,227,106,.35)', fontSize: 14, lineHeight: 1.6 }}>
-      <b>On YouTube as part {s.part}</b> · {s.upload && s.upload.done ? s.upload.done.replace('until', 'until').replace(/T(\d\d:\d\d).*$/, ' $1 UTC') : 'private'} ·{' '}
+      <b>{s.kind === 'long' ? `On YouTube (Vol. ${s.script.volume})` : `On YouTube as part ${s.part}`}</b> · {s.upload && s.upload.done ? s.upload.done.replace('until', 'until').replace(/T(\d\d:\d\d).*$/, ' $1 UTC') : 'private'} ·{' '}
       <a href={'https://youtube.com/shorts/' + s.yt_video_id} target="_blank" rel="noopener noreferrer">watch</a> · <a href={'https://studio.youtube.com/video/' + s.yt_video_id + '/edit'} target="_blank" rel="noopener noreferrer">open in YouTube Studio</a></p> : null}
     {s.status === 'failed' ? <p role="alert" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(255,107,107,.45)', fontSize: 14, lineHeight: 1.5 }}><b>The factory stopped:</b> {s.render_error || 'unknown reason'}</p> : null}
     {['approved', 'failed', 'rendered'].includes(s.status) ? <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -84,7 +84,7 @@ function Script({ s, busy, run, factory, rendering }) {
     </div> : null}
 
     <div style={{ display: 'grid', gap: 8 }} role="list" aria-label="Scenes">
-      {sc.map((x, i) => <div key={x.id} role="listitem" style={{ display: 'grid', gridTemplateColumns: '30px minmax(0,1fr)', gap: 10, padding: '10px 12px', borderRadius: 14, background: 'rgba(242,239,233,.04)', border: '1px solid var(--line)' }}>
+      {sc.map((x, i) => [s.kind === 'long' && (i === 0 || sc[i - 1].seg !== x.seg) ? <div key={'ch' + x.seg} style={{ marginTop: i ? 8 : 0, fontWeight: 800, fontSize: 15 }}>{x.seg < 0 ? 'Intro' : x.seg >= ((s.script.chapters || []).filter((c) => c.site).length) ? 'Outro' : `Chapter ${x.seg + 1}: ${((s.script.chapters || []).find((c) => c.seg === x.seg) || {}).title || ''}`}</div> : null, <div key={x.id} role="listitem" style={{ display: 'grid', gridTemplateColumns: '30px minmax(0,1fr)', gap: 10, padding: '10px 12px', borderRadius: 14, background: 'rgba(242,239,233,.04)', border: '1px solid var(--line)' }}>
         <span aria-hidden="true" style={{ fontSize: 20, lineHeight: '24px' }}>{POSE[x.pose] || '🙂'}</span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', ...dim }}>{i + 1}. {TYPE[x.type] || x.type}{x.capture ? <span style={{ textTransform: 'none', fontWeight: 500, letterSpacing: 0 }}> · film: {x.capture}</span> : null}</div>
@@ -98,7 +98,7 @@ function Script({ s, busy, run, factory, rendering }) {
             {x.chips ? <p style={{ margin: '4px 0 0', fontSize: 13, ...dim }}>{x.chips.join(' · ')}</p> : null}
           </>}
         </div>
-      </div>)}
+      </div>])}
     </div>
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 14 }}>
@@ -144,7 +144,8 @@ function Script({ s, busy, run, factory, rendering }) {
 function Publishing({ st, run, busy }) {
   const [mode, setMode] = useState(st.publish_mode), [time, setTime] = useState(st.publish_time)
   const [series, setSeries] = useState(st.series), [inTitle, setInTitle] = useState(st.series_in_title !== false), [intro, setIntro] = useState(st.spoken_intro !== false)
-  const changed = mode !== st.publish_mode || time !== st.publish_time || series !== st.series || inTitle !== (st.series_in_title !== false) || intro !== (st.spoken_intro !== false)
+  const [days, setDays] = useState(String(st.long_days || 'tue,fri').split(',').filter(Boolean)), [count, setCount] = useState(st.long_count || 6)
+  const changed = mode !== st.publish_mode || time !== st.publish_time || series !== st.series || inTitle !== (st.series_in_title !== false) || intro !== (st.spoken_intro !== false) || days.join(',') !== String(st.long_days || 'tue,fri') || Number(count) !== Number(st.long_count || 6)
   const tick = (v, set, label) => <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--green)' }} />{label}</label>
   const sample = (series || '').replace(/\b\w/g, (c) => c.toUpperCase())
   return (<section style={{ ...card, marginBottom: 12, display: 'grid', gap: 10 }} aria-label="Publishing">
@@ -162,6 +163,13 @@ function Publishing({ st, run, busy }) {
       {tick(inTitle, setInTitle, 'In every title')}{tick(intro, setIntro, 'Said at the start of each video')}
     </div>
     {inTitle ? <span style={{ fontSize: 12.5, ...dim }}>Titles look like: “{sample} (Part 12) | This free site turns photos into palettes”</span> : null}
-    {changed ? <div><button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time, series, inTitle, intro }, 'Publishing settings saved.')}>Save</button></div> : null}
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+      <b style={{ fontSize: 14 }}>Long videos</b>
+      <div className="seg" role="group" aria-label="Long-video days" style={{ margin: 0 }}>{['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((d) => <button key={d} type="button" aria-pressed={days.includes(d)} onClick={() => setDays(days.includes(d) ? days.filter((x) => x !== d) : [...days, d])}>{d[0].toUpperCase() + d.slice(1)}</button>)}</div>
+      <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>sites in each <select className="input" value={count} onChange={(e) => setCount(Number(e.target.value))} style={{ width: 80 }}>{[4, 5, 6, 7, 8].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
+      <button className="btn btn-line" disabled={!!busy} onClick={() => run('wl', { action: 'write-long' }, 'Long video written.')}>{busy === 'wl' ? 'Writing… (2–3 minutes)' : 'Write long video now'}</button>
+    </div>
+    <span style={{ fontSize: 12.5, ...dim }}>On the chosen days, Autopilot writes a landscape video (about 5–8 minutes) from the latest finds that already went out as Shorts, with a chapter per site. Next: Vol. {st.long_volume || 1}.</span>
+    {changed ? <div><button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time, series, inTitle, intro, longDays: days, longCount: count }, 'Publishing settings saved.')}>Save</button></div> : null}
   </section>)
 }

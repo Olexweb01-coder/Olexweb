@@ -8,6 +8,7 @@ import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/s
 import { progressOf } from '@/lib/site/progress'
 import { sendToFactory } from '@/lib/site/factory'
 import { uploadVideo, savePublishSettings } from '@/lib/site/publish'
+import { writeLong } from '@/lib/site/longform'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -28,6 +29,7 @@ export async function POST(request) {
       if (!Number.isInteger(body.id)) throw new Refused('Request refused.')
       try { return await uploadVideo(body.id) } catch (e) { throw new Refused(e.message) }
     }
+    if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'publish-settings') { try { return await savePublishSettings(body) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'send-to-factory') {
       if (!Number.isInteger(body.id)) throw new Refused('Request refused.')

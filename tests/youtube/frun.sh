@@ -1,4 +1,5 @@
 #!/bin/sh
+for h in paletteforge freemovies clicky down masonry shotcut squoosh tldraw invented feeds gradientlab fontpair; do grep -q " $h.test$" /etc/hosts || echo "127.0.0.1 $h.test" >> /etc/hosts; done  # hosts-setup
 # usage: ./frun.sh <phase script> [args]   starts Postgres, the stand-ins and the admin, runs the phase, stops everything
 service postgresql start >/dev/null 2>&1; sleep 1
 . /home/claude/yt-test/fenv.sh

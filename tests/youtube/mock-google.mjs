@@ -87,6 +87,24 @@ http.createServer(async (req, res) => {
     if (S.aiDown) return send(res, 503, { error: { message: 'high demand' } })
     let out
 
+
+    if (/Write chapter (\d+) of (\d+): (.+?) \(/.test(prompt)) {
+      const m = prompt.match(/Write chapter (\d+) of (\d+): (.+?) \(/), name = m[3]
+      S.longCalls = (S.longCalls || []).concat([name])
+      const page = (prompt.match(/THE SITE'S OWN PAGE[^\n]*\n([\s\S]*?)\n\nRules:/) || [])[1] || ''
+      const quote = (page.split('. ')[1] || page).split('.')[0].trim()
+      const host = (prompt.match(/\((https?:\/\/[^)]+)\)/) || [])[1] || ''
+      const L = (t) => t
+      out = { chapter: name + ': worth a look', claims: [{ claim: 'What ' + name + ' does', quote }], scenes: [
+        { type: 'talk', pose: 'thinking', text: L(`This next one is ${name}, and it is the kind of site you will keep coming back to for real everyday work.`) },
+        { type: 'demo', pose: 'pointing', text: L('Here is the homepage, clean and simple, and you can start straight away without any account or setup at all.'), capture: 'homepage' },
+        { type: 'demo', pose: 'pointing', text: L('Watch what happens when I use the main tool once, the result appears right in front of you in seconds.'), capture: 'use the main tool' },
+        { type: 'infographic', pose: 'thinking', text: L('It runs in the browser and keeps things simple for anyone who tries it.'), chips: ['In the browser', 'Simple'] },
+        { type: 'demo', pose: 'pointing', text: L('Then you can copy the result into your own project, share it, or keep going and try something new.'), capture: 'copy the result' },
+        { type: 'talk', pose: 'thinking', text: L('It saves time on the boring parts, so you can spend your energy on the parts that matter most to you.') },
+        { type: 'url', pose: 'pointing', text: L('You can find it at the address on screen, so pause the video if you want to try it right now.'), big: host.replace(/^https?:\/\//, '').split('/')[0] }] }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
     if (/Write the Short about/.test(prompt)) {
       const name = prompt.match(/Write the Short about (.+?) \(/)[1], repair = /YOUR PREVIOUS SCRIPT failed/.test(prompt)
       S.scriptCalls = (S.scriptCalls || []).concat([name + (repair ? ' (repair)' : '')])
