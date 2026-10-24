@@ -407,3 +407,13 @@ alter table yt_settings add column if not exists long_count int not null default
 alter table yt_settings add column if not exists long_volume int not null default 1;
 create table if not exists yt_long_items (script_id int not null references yt_scripts(id) on delete cascade, idea_id int not null references yt_ideas(id) on delete cascade,
   primary key (script_id, idea_id));
+
+-- ---------- short links (olexweb.com/me → WhatsApp) and the free audio course (olexweb.com/aoc) (safe to run again) ----------
+create table if not exists site_links (slug text primary key, phone text not null, message text not null default '', clicks int not null default 0, updated_at timestamptz not null default now());
+insert into site_links (slug, phone, message) values ('me', '2347011726321', 'Hi Olex, I want Anatomy of Creation 🙌') on conflict do nothing;
+create table if not exists site_link_clicks (slug text not null, day date not null, n int not null default 0, primary key (slug, day));
+create table if not exists aoc_settings (id int primary key default 1 check (id = 1), goal int not null default 300, content jsonb not null default '{}');
+insert into aoc_settings (id) values (1) on conflict do nothing;
+create table if not exists aoc_listeners (id serial primary key, token text not null unique, name text not null, ip_hash text, progress jsonb not null default '{}',
+  feedback text, feedback_at timestamptz, created_at timestamptz not null default now(), last_seen timestamptz not null default now());
+alter table aoc_settings add column if not exists close_when_full boolean not null default true;   -- the flyer says "300 slots only · then it closes"

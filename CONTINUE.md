@@ -119,6 +119,14 @@ Last updated: 24 October 2026.
   outro), titled "N Secret Websites You Should Know (Vol. V)"; the factory renders 1920×1080 (`src/Long.jsx`) and
   sends chapter times back; the YouTube description gets chapters. A long upload can go out on the same day as a Short.
 
+- **Freebie funnel (Anatomy of Creation)**: `olexweb.com/me` redirects to his WhatsApp with an editable message
+  (admin → Course & links; taps counted). People message him, save his number (he verifies), then he sends
+  `olexweb.com/aoc`: name + "After listening, I'll share what I learned" tick, then every recording with play and
+  download (nothing locked, by his choice), plus the Creation Map and "What did you learn?". Admin shows joined
+  "x of 300", what each person played, downloaded or finished, their feedback, CSV export, editable content.
+  Animated landing page (approved from a recorded preview): live hero rebuilt from the flyer (letters rise, OF draws, CREATION slides green, floating headphones, swaying bulb that lights up after joining, tilt/parallax), Olexweb header ("View full website") and footer, waveform player (real waveforms in lib/site/aoc-waves.js; no live audio analysis so iPhones keep playing with the screen locked; lock-screen controls). Measured on a 4× slowed phone: 60 fps opening and scrolling, 0 frames over 50 ms, CLS 0, LCP 0.76 s, 411 KB (tests/youtube/perf.mjs). Main button: the full course as one MP3; "Or part by part" below. Styled after his flyer (AOC-Flyer-Final.png; the landing card is the hero). Audio (AAC 64k, levelled, from transcripts: Part 1 = lessons 00+01, Parts 2–4 = 02, 03, 04): `public/aoc/anatomy-of-creation-part-1..4.m4a` + `anatomy-of-creation-full-course.m4a`. "Close when the slots are full" switch (default on, as the flyer promises). (from his WhatsApp recordings, levelled to −16 LUFS, 96k MP3). The count shows only in the admin. Files: `lib/site/aoc.js`, `app/me`, `app/aoc`, `components/AocCourse.jsx`,
+  `components/admin/AdminAoc.jsx`. The site anthem is silenced on /aoc.
+
 ## 7. Next steps, in order
 
 1. **Wait for Google's audit reply** (olexweb01@gmail.com); answer any questions with help. Shot list and answers: `AUDIT.md`.

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <radialGradient id="glass" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#e9ece6"/><stop offset=".8" stop-color="#c9cfc4"/><stop offset="1" stop-color="#aeb6a8"/></radialGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="50%"><stop offset="0" stop-color="#d9ff9e" stop-opacity=".95"/><stop offset=".6" stop-color="#8fe36a" stop-opacity=".35"/><stop offset="1" stop-color="#8fe36a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="coil" x1="0" x2="1"><stop offset="0" stop-color="#2e6b14"/><stop offset=".35" stop-color="#8fe36a"/><stop offset=".6" stop-color="#5fb534"/><stop offset="1" stop-color="#245a0f"/></linearGradient>
+    <linearGradient id="tip" x1="0" x2="1"><stop offset="0" stop-color="#0d0f0b"/><stop offset=".5" stop-color="#3a3f36"/><stop offset="1" stop-color="#0d0f0b"/></linearGradient>
+  </defs>
+  <circle class="halo" cx="100" cy="100" r="96" fill="url(#glow)" opacity="0"/>
+  <path d="M100 18c-45 0-78 34-78 76 0 30 16 50 32 66 8 8 12 18 12 30v14h68v-14c0-12 4-22 12-30 16-16 32-36 32-66 0-42-33-76-78-76z" fill="url(#glass)" stroke="#9aa392" stroke-width="2"/>
+  <path class="filament" d="M80 172v-38c0-10 8-14 12-6l8 16 8-16c4-8 12-4 12 6v38" fill="none" stroke="#8a9284" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="72" cy="62" rx="18" ry="26" fill="#fff" opacity=".75" transform="rotate(-25 72 62)"/>
+  <circle cx="66" cy="96" r="5" fill="#fff" opacity=".6"/>
+  <g>
+    <rect x="62" y="204" width="76" height="16" rx="8" fill="url(#coil)"/>
+    <rect x="64" y="222" width="72" height="16" rx="8" fill="url(#coil)"/>
+    <rect x="66" y="240" width="68" height="16" rx="8" fill="url(#coil)"/>
+    <path d="M70 258h60l-8 18c-3 6-8 9-14 9h-16c-6 0-11-3-14-9z" fill="url(#tip)"/>
+  </g>
+</svg>
