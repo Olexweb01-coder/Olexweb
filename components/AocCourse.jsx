@@ -12,7 +12,14 @@ async function api(body) {
   const r = await fetch('/api/aoc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Something went wrong. Try again.'); return j
 }
-const playing = { el: null }                                            // one recording plays at a time
+const playing = { el: null }
+// the slots message for each stage (the count itself is never shown here)
+const SLOTS = {
+  open: (g) => ({ strong: `Only ${g} slots.`, rest: 'Get in before it closes.' }),
+  few: () => ({ strong: 'Join fast.', rest: 'Few spaces left.' }),
+  bonus: () => ({ strong: 'Bonus spots opened.', rest: 'Join while it’s open.' }),
+  closed: () => ({ strong: 'Sign-ups are closed for now.', rest: 'Message Olaitan to hear about the next one.' }),
+}                                            // one recording plays at a time
 const Mark = () => <span className="mk" aria-hidden="true"><span><b style={{ height: '40%' }} /><b style={{ height: '100%' }} /><b style={{ height: '65%' }} /><b style={{ height: '85%' }} /></span></span>
 
 function Player({ src, title, wave, onEvent }) {
@@ -59,6 +66,7 @@ export default function AocCourse({ data }) {
   const [name, setName] = useState(''), [tick, setTick] = useState(false), [busy, setBusy] = useState(false), [err, setErr] = useState('')
   const [fb, setFb] = useState(''), [sent, setSent] = useState(false), [fbErr, setFbErr] = useState(''), [partsOpen, setPartsOpen] = useState(false)
   const total = c.full && c.full.wave ? mins(c.full.wave.seconds) : 37
+  const stage = data.stage || 'open', slot = (SLOTS[stage] || SLOTS.open)(data.goal), closed = stage === 'closed'
 
   useEffect(() => {
     try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.token) setMe(s) } catch {}
@@ -108,8 +116,8 @@ export default function AocCourse({ data }) {
           {fbErr ? <p role="alert" className="err">{fbErr}</p> : null}
           <button type="submit" className="btn">Send</button></>}
       </form>
-    </div>) : data.closed ? (<div className="card acard">
-      <span className="eyebrow"><i />Slots</span><h3>All {data.goal} slots have been taken.</h3>
+    </div>) : closed ? (<div className="card acard">
+      <span className="eyebrow"><i />Sign-ups</span><h3>Sign-ups are closed for now.</h3>
       <p className="small left">Message Olaitan to hear first about the next free resource.</p>
       <a className="btn g wide" href="/me">Message Olaitan on WhatsApp</a>
     </div>) : (<form className="card acard" onSubmit={enter} aria-label="Get free access">
@@ -117,6 +125,7 @@ export default function AocCourse({ data }) {
       <label className="f">Your name<input type="text" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={60} autoComplete="name" placeholder="e.g. Ada Okafor" /></label>
       <label className="tick"><input type="checkbox" checked={tick} onChange={(e) => setTick(e.target.checked)} required /><span className="b" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5" /></svg></span>After listening, I’ll share what I learned.</label>
       {err ? <p role="alert" className="err">{err}</p> : null}
+      {stage !== 'open' ? <p className={'urgent ' + stage}>{slot.strong} {slot.rest}</p> : null}
       <button type="submit" className="btn g wide" disabled={busy}>{busy ? 'Opening…' : 'Get access'}</button>
     </form>)
 
@@ -125,31 +134,35 @@ export default function AocCourse({ data }) {
     <header className="nav"><div className="wrap">
       <a className="brand" href="#top"><Mark />Anatomy of Creation</a>
       <nav className="links" aria-label="On this page"><a href="#get">What you’ll get</a><a href="#for">Who it’s for</a><a href="#about">About</a><a href="/">Main website ↗</a></nav>
-      <a className="btn" href="#access">{me ? 'Your course' : 'Get access'}</a>
+      <a className="btn" href="#access">{me ? 'Your course' : closed ? 'Next one' : 'Get access'}</a>
     </div></header>
 
     <main>
       <section className="hero"><div className="wrap">
-        <div>
-          <span className="eyebrow"><i />Free audio course · by Olaitan Adebayo</span>
-          <h1 className="title disp" aria-label={c.title}><span aria-hidden="true">ANATOMY</span><span aria-hidden="true"><span className="of">OF</span> <em>CREATION</em></span></h1>
-          <p className="lead"><b>{c.tagline} {c.taglineBold}</b></p>
-          <p className="sub2">{c.parts.length} short audios that show why some people create while others only watch, and how to step into creation yourself.</p>
-          <div className="proof"><span>🎧 100% free</span><span>⏱ {total} minutes</span><span>📱 Listen on your phone</span></div>
-          <div className="row"><a className="btn g" href="#access">{me ? 'Go to your course' : 'Get free access'}</a><a className="ghost" href="#get">What you’ll get ↓</a></div>
-          <p className="slots"><b>Only {data.goal} slots.</b> When it’s full, it closes.</p>
+        <h1 className="sr">{c.title}: {c.tagline} {c.taglineBold}</h1>
+        <div className="herogrid">
+          <picture className="card-img">
+            <source media="(min-width: 700px)" srcSet="/aoc/card-1600.webp" />
+            <img src="/aoc/card-900.webp" width="1600" height="840" alt="Anatomy of Creation, a free audio in 4 short parts by Olaitan Adebayo, creative ideator. 100% free, full access, no payment." fetchPriority="high" />
+          </picture>
+          <div className="hero-text">
+            <p className="lead">{c.tagline} <b>{c.taglineBold}</b></p>
+            <p className="sub2"><b>{c.title}</b> is a free audio in {c.parts.length} short parts that answers that question, and shows you how to step into creation yourself.</p>
+            <div className="proof"><span>🎧 100% free · no payment</span><span>⏱ {total} minutes</span><span>📱 Listen on your phone</span></div>
+          </div>
+          <div className="cta-box">
+            <p className="ctah">{me ? 'Your course is ready.' : closed ? 'Sign-ups are paused.' : 'Free access, today.'}</p>
+            <a className="btn g wide0" href="#access">{me ? 'Go to your course' : closed ? 'Hear about the next one' : 'Get free access'}</a>
+            <p className={'slots ' + stage}><b>{slot.strong}</b> {slot.rest}</p>
+            <a className="ghost" href="#get">What you’ll get ↓</a>
+          </div>
         </div>
-        <div className="photo"><img src="/aoc/photo.webp" alt="Olaitan Adebayo" width="1220" height="995" fetchPriority="high" /><div className="tag"><b>Olaitan Adebayo</b><span>CREATIVE IDEATOR</span></div></div>
-      </div></section>
-
-      <section className="look rv"><div className="wrap">
-        <p className="disp">Look around you.</p>
-        <p className="body">Everything you see was made by someone. Someone <b>noticed, thought, built,</b> and put it into the world.</p>
       </div></section>
 
       <section className="q"><div className="wrap rv">
-        <p className="disp">So why do some people <em>create</em>, while others only watch?</p>
-        <p className="after"><b>{c.title}</b> is a free audio in {c.parts.length} short parts that answers that question, and shows you how to step into creation yourself.</p>
+        <p className="disp">Look around <em>you.</em></p>
+        <p className="after">Everything you see was made by someone. Someone <b>noticed, thought, built,</b> and put it into the world.</p>
+        <p className="after">So why do some create, while others only watch? <b>{c.title}</b> answers that, and shows you how to step into creation yourself.</p>
       </div></section>
 
       <section className="s"><div className="wrap rv">
@@ -160,7 +173,7 @@ export default function AocCourse({ data }) {
 
       <section className="s" id="get" style={{ paddingTop: 0 }}><div className="wrap">
         <div className="rv"><span className="eyebrow"><i />What you’ll get</span><h2 className="disp">What you’ll walk away with</h2></div>
-        <ul className="gets">{(c.learn || []).map((t, i) => <li key={t} className="rv"><span className="n">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3></li>)}</ul>
+        <ul className="gets">{(c.learn || []).map((t, i) => <li key={t} className="rv"><span className="n">{String(i).padStart(2, '0')}</span><h3>{t}</h3></li>)}</ul>
       </div></section>
 
       <section className="s for" id="for"><div className="wrap rv">
@@ -171,17 +184,17 @@ export default function AocCourse({ data }) {
 
       <section className="s access" id="access"><div className="wrap">
         <div><span className="eyebrow"><i />Get access</span><h2 className="disp">Free. On your phone.</h2>
-          <div className="facts"><div><span className="e">🎧</span>100% free. Listen on your phone.</div><div><span className="e">⏳</span>Only {data.goal} slots. When it’s full, it closes.</div><div><span className="e">⬇</span>Download once, listen offline.</div></div></div>
+          <div className="facts"><div><span className="e">🎧</span>100% free. No payment. Listen on your phone.</div><div className={'stage ' + stage}><span className="e">⏳</span><span><b>{slot.strong}</b> {slot.rest}</span></div><div><span className="e">⬇</span>Download once, listen offline.</div></div></div>
         {accessCard}
       </div></section>
 
       <section className="s about" id="about" style={{ paddingTop: 0 }}><div className="wrap rv">
-        <div className="av"><img src="/aoc/photo.webp" alt="" width="1220" height="995" loading="lazy" /></div>
+        <div className="av"><img src="/aoc/avatar.webp" alt="" width="360" height="360" loading="lazy" /></div>
         <div><span className="eyebrow"><i />From Olaitan</span><h2 className="disp">Hi, I’m Olaitan Adebayo.</h2>
           <p>A creative ideator, builder and web developer. I read widely, think slowly and ship quickly. I made this audio for anyone who’s tired of only watching, and ready to make something real.</p></div>
       </div></section>
 
-      <section className="final"><div className="wrap rv"><p className="disp">Stop only watching. <em>Start creating.</em></p><a className="btn g" href="#access">{me ? 'Go to your course' : 'Get free access'}</a></div></section>
+      <section className="final"><div className="wrap rv"><p className="disp">Stop only watching. <em>Start creating.</em></p>{!me && !closed && stage !== 'open' ? <p className="fstage">{slot.strong} {slot.rest}</p> : null}<a className="btn g" href="#access">{me ? 'Go to your course' : closed ? 'Hear about the next one' : 'Get free access'}</a></div></section>
     </main>
 
     <footer className="foot"><div className="wrap">
@@ -210,22 +223,25 @@ html{scroll-behavior:smooth}html,body{background:#F1F3EE!important;color-scheme:
 .aoc .links{display:flex;gap:22px;margin-left:auto;font-weight:700;font-size:15px;color:var(--dim)}.aoc .links a{text-decoration:none}.aoc .links a:hover{color:var(--ink)}
 .aoc .nav .btn{padding:11px 18px;font-size:14px;white-space:nowrap}.aoc .brand{white-space:nowrap}@media(max-width:860px){.aoc .links{display:none}.aoc .nav .btn{margin-left:auto}}
 @media(max-width:420px){.aoc .nav .wrap{gap:12px}.aoc .brand{font-size:15px;gap:8px}.aoc .mk{width:26px;height:26px}.aoc .nav .btn{padding:10px 14px;font-size:13.5px}}
-/* hero */
-.aoc .hero{padding:clamp(28px,6vw,44px) 0 clamp(36px,6vw,70px)}.aoc .hero .wrap{display:grid;gap:30px;align-items:center}
-.aoc .title{font-size:clamp(58px,15.5vw,96px);margin:14px 0 0;line-height:.86}.aoc .title>span{display:block}.aoc .title em{font-style:normal;color:var(--green)}.aoc .title .of{color:transparent;-webkit-text-stroke:2px var(--ink)}
-.aoc .lead{font-size:clamp(20px,2.5vw,26px);line-height:1.3;max-width:28ch;margin:20px 0 0}.aoc .sub2{font-size:clamp(16px,1.9vw,18px);color:var(--dim);max-width:44ch;margin:12px 0 0}
-.aoc .proof{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.aoc .proof span{padding:9px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);font-weight:700;font-size:14.5px}
-.aoc .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:26px}.aoc .ghost{font-weight:800;text-decoration:none;color:var(--deep);padding:12px 6px}
-.aoc .slots{margin:16px 0 0;font-size:15px;color:var(--dim)}.aoc .slots b{color:var(--ink)}
-.aoc .photo{position:relative;justify-self:center;width:min(100%,420px);aspect-ratio:1/1.05;border-radius:32px;background:radial-gradient(closest-side at 55% 55%,#bfe3a5,#dfeed4 70%,#e9f1e2);overflow:hidden}
-.aoc .photo img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:108%;height:auto}
-.aoc .photo .tag{position:absolute;left:16px;bottom:16px;padding:12px 16px;border-radius:16px;background:#fff;box-shadow:0 14px 30px -18px rgba(18,21,16,.45)}.aoc .photo .tag b{display:block;font-size:17px}.aoc .photo .tag span{font-size:12.5px;font-weight:800;letter-spacing:.16em;color:var(--deep)}
-@media(min-width:900px){.aoc .hero .wrap{grid-template-columns:1.3fr .7fr}.aoc .title{font-size:clamp(76px,7.4vw,106px);white-space:nowrap}.aoc .photo{width:min(100%,400px)}}
-@media(max-width:520px){.aoc .hero .eyebrow{font-size:11px;letter-spacing:.14em}}
+/* hero: the landing card, then the opening */
+.aoc .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.aoc .hero{padding:clamp(16px,3vw,28px) 0 clamp(36px,6vw,64px)}
+.aoc .card-img{display:block}.aoc .card-img img{display:block;width:100%;height:auto;border-radius:clamp(18px,2.6vw,30px);border:1px solid rgba(255,255,255,.9);box-shadow:0 30px 60px -38px rgba(18,21,16,.5);background:#e9efe3}
+.aoc .herogrid{display:grid;gap:clamp(20px,3vw,28px);grid-template-areas:"card" "text" "cta"}
+.aoc .card-img{grid-area:card}.aoc .hero-text{grid-area:text}.aoc .cta-box{grid-area:cta}
+@media(min-width:900px){.aoc .herogrid{grid-template-columns:minmax(0,1.6fr) minmax(280px,.72fr);grid-template-areas:"card cta" "text text";align-items:center;column-gap:28px}.aoc .hero-text{display:grid;grid-template-columns:1.1fr .9fr;gap:8px 40px;align-items:end}.aoc .hero-text .proof{grid-column:1/-1}.aoc .hero-text .sub2{margin:0}}
+.aoc .ctah{font-family:var(--font-hubot),system-ui;font-stretch:78%;font-weight:900;font-size:clamp(26px,2.6vw,32px);line-height:1;text-align:center}
+.aoc .lead{font-family:var(--font-hubot),system-ui;font-stretch:78%;font-weight:900;font-size:clamp(32px,5vw,52px);line-height:1;letter-spacing:-.01em}.aoc .lead b{color:var(--green);font-weight:900}
+.aoc .sub2{font-size:clamp(16px,1.9vw,19px);color:var(--dim);max-width:52ch;margin:14px 0 0}.aoc .sub2 b{color:var(--ink)}
+.aoc .proof{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.aoc .proof span{padding:9px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);font-weight:700;font-size:14.5px}
+.aoc .cta-box{display:grid;gap:12px;padding:clamp(18px,3vw,24px);border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:0 24px 50px -36px rgba(18,21,16,.45)}
+.aoc .wide0{width:100%;padding:18px}.aoc .ghost{justify-self:center;font-weight:800;text-decoration:none;color:var(--deep);padding:4px 6px}
+.aoc .slots{text-align:center;font-size:15.5px;color:var(--dim)}.aoc .slots b{color:var(--ink)}
+.aoc .slots.few b,.aoc .slots.bonus b{color:#B54708}.aoc .urgent{margin-top:16px;padding:12px 14px;border-radius:14px;background:#FFF4E5;color:#7A3E00;font-weight:700;font-size:15px}
+.aoc .facts .stage.few,.aoc .facts .stage.bonus{background:#FFF8EE;border-color:#F7D9AE}.aoc .fstage{margin-top:18px;color:#FFD08A;font-weight:700;font-size:17px}
 /* story */
-.aoc .look{padding:clamp(56px,8vw,96px) 0 0}.aoc .look p.disp{font-size:clamp(48px,8vw,96px)}.aoc .look .body{font-size:clamp(19px,2.4vw,24px);max-width:34ch;margin:16px 0 0;color:#2b3027}.aoc .look .body b{color:var(--ink)}
-.aoc .q{margin-top:clamp(44px,6vw,70px);background:var(--ink);color:#fff;padding:clamp(56px,9vw,110px) 0}.aoc .q p.disp{font-size:clamp(40px,7vw,84px);max-width:16ch}.aoc .q em{font-style:normal;color:var(--green)}
-.aoc .q .after{margin-top:26px;max-width:46ch;font-size:clamp(17px,2.2vw,20px);color:rgba(255,255,255,.78)}.aoc .q .after b{color:#fff}
+.aoc .q{background:var(--ink);color:#fff;padding:clamp(56px,9vw,110px) 0}.aoc .q p.disp{font-size:clamp(40px,7vw,84px);max-width:16ch}.aoc .q em{font-style:normal;color:var(--green)}
+.aoc .q .after{margin-top:22px;max-width:46ch;font-size:clamp(17px,2.2vw,20px);color:rgba(255,255,255,.78)}.aoc .q .after b{color:#fff}
 .aoc section.s{padding:clamp(56px,8vw,96px) 0}.aoc .s h2{font-size:clamp(40px,6vw,64px);margin:14px 0 0}.aoc .s .intro{font-size:18px;color:var(--dim);max-width:52ch;margin:14px 0 0}
 .aoc .parts{display:grid;gap:12px;margin-top:30px;grid-template-columns:repeat(2,1fr)}@media(min-width:760px){.aoc .parts{grid-template-columns:repeat(4,1fr)}}
 .aoc .parts div{padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line)}.aoc .parts b{display:block;font-family:var(--font-hubot),system-ui;font-stretch:78%;font-weight:900;font-size:30px}.aoc .parts span{font-size:14px;color:var(--dim)}

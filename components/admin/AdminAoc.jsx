@@ -13,7 +13,7 @@ const when = (d) => new Date(d).toLocaleString('en-GB', { day: 'numeric', month:
 export default function AdminAoc({ data }) {
   const router = useRouter(), [busy, setBusy] = useState(''), [err, setErr] = useState('')
   const [phone, setPhone] = useState(data.link ? data.link.phone : ''), [msg, setMsg] = useState(data.link ? data.link.message : '')
-  const [c, setC] = useState({ ...data.content, goal: data.goal, close: data.close, learn: (data.content.learn || []).join('\n') }), [show, setShow] = useState(null)
+  const [c, setC] = useState({ ...data.content, goal: data.goal, learn: (data.content.learn || []).join('\n') }), [show, setShow] = useState(null)
   async function call(body, ok) {
     setBusy(body.action); setErr('')
     try {
@@ -57,6 +57,12 @@ export default function AdminAoc({ data }) {
         <div style={{ display: 'flex', gap: 8 }}><button className="btn btn-line" onClick={() => { navigator.clipboard.writeText('https://olexweb.com/aoc'); toast('Course link copied.') }}>Copy course link</button>
           {people.length ? <button className="btn btn-line" onClick={csv}>Export (CSV)</button> : null}</div>
       </div>
+      {(() => { const n = people.length, st = !data.accepting ? 'closed' : n >= data.goal ? 'bonus' : n >= data.fewFrom ? 'few' : 'open'
+        const say = { open: `“Only ${data.goal} slots. Get in before it closes.”`, few: '“Join fast. Few spaces left.”', bonus: '“Bonus spots opened. Join while it’s open.”', closed: '“Sign-ups are closed for now.”' }[st]
+        return <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', margin: '14px 0 0', padding: 14, borderRadius: 16, border: '1px solid var(--line)', background: st === 'closed' ? 'rgba(255,120,120,.08)' : st === 'open' ? 'transparent' : 'rgba(255,190,90,.08)' }}>
+          <span style={{ fontSize: 14.5 }}>Visitors see: <b>{say}</b></span>
+          <button className={data.accepting ? 'btn btn-line' : 'btn btn-green'} style={{ marginLeft: 'auto' }} disabled={!!busy} onClick={() => { if (!data.accepting || window.confirm('Close sign-ups? New visitors will see “Sign-ups are closed for now”. People who joined keep their access.')) call({ action: 'accepting', on: !data.accepting }, data.accepting ? 'Sign-ups closed.' : 'Sign-ups reopened.') }}>{busy === 'accepting' ? 'Saving…' : data.accepting ? 'Close sign-ups' : 'Reopen sign-ups'}</button>
+        </div> })()}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, margin: '14px 0' }}>
         {[['Joined', `${people.length} of ${data.goal}`], ['Finished all', finished], ['Shared what they learned', people.filter((p) => p.feedback).length]].map(([k, v]) => <div key={k} style={{ padding: 14, borderRadius: 16, border: '1px solid var(--line)' }}><div style={{ fontSize: 13, ...dim }}>{k}</div><b className="d" style={{ fontSize: 28 }}>{v}</b></div>)}
       </div>
@@ -82,7 +88,7 @@ export default function AdminAoc({ data }) {
         <label style={{ display: 'grid', gap: 6, fontSize: 14 }}>What you’ll get (one per line; numbered 00, 01… on the page)<textarea className="input" rows={5} value={c.learn} onChange={(e) => setC({ ...c, learn: e.target.value })} /></label>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 14, maxWidth: 200 }}>Slots<input className="input" type="number" min={1} value={c.goal} onChange={(e) => setC({ ...c, goal: e.target.value })} /></label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><input type="checkbox" checked={c.close !== false} onChange={(e) => setC({ ...c, close: e.target.checked })} style={{ width: 18, height: 18, accentColor: 'var(--green)' }} />Close when the slots are full (the flyer says “then it closes”)</label>
+          <span style={{ fontSize: 13.5, ...dim }}>“Few spaces left” shows from {Math.max(1, Math.round((Number(c.goal) || 100) * 0.6))} joins; “Bonus spots opened” after {Number(c.goal) || 100}. It never closes by itself.</span>
         </div>
         <b style={{ fontSize: 14, marginTop: 6 }}>Recordings, in order</b>
         {parts.map((p, i) => <div key={i} style={{ display: 'grid', gap: 8, padding: 12, borderRadius: 14, border: '1px solid var(--line)' }}>

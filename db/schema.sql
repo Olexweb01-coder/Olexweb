@@ -417,3 +417,7 @@ insert into aoc_settings (id) values (1) on conflict do nothing;
 create table if not exists aoc_listeners (id serial primary key, token text not null unique, name text not null, ip_hash text, progress jsonb not null default '{}',
   feedback text, feedback_at timestamptz, created_at timestamptz not null default now(), last_seen timestamptz not null default now());
 alter table aoc_settings add column if not exists close_when_full boolean not null default true;   -- the flyer says "300 slots only · then it closes"
+-- the new flyer (100 slots, never closes by itself; "few spaces left" from 60; bonus spots after 100; closed only by hand)
+alter table aoc_settings add column if not exists accepting boolean not null default true;
+alter table aoc_settings add column if not exists flyer_version int not null default 0;
+update aoc_settings set goal = 100, close_when_full = false, accepting = true, content = '{}', flyer_version = 3 where id = 1 and flyer_version < 3;   -- once only
