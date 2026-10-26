@@ -7,12 +7,18 @@ import YouTube from '@/components/admin/YouTube'
 import YouTubeIdeas, { YouTubeTabs } from '@/components/admin/YouTubeIdeas'
 import YouTubeScripts from '@/components/admin/YouTubeScripts'
 import YouTubeVideos from '@/components/admin/YouTubeVideos'
+import YouTubeProgress from '@/components/admin/YouTubeProgress'
+import { progressPage } from '@/lib/site/progress'
 import { videosData } from '@/lib/site/publish'
 export const metadata = { title: 'YouTube' }
 export const dynamic = 'force-dynamic'
 export default async function YouTubePage({ searchParams }) {
   const u = await requireUser(); if (!ownerOnly(u)) redirect('/admin/more')
   const sp = searchParams || {}
+  if (sp.view === 'progress') {
+    const data = await progressPage()
+    return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="progress" /><YouTubeProgress data={JSON.parse(JSON.stringify(data))} /></>)
+  }
   if (sp.view === 'videos') {
     const data = await videosData()
     return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="videos" /><YouTubeVideos data={JSON.parse(JSON.stringify(data))} /></>)

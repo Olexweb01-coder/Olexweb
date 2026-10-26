@@ -188,3 +188,10 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Status: checkUploads() asks YouTube (videos.list part=status) for Private/Public of recent uploads; on opening Videos
   (at most every 10 min) and "Check status". Cards: "Posted to YouTube · date, time · Private/Public (checked x ago)".
 - Tests: fT.mjs (research, status, Disconnect clean-up). Stand-in Google: niche search, countries, /_privacy.
+- Progress tab (built): lib/site/progress.js progressPage() + components/admin/YouTubeProgress.jsx: Needs you (failed with
+  reason + Try again = send-to-factory; needs_review → Scripts; silent factory job >6 min → Needs you) · In progress
+  (factory with stages/eta, ideas/script/upload jobs) · Finished (last 24 h). Auto-refresh every 4 s while running.
+- Course & links redesigned (components/admin/AdminAoc.jsx): sections Overview · People · Feedback · WhatsApp link ·
+  Course settings; header with live status, View the page, Close/Reopen sign-ups. Same API actions as before.
+- Next ideas: Instagram Reels + Facebook Reels publishing from the same queue (Meta app, own Business account, no app
+  review needed for own account; IG limit 100 API posts/24 h). TikTok needs an audit (private-only until then).
