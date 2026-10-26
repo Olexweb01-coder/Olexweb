@@ -195,3 +195,16 @@ content. Add it after the audit is approved, since the audit describes one chann
   Course settings; header with live status, View the page, Close/Reopen sign-ups. Same API actions as before.
 - Next ideas: Instagram Reels + Facebook Reels publishing from the same queue (Meta app, own Business account, no app
   review needed for own account; IG limit 100 API posts/24 h). TikTok needs an audit (private-only until then).
+
+## Pages & links: Install 1 (built)
+- lib/site/pages.js (pages, sign-ups with AOC-style stages, short links to WhatsApp or any https URL, AI draft/suggest that never
+  invents facts), app/[slug]/page.js (catch-all, cached per page: generateStaticParams []), components/PageView.jsx (webinar,
+  event = dark opening + flipping date card, audio course), components/LinkHop.jsx, admin: /admin/pages (AdminPages.jsx),
+  /admin/pages/[id] (PageEditor.jsx: Edit · Overview · People · Feedback · Settings, live phone preview).
+- Nav "Course & links" → "Pages & links"; AOC stays at /admin/aoc and /aoc (its own tables), shown as the first card.
+- Community link is only returned after sign-up (never in the public page data). Audio files likewise.
+- Reserved addresses: RESERVED in pages.js (all app routes + public folders); update it when adding new top-level routes.
+- Editor lesson: never define components inside a component (inputs lose focus); helpers are called as functions.
+- Style lesson: `.pv :where(a){color:inherit}` (a plain `.pv a` rule overrode button text colours).
+- Tests: fPG.mjs (40), vPG.mjs (14 on screen, incl. typing focus and readable buttons), pPG.mjs (speed).
+- Install 2 next: uploads straight to the bucket (photos with a 4:5 chest-up cropper, audio) + full-page preview.

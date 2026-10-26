@@ -430,3 +430,14 @@ alter table yt_settings add column if not exists publish_time2 text;   -- a seco
 create table if not exists yt_time_research (id int primary key default 1 check (id = 1), researched_at timestamptz, videos int not null default 0,
   hours jsonb not null default '{}'::jsonb, countries jsonb not null default '[]'::jsonb, terms text);
 alter table yt_settings add column if not exists status_checked_at timestamptz;
+
+-- ---------- Pages & links: pages from templates at any address, sign-ups, short links to any URL ----------
+create table if not exists pages (id serial primary key, slug text not null unique, type text not null check (type in ('webinar', 'event', 'audio')),
+  status text not null default 'draft' check (status in ('draft', 'live')), content jsonb not null default '{}'::jsonb, goal int not null default 100,
+  accepting boolean not null default true, created_at timestamptz not null default now(), updated_at timestamptz not null default now(), published_at timestamptz);
+create table if not exists page_signups (id serial primary key, page_id int not null references pages(id) on delete cascade, token text not null unique,
+  name text not null, ip_hash text, progress jsonb not null default '{}'::jsonb, feedback text, feedback_at timestamptz,
+  created_at timestamptz not null default now(), last_seen timestamptz not null default now());
+create index if not exists page_signups_page on page_signups (page_id, created_at);
+alter table site_links add column if not exists url text;            -- a short link to any website (phone stays for WhatsApp links)
+alter table site_links alter column phone drop not null;
