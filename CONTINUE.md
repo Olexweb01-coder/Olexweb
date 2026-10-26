@@ -208,3 +208,8 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Style lesson: `.pv :where(a){color:inherit}` (a plain `.pv a` rule overrode button text colours).
 - Tests: fPG.mjs (40), vPG.mjs (14 on screen, incl. typing focus and readable buttons), pPG.mjs (speed).
 - Install 2 next: uploads straight to the bucket (photos with a 4:5 chest-up cropper, audio) + full-page preview.
+- Install 2 (built): audio uploads in 3 MB pieces through /admin/api/pages/upload (lib/site/pagefiles.js, bucket keys aud/<id>/<n>,
+  table page_files), streamed at /media/a/<id>.<ext> (Range: one piece per answer; no Range: whole file streamed in order).
+  Photos: components/admin/Uploaders.jsx PhotoUpload crops in the browser (4:5 chest-up guide; 1.91 for link previews) and posts
+  to the existing /admin/api/upload (WebP, /media/img/...). Full preview: /admin/pages/[id]/preview (saves first).
+  Housekeeping helper dropUnfinished() exists for half-uploaded files (not yet scheduled). Tests: fUP.mjs (14).

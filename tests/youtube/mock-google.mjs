@@ -21,6 +21,7 @@ http.createServer(async (req, res) => {
   log.push(req.method + ' ' + u.pathname)
   if (u.pathname === '/_state') return send(res, 200, { ...S, issued: [...S.issued], log })
   if (u.pathname === '/_set') { for (const [k, v] of p) S[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v; return send(res, 200, { ok: true }) }
+  if (u.pathname === '/_privacy') { S.privacy = S.privacy || {}; S.privacy[p.get('id')] = p.get('p'); return send(res, 200, { ok: true }) }
   if (u.pathname === '/auth') {                       // the consent screen: approve straight away
     const code = 'code-' + Math.random().toString(36).slice(2)
     S.codes[code] = { redirect: p.get('redirect_uri'), challenge: p.get('code_challenge'), scope: p.get('scope') }
@@ -83,6 +84,13 @@ http.createServer(async (req, res) => {
     let raw = ''; for await (const ch of req) raw += ch
     const b = JSON.parse(raw), prompt = b.contents[0].parts[0].text
     S.aiCalls = (S.aiCalls || 0) + 1
+    if (prompt.includes('Draft the landing page')) {          // Pages & links: a draft that keeps facts from the notes only
+      const given = /14 Nov/.test(prompt), out = { title: 'Build With AI', kicker: 'Free webinar', tagline: 'Watch an idea become a live website in one hour.', intro: 'A practical session.', learnTitle: 'What you’ll see',
+        learn: ['Planning with AI', 'Building live', 'Publishing it', 'Your questions'], whoFor: 'Students and freelancers.', cta: 'Save my seat', preview: 'A free live session.', hostBio: 'Olaitan builds with AI.',
+        faq: [{ q: 'Is it free?', a: 'Yes.' }], when: given ? '2026-11-14T19:00' : '', minutes: given ? 60 : 0, platform: given ? 'Google Meet' : '[add the platform]', venue: '', address: '' }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (prompt.includes('Suggest 3 different options')) return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ options: ['Option one', 'Option two', 'Option three'] }) }] } }] })
     if (S.aiDelay) await new Promise((r) => setTimeout(r, S.aiDelay))
     if (S.aiDown) return send(res, 503, { error: { message: 'high demand' } })
     let out
@@ -170,6 +178,7 @@ http.createServer(async (req, res) => {
   }
   if (u.pathname.startsWith('/upload/session/') && req.method === 'PUT') {
     const ss = S.sessions[Number(u.pathname.split('/').pop())]; const chunks = []; for await (const c of req) chunks.push(c)
+    if (!ss) return send(res, 404, { error: { message: 'upload session not found' } })   // like YouTube: an unknown or expired session
     const cr = req.headers['content-range'] || '', range = () => (ss.len ? { Range: 'bytes=0-' + (ss.len - 1) } : {})
     if (/^bytes \*\//.test(cr)) { res.writeHead(308, range()); return res.end() }
     const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(cr); if (!m || Number(m[1]) !== ss.len) return send(res, 400, { error: { message: 'bad range ' + cr + ' at ' + ss.len } })
@@ -182,11 +191,17 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/youtube/v3/search') {
     S.searches = (S.searches || 0) + 1
     const qn = (p.get('q') || '').toLowerCase()
+    if (p.get('videoDuration') === 'short' && p.get('order') === 'viewCount') { S.niche = (S.niche || 0) + 1   // best-time research: 10 niche Shorts per term
+      return send(res, 200, { items: Array.from({ length: 10 }, (_, i) => ({ id: { videoId: 'nc' + S.niche + '_' + i }, snippet: { channelId: 'otherchan', title: 'Niche ' + i } })) }) }
     const items = /squoosh/.test(qn) ? ['sq1', 'sq2', 'sq3', 'sq4'].map((id) => ({ id: { videoId: id }, snippet: { title: 'Squoosh is amazing ' + id, description: '' } })) : []
     return send(res, 200, { items })
   }
   if (u.pathname === '/youtube/v3/videos') {
     const ids = p.get('id').split(',')
+    if (ids[0].startsWith('nc')) { const H = [18, 18, 18, 11, 11, 6, 6, 20, 20, 13], V = { 18: 50000, 20: 20000, 11: 8000, 13: 6000, 6: 1500 }
+      return send(res, 200, { items: ids.map((id) => { const i = Number(id.split('_')[1]), age = 2 + (i % 5), at = new Date(Date.now() - age * 86400e3); at.setUTCHours(H[i], 5, 0, 0)
+        const realAge = (Date.now() - at.getTime()) / 86400e3; return { id, snippet: { publishedAt: at.toISOString(), channelId: 'otherchan' }, statistics: { viewCount: String(Math.round(V[H[i]] * Math.max(1, realAge))) } } }) }) }
+    if (p.get('part') === 'status,statistics') return send(res, 200, { items: ids.map((id) => ({ id, status: { privacyStatus: (S.privacy || {})[id] || 'private' }, statistics: { viewCount: '12' } })) })
     if (ids[0].startsWith('sq')) return send(res, 200, { items: ids.map((id, i) => ({ id, snippet: { title: 'Squoosh is amazing', channelTitle: 'BigTech' }, statistics: { viewCount: String([900000, 120000, 70000, 3000][i] || 10) } })) })
     return send(res, 200, { items: VIDS.filter((v) => ids.includes(v[0])).map((v) => ({ id: v[0], snippet: { title: v[1], publishedAt: v[4], thumbnails: { medium: { url: `https://i.ytimg.com/vi/${v[0]}/mqdefault.jpg` } } },
       contentDetails: { duration: v[2] }, statistics: { viewCount: String(v[3]), likeCount: String(Math.round(v[3] / 14)), commentCount: String(Math.round(v[3] / 60)) }, status: { privacyStatus: 'public' } })) })
@@ -198,6 +213,7 @@ http.createServer(async (req, res) => {
       for (let o = 40; o >= 2; o--) { const v = o < 30 && o > 18 ? 40 + ((o * 37) % 70) : 2 + (o % 5); rows.push([day(o), v, v * 0.42, 55 + (o % 9), o % 6 === 0 ? 2 : 0, o % 13 === 0 ? 1 : 0, Math.round(v / 12), o % 4 === 0 ? 1 : 0]) }
       return send(res, 200, { columnHeaders: ['day', ...m].map((name) => ({ name })), rows })
     }
+    if (p.get('dimensions') === 'country') return send(res, 200, { columnHeaders: [{ name: 'country' }, { name: 'views' }], rows: [['NG', 600], ['US', 250], ['GB', 150]] })
     if (p.get('dimensions') === 'video') {
       const m = p.get('metrics').split(',')
       return send(res, 200, { columnHeaders: ['video', ...m].map((name) => ({ name })), rows: VIDS.map((v, i) => [v[0], v[3], v[3] * 0.45, [71, 64, 88, 93, 52, 38][i], i % 3, i === 3 ? 4 : 1]) })

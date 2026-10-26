@@ -138,7 +138,7 @@ export default function PageView({ page, preview = false }) {
       {c.intro ? <section className="pv-sec pv-rv"><p className="pv-intro">{c.intro}</p></section> : null}
       {(c.learn || []).length ? <section className="pv-sec pv-rv"><span className="pv-eb">{type === 'audio' ? 'What you’ll get' : 'What you’ll see'}</span><h2>{c.learnTitle || 'What it covers'}</h2>
         <ol className="pv-learn">{c.learn.map((t, i) => <li key={i}><span className="pv-n">{String(i + 1).padStart(2, '0')}</span><b>{t}</b></li>)}</ol></section> : null}
-      {type === 'audio' && (c.parts || []).length ? <section className="pv-sec pv-rv"><span className="pv-eb">The audio</span><h2>{c.parts.length} short parts.</h2>
+      {type === 'audio' && (c.parts || []).length ? <section className="pv-sec pv-rv"><span className="pv-eb">The audio</span><h2>{c.parts.length} short {c.parts.length === 1 ? "part" : "parts"}.</h2>
         <div className="pv-plist">{c.parts.map((p, i) => <div key={i}><b>{p.title}</b><span>{p.minutes ? p.minutes + ' min' : ''}</span></div>)}</div></section> : null}
       <section className="pv-sec pv-rv" id="pv-join">{joinCard}</section>
       {c.host && c.host.name ? <section className="pv-sec pv-rv"><span className="pv-eb">Your host</span><Person p={c.host} big /></section> : null}

@@ -16,3 +16,5 @@ send $ID2
 node fD2.mjs private
 send $ID2
 node fD2.mjs scheduled
+node fQ.mjs
+node fT.mjs

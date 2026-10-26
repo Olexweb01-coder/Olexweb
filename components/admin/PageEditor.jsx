@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PageView from '../PageView'
 import { toast } from './ui'
+import { AudioUpload, PhotoUpload } from './Uploaders'
 
 const NAME = { audio: 'audio course', webinar: 'webinar', event: 'event' }
 const dim = { color: 'var(--dim)' }
@@ -55,6 +56,7 @@ export default function PageEditor({ data }) {
     <div className="pe-hero"><div><a className="pe-back" href="/admin/pages">← Pages &amp; links</a><h1 className="d" style={{ margin: '4px 0 0' }}>{c.title || 'New ' + NAME[P.type]}</h1>
       <span className={'pe-pill ' + (P.status === 'live' ? stage : 'draft')}><i />{P.status === 'live' ? `Live · visitors see ${sees}` : 'Draft · not public yet'}</span></div>
       <div className="pe-hb">{P.status === 'live' ? <a className="btn btn-line" href={'/' + P.slug} target="_blank" rel="noopener">View the page ↗</a> : null}
+        <button className="btn btn-line" disabled={!!busy} onClick={async () => { const w = window.open('', '_blank'); if (await save(null)) w.location = '/admin/pages/' + P.id + '/preview'; else w.close() }}>Full preview</button>
         <button className="btn btn-line" disabled={!!busy} onClick={() => save()}>{busy === 'save' ? 'Saving…' : dirty ? 'Save draft' : 'Saved'}</button>
         {P.status === 'live' ? <button className="btn btn-line" disabled={!!busy} onClick={async () => { if (window.confirm('Take this page offline? Its address will show “not found” until you publish again.') && await call({ action: 'unpublish' }, 'Page is offline.')) router.refresh() }}>Unpublish</button>
           : <button className="btn btn-green" disabled={!!busy || !slugOk.ok} onClick={async () => { if (!(await save(null))) return; if (await call({ action: 'publish' }, 'Published at olexweb.com/' + slug)) router.refresh() }}>{busy === 'publish' ? 'Publishing…' : 'Publish'}</button>}</div></div>
@@ -78,18 +80,19 @@ export default function PageEditor({ data }) {
       {F({ k: "whoFor", label: "Who it’s for", area: true, ai: true })}{F({ k: "cta", label: "Button text", ai: true, ph: P.type === 'audio' ? 'Get free access' : 'Save my seat' })}
 
       {P.type === 'audio' ? <div className="pe-box"><b>Recordings</b>{(c.parts || []).map((p, i) => <div key={i} className="pe-item"><input className="input" placeholder="Title (e.g. Part 1)" value={p.title || ''} onChange={(e) => setArr('parts', i, { title: e.target.value })} />
-          <input className="input" placeholder="File address (e.g. /aoc/…m4a or a storage link)" value={p.file || ''} onChange={(e) => setArr('parts', i, { file: e.target.value })} /><input className="input" type="number" placeholder="Minutes" value={p.minutes || ''} onChange={(e) => setArr('parts', i, { minutes: e.target.value })} />
+          <div className="pe-file">{p.file ? <span className="pe-ok">✓ {p.file.split('/').pop()}</span> : <span style={dim}>No recording yet</span>}<AudioUpload label={p.file ? 'Replace' : 'Upload the recording'} onDone={(u, m) => setArr('parts', i, { file: u, ...(m ? { minutes: m } : {}) })} /></div>
+          <input className="input" type="number" placeholder="Minutes" value={p.minutes || ''} onChange={(e) => setArr('parts', i, { minutes: e.target.value })} aria-label="Minutes" />
           <button type="button" className="pe-rm" onClick={() => set('parts', c.parts.filter((_, j) => j !== i))}>Remove</button></div>)}
         <button type="button" className="btn btn-line" onClick={() => set('parts', [...(c.parts || []), { title: 'Part ' + ((c.parts || []).length + 1), file: '', minutes: '' }])}>Add a recording</button></div> : null}
 
       <div className="pe-box"><b>Your host</b><div className="pe-two"><input className="input" placeholder="Name" value={(c.host || {}).name || ''} onChange={(e) => set('host', { ...c.host, name: e.target.value })} /><input className="input" placeholder="Role" value={(c.host || {}).role || ''} onChange={(e) => set('host', { ...c.host, role: e.target.value })} /></div>
         <textarea className="input" rows={2} placeholder="One line about you, for this topic" value={(c.host || {}).bio || ''} onChange={(e) => set('host', { ...c.host, bio: e.target.value })} />
-        <input className="input" placeholder="Photo address (chest-up), e.g. /aoc/host.webp" value={(c.host || {}).photo || ''} onChange={(e) => set('host', { ...c.host, photo: e.target.value })} /></div>
+        <div className="pe-photo">{(c.host || {}).photo ? <img src={c.host.photo} alt="" /> : <span>No photo</span>}<PhotoUpload label={(c.host || {}).photo ? 'Change photo' : 'Upload a photo'} onDone={(u) => set('host', { ...c.host, photo: u })} /></div></div>
 
       <div className="pe-box"><b>Speakers <span style={{ fontWeight: 500, ...dim }}>(optional)</span></b>{(c.speakers || []).map((p, i) => <div key={i} className="pe-item">
         <div className="pe-two"><input className="input" placeholder="Name" value={p.name || ''} onChange={(e) => setArr('speakers', i, { name: e.target.value })} /><input className="input" placeholder="Role · company" value={p.role || ''} onChange={(e) => setArr('speakers', i, { role: e.target.value })} /></div>
         <div className="pe-f" style={{ margin: 0 }}><label>One line about them{S({ field: "bio", extra: `${p.name}, ${p.role}`, k: 'bio' + i })}</label><textarea className="input" rows={2} value={p.bio || ''} onChange={(e) => setArr('speakers', i, { bio: e.target.value })} />{Opts({ k: 'bio' + i, onPick: (o) => setArr('speakers', i, { bio: o }) })}</div>
-        <input className="input" placeholder="Photo address (chest-up)" value={p.photo || ''} onChange={(e) => setArr('speakers', i, { photo: e.target.value })} /><button type="button" className="pe-rm" onClick={() => set('speakers', c.speakers.filter((_, j) => j !== i))}>Remove speaker</button></div>)}
+        <div className="pe-photo">{p.photo ? <img src={p.photo} alt="" /> : <span>No photo</span>}<PhotoUpload label={p.photo ? 'Change photo' : 'Upload a photo'} onDone={(u) => setArr('speakers', i, { photo: u })} /></div><button type="button" className="pe-rm" onClick={() => set('speakers', c.speakers.filter((_, j) => j !== i))}>Remove speaker</button></div>)}
         <button type="button" className="btn btn-line" onClick={() => set('speakers', [...(c.speakers || []), { name: '', role: '', bio: '', photo: '' }])}>Add a speaker</button></div>
 
       <div className="pe-box"><b>Questions <span style={{ fontWeight: 500, ...dim }}>(optional)</span></b>{(c.faq || []).map((f, i) => <div key={i} className="pe-item"><input className="input" placeholder="Question" value={f.q || ''} onChange={(e) => setArr('faq', i, { q: e.target.value })} /><textarea className="input" rows={2} placeholder="Answer" value={f.a || ''} onChange={(e) => setArr('faq', i, { a: e.target.value })} /><button type="button" className="pe-rm" onClick={() => set('faq', c.faq.filter((_, j) => j !== i))}>Remove</button></div>)}
@@ -97,7 +100,7 @@ export default function PageEditor({ data }) {
 
       <div className="pe-box"><b>After sign-up</b><div className="pe-f" style={{ margin: 0 }}><label htmlFor="f-comm">WhatsApp community link <span style={dim}>(optional)</span></label><input id="f-comm" className="input" value={c.community || ''} onChange={(e) => set('community', e.target.value)} placeholder="https://chat.whatsapp.com/…" /></div>
         <small style={dim}>{P.type === 'audio' ? 'Shown after they unlock the course.' : 'Shown as the required last step: “the joining link and every update are shared there only”.'}</small></div>
-      {F({ k: "preview", label: "Link-preview text (when shared on WhatsApp)", area: true, ai: true })}{F({ k: "photo", label: "Link-preview image address (optional)", ph: "/aoc/og.jpg" })}
+      {F({ k: "preview", label: "Link-preview text (when shared on WhatsApp)", area: true, ai: true })}<div className="pe-f"><label>Link-preview image <span style={dim}>(optional; shown when the link is shared)</span></label><div className="pe-photo pe-wide">{c.photo ? <img src={c.photo} alt="" /> : <span>No image</span>}<PhotoUpload ratio={1.91} label={c.photo ? 'Change image' : 'Upload an image'} hint="Pick the part to show in the WhatsApp preview." onDone={(u) => set('photo', u)} /></div></div>
     </div>
     <aside className="pe-prev"><div className="pe-phone"><div className="pe-scr"><PageView key={JSON.stringify(previewPage).length} page={previewPage} preview /></div></div><p style={{ textAlign: 'center', fontSize: 13, ...dim }}>Live preview</p></aside></div> : null}
 
@@ -136,6 +139,8 @@ export default function PageEditor({ data }) {
 .pe-ok{font-size:12.5px;color:var(--green)}.pe-bad{font-size:12.5px;color:#ff8a8a}
 .pe-two{display:grid;gap:10px}@media(min-width:640px){.pe-two{grid-template-columns:1fr 1fr}}
 .pe-box{display:grid;gap:10px;margin-bottom:14px;padding:14px;border-radius:18px;border:1px solid var(--line)}.pe-box>b{font-size:15px}.pe-item{display:grid;gap:8px;padding:12px;border-radius:14px;background:var(--raise)}.pe-item .btn,.pe-box>.btn{justify-self:start}
+.pe-photo{display:flex;gap:12px;align-items:center}.pe-photo img,.pe-photo>span{width:72px;height:90px;border-radius:12px;object-fit:cover;background:rgba(242,239,233,.06);display:grid;place-items:center;font-size:11.5px;color:var(--dim);text-align:center}
+.pe-wide img,.pe-wide>span{width:153px;height:80px}.pe-file{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .pe-rm{justify-self:start;padding:0;border:0;background:none;color:var(--dim);font:600 13px inherit;cursor:pointer;text-decoration:underline}
 .pe-phone{width:340px;max-width:100%;height:680px;margin:0 auto;border-radius:34px;border:9px solid #1d211d;overflow:hidden;background:#f2efe9}.pe-scr{width:390px;height:780px;transform:scale(.8256);transform-origin:top left;overflow-y:auto}
 .pe-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}.pe-nums div{padding:16px;border-radius:20px;background:var(--raise);border:1px solid var(--line)}.pe-nums b{display:block;font-family:var(--display);font-stretch:80%;font-weight:900;font-size:36px;line-height:1}.pe-nums span{font-size:13.5px;color:var(--dim)}.pe-nums small{display:block;margin-top:6px;color:var(--green);font-size:12.5px}

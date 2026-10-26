@@ -1,0 +1,41 @@
+// On screen: public pages (phone) and the editor (laptop), with real typing
+import pg from 'pg'
+import { createHash, randomBytes } from 'node:crypto'
+import { chromium } from '/home/claude/olexweb-factory/node_modules/playwright/index.mjs'
+const db = new pg.Client({ connectionString: 'postgres://olex:olex@localhost/olexweb' }); await db.connect()
+let pass = 0, failn = 0; const check = (ok, what, extra = '') => { if (ok) { pass++; console.log('  ✓ ' + what) } else { failn++; console.log('  ✗ ' + what + (extra ? '  → ' + extra : '')) } }
+const u = (await db.query("select id from admin_users where email='owner@test.local'")).rows[0], T = randomBytes(32).toString('base64url')
+await db.query("insert into sessions (id_hash,user_id,expires_at) values ($1,$2,now()+interval '1 day')", [createHash('sha256').update(T).digest('hex'), u.id])
+const seen = (p, sel) => p.evaluate((sel) => { const e = document.querySelector(sel); if (!e) return 'missing'; const r = e.getBoundingClientRect(); let o = 1, n = e; while (n && n.nodeType === 1) { o *= +getComputedStyle(n).opacity; n = n.parentElement }
+  return r.width > 0 && r.height > 0 && o > 0.95 && r.top < innerHeight && r.bottom > 0 ? 'yes' : `no (opacity ${o.toFixed(2)}, top ${Math.round(r.top)})` }, sel)
+const b = await chromium.launch()
+console.log('\n61. On screen: the public pages (phone)')
+let ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }), p = await ctx.newPage()
+await p.goto('http://localhost:3000/build-live', { waitUntil: 'load' }); await p.waitForTimeout(2600)
+for (const [s, w] of [['.pv h1', 'the title'], ['.pv-when', 'the date and countdown'], ['.pv-heroCta', '“Save my seat”']]) check(await seen(p, s) === 'yes', 'first screen shows ' + w, await seen(p, s))
+const readable = await p.evaluate(() => [...document.querySelectorAll('.pv-btn')].filter((b) => b.offsetParent).every((b) => { const c = getComputedStyle(b); return c.color !== c.backgroundColor && b.textContent.trim().length > 0 }))
+check(readable, 'every button’s text is readable (text colour differs from its background)')
+const wide = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1); check(!wide, 'nothing spills sideways on a phone')
+const t1 = await p.textContent('.pv-cnt'); await p.waitForTimeout(1200); const t2 = await p.textContent('.pv-cnt'); check(t1 !== t2, 'the countdown really ticks')
+await p.screenshot({ path: '/tmp/vp-webinar.png' })
+await p.click('.pv-heroCta'); await p.waitForTimeout(900); await p.fill('.pv-form input', 'Kemi Eze'); await p.click('.pv-form button[type=submit]'); await p.waitForTimeout(1500)
+check(await seen(p, '.pv-done h3') === 'yes' && /Kemi/.test(await p.textContent('.pv-done h3')), 'after sign-up: “You’re in, Kemi.” on screen')
+await p.evaluate(() => document.querySelector('.pv-comm').scrollIntoView({ block: 'center' })); await p.waitForTimeout(400)
+check(await seen(p, '.pv-comm .pv-g') === 'yes' && (await p.getAttribute('.pv-comm .pv-g', 'href')).startsWith('https://chat.whatsapp.com/'), 'the required “Join the community” step is on screen, with your link')
+await p.screenshot({ path: '/tmp/vp-after.png' }); await ctx.close()
+ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true }); p = await ctx.newPage()
+await p.goto('http://localhost:3000/meetup', { waitUntil: 'load' }); await p.waitForTimeout(2600); check(await seen(p, '.pv-date') === 'yes' && await seen(p, '.pv h1') === 'yes', 'event page: the date card and title are on screen')
+const hlOk = await p.evaluate(() => { const h = document.querySelector('.pv-hl'), bg = getComputedStyle(document.querySelector('.pv-hero')).backgroundColor; return !h || getComputedStyle(h).color !== bg })
+check(hlOk, 'event page: the highlighted line is readable on the dark background'); await p.screenshot({ path: '/tmp/vp-event.png' }); await ctx.close()
+console.log('\n62. On screen: the editor (laptop)')
+const id = (await db.query("select id from pages where slug = 'build-live'")).rows[0].id
+ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, extraHTTPHeaders: { cookie: '__Host-olex_sess=' + T } }); p = await ctx.newPage()
+await p.goto('http://localhost:3000/admin/pages', { waitUntil: 'load' }); await p.waitForTimeout(800); await p.screenshot({ path: '/tmp/vp-list.png' })
+await p.click('text=New page'); await p.waitForTimeout(400); check(await p.locator('.pg-t').count() === 4, '“New page” offers the four templates'); await p.screenshot({ path: '/tmp/vp-pick.png' }); await p.keyboard.press('Escape')
+await p.goto('http://localhost:3000/admin/pages/' + id, { waitUntil: 'load' }); await p.waitForTimeout(900)
+await p.click('#f-title', { clickCount: 3 }); await p.keyboard.type('Typing Keeps Focus', { delay: 15 })
+check(await p.inputValue('#f-title') === 'Typing Keeps Focus', 'typing in the editor keeps focus, letter after letter', await p.inputValue('#f-title'))
+await p.waitForTimeout(600); check(/Typing/.test(await p.textContent('.pe-scr h1').catch(() => '')) || /Typing/.test(await p.getAttribute('.pe-scr h1', 'aria-label').catch(() => '')), 'the live phone preview updates as you type')
+await p.click('#f-title >> xpath=preceding-sibling::label//button'); await p.waitForTimeout(1200); check(await p.locator('.pe-opts button').count() >= 3, '✨ Suggest shows the options to tap')
+await p.screenshot({ path: '/tmp/vp-editor.png' }); await ctx.close()
+await b.close(); console.log(`  (${pass} passed, ${failn} failed)`); await db.end(); process.exit(failn ? 1 : 0)

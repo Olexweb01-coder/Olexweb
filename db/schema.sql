@@ -441,3 +441,5 @@ create table if not exists page_signups (id serial primary key, page_id int not 
 create index if not exists page_signups_page on page_signups (page_id, created_at);
 alter table site_links add column if not exists url text;            -- a short link to any website (phone stays for WhatsApp links)
 alter table site_links alter column phone drop not null;
+create table if not exists page_files (id text primary key, name text not null, mime text not null, bytes bigint not null, pieces int not null,
+  piece_size int not null, got int[] not null default '{}', ready boolean not null default false, created_at timestamptz not null default now());
