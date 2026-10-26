@@ -9,13 +9,16 @@ const fmtLen = (s) => { s = Math.round(s || 0); return `${Math.floor(s / 60)}:${
 const dayName = (d, today) => { if (d === today) return 'Today'; const t = new Date(Date.parse(today + 'T12:00:00Z') + 86400e3).toISOString().slice(0, 10); if (d === t) return 'Tomorrow'; return new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }
 const label = (v) => v.kind === 'long' ? `Vol. ${v.volume || ''}` : v.part ? `Part ${v.part}` : 'Video'
 const when = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+const stamp = (d) => d ? new Date(d).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : ''
+const ago = (d) => { const m = Math.round((Date.now() - new Date(d).getTime()) / 60e3); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago' }
+const privText = (p) => !p ? 'Private' : p.startsWith('public') ? 'Public' : p.startsWith('unlisted') ? 'Unlisted' : p === 'missing' ? 'Not found on YouTube' : p.includes('until') ? 'Private, goes public ' + stamp(p.split('until ')[1]) : 'Private'
 
 export default function YouTubeVideos({ data }) {
   const router = useRouter(), [busy, setBusy] = useState(''), [err, setErr] = useState('')
   const [q, setQ] = useState(''), [show, setShow] = useState('all'), [sort, setSort] = useState('newest'), [since, setSince] = useState('any')
   const [play, setPlay] = useState(null), [confirm, setConfirm] = useState(null)
   const [edit, setEdit] = useState(false), [per, setPer] = useState(data.queue.perDay), [t1, setT1] = useState(data.queue.times[0]), [t2, setT2] = useState(data.queue.times[1] || '20:00')
-  const Q = data.queue, queuedIds = new Set(Q.items.map((x) => x.id))
+  const B = data.best, Q = data.queue, queuedIds = new Set(Q.items.map((x) => x.id))
   async function call(body, ok) {
     setBusy(body.action + (body.id || '')); setErr('')
     try {
@@ -24,7 +27,7 @@ export default function YouTubeVideos({ data }) {
       if (!r.ok) setErr(j.error || 'Something went wrong.'); else { toast(ok); router.refresh() }
     } catch { setErr('No connection. Try again.') } finally { setBusy('') }
   }
-  const stateOf = (v) => v.status === 'uploaded' ? (v.privacy === 'public' ? 'public' : 'youtube') : queuedIds.has(v.id) ? 'queued' : 'ready'
+  const stateOf = (v) => v.status === 'uploaded' ? (String(v.privacy || '').startsWith('public') ? 'public' : 'youtube') : queuedIds.has(v.id) ? 'queued' : 'ready'
   const counts = useMemo(() => { const c = { all: data.videos.length, ready: 0, queued: 0, youtube: 0 }; for (const v of data.videos) { const s = stateOf(v); if (s === 'ready') c.ready++; else if (s === 'queued') c.queued++; else c.youtube++ } return c }, [data])
   const list = useMemo(() => {
     const cut = since === 'any' ? 0 : Date.now() - Number(since) * 86400e3, needle = q.trim().toLowerCase()
@@ -44,9 +47,10 @@ export default function YouTubeVideos({ data }) {
       {edit ? <div className="yv-pt2">
         <div className="yv-row"><span>Videos a day</span>{[1, 2].map((n) => <button key={n} className={'yv-chip' + (per === n ? ' yv-on' : '')} aria-pressed={per === n} onClick={() => setPer(n)}>{n}</button>)}</div>
         <div className="yv-row"><label>{per === 2 ? 'First time' : 'Time'} <input className="input" type="time" value={t1} onChange={(e) => setT1(e.target.value)} /></label>{per === 2 ? <label>Second time <input className="input" type="time" value={t2} onChange={(e) => setT2(e.target.value)} /></label> : null}</div>
-        <div className="yv-sug"><b>{data.best.learned.length ? 'Best for your channel (from your own videos)' : 'Suggested times (Lagos)'}</b>
-          {(data.best.learned.length ? data.best.learned.map((x) => ({ time: x.time, why: `${x.views} views per video on average (${x.videos} videos)` })) : data.best.start).map((x) => <button key={x.time} className="yv-tip" onClick={() => { if (per === 2 && t1 !== x.time) setT2(x.time); else setT1(x.time) }}><b>{x.time}</b><span>{x.why}</span></button>)}
-          <small>{data.best.learned.length ? 'Worked out from the hour each video went up. It updates as you post more.' : `YouTube shows numbers per day, not per hour, so these are starting points for a tech and tools audience. Once you’ve posted at a few different times (${data.best.videos} of 8 videos so far), this switches to what works best on your own channel.`}</small></div>
+        <div className="yv-sug"><b>{B.picks.length ? 'Best times (Lagos), from research' : 'Suggested times (Lagos)'}</b>
+          {(B.picks.length ? B.picks : B.start).map((x) => <button key={x.time} className="yv-tip" onClick={() => { if (per === 2 && t1 !== x.time) setT2(x.time); else setT1(x.time) }}><b>{x.time}</b><span>{x.why}</span></button>)}
+          <small>{B.researchedAt ? `Researched ${when(B.researchedAt)} from ${B.nicheVideos} top Shorts in your niche${B.countries.length ? '; your viewers are mostly in ' + B.countries.join(', ') : ''}${B.ownVideos >= 8 ? '; plus your own videos’ results' : ''}. Refreshed every week.` : 'Not researched yet. Research looks at when top Shorts in your niche were posted and how fast they grew, plus where your viewers are. Until then, these are starting points for a tech and tools audience.'} Timing helps a video’s first push; the hook and topic still decide if it spreads.</small>
+          <div><button className="btn btn-line" disabled={!!busy} onClick={() => call({ action: 'research-times' }, 'Research done: suggestions updated.')}>{busy === 'research-times' ? 'Researching…' : 'Research now'}</button></div></div>
         <div><button className="btn btn-green" disabled={!!busy} onClick={() => call({ action: 'posting-times', perDay: per, time: t1, time2: t2 }, 'Posting times saved.').then(() => setEdit(false))}>Save posting times</button></div>
       </div> : null}
       <div className="yv-vqs">
@@ -59,6 +63,7 @@ export default function YouTubeVideos({ data }) {
 
     <div className="yv-vf">
       <input className="input" type="search" placeholder="Search videos by title or site…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search videos" />
+      <button className="btn btn-line" disabled={!!busy} onClick={() => call({ action: 'check-status' }, 'Checked with YouTube.')}>{busy === 'check-status' ? 'Checking…' : 'Check status'}</button>
       {[['all', 'All'], ['ready', 'Ready'], ['queued', 'Queued'], ['youtube', 'On YouTube']].map(([k, l]) => <button key={k} className={'yv-chip' + (show === k ? ' yv-on' : '')} aria-pressed={show === k} onClick={() => setShow(k)}>{l} {counts[k]}</button>)}
       <select className="input" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort"><option value="newest">Newest</option><option value="views">Most views</option><option value="watched">Most watched</option></select>
       <select className="input" value={since} onChange={(e) => setSince(e.target.value)} aria-label="Date"><option value="any">Any date</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
@@ -72,6 +77,7 @@ export default function YouTubeVideos({ data }) {
       <div className="yv-vb">
         <span className={'yv-st yv-' + s}>{s === 'public' ? 'Public' : s === 'youtube' ? 'Private · on YouTube' : s === 'queued' ? 'Queued · ' + queueDay(v.id) : 'Ready'}{v.special ? ' · posted specially' : ''}</span>
         <b className="yv-vt">{v.title || v.name}</b>
+        {s === 'public' || s === 'youtube' ? <p className="yv-posted">Posted to YouTube · {stamp(v.uploadedAt)} · <b className={s === 'public' ? 'yv-pub' : 'yv-prv'}>{privText(v.privacy)}</b>{v.checkedAt ? <span> (checked {ago(v.checkedAt)})</span> : null}</p> : null}
         {s === 'public' || s === 'youtube' ? <div className="yv-stats"><span><b>{v.views ?? 0}</b> views</span>{v.watched ? <span><b>{Math.round(v.watched)}%</b> watched</span> : null}</div> : null}
         {s === 'ready' ? <div className="yv-act"><button className="yv-p" disabled={!!busy} onClick={() => call({ action: 'queue-add', id: v.id }, 'Added to the queue.')}>Add to queue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
         {s === 'queued' ? <div className="yv-act"><button disabled={!!busy} onClick={() => call({ action: 'queue-remove', id: v.id }, 'Removed from the queue.')}>Unqueue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
@@ -101,6 +107,7 @@ export default function YouTubeVideos({ data }) {
 .yv-link{margin-left:8px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--green);font:700 12.5px inherit;cursor:pointer}
 .yv-pt2{display:grid;gap:12px;margin:0 0 14px;padding:14px;border-radius:16px;border:1px solid var(--line);background:rgba(242,239,233,.03)}.yv-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}.yv-row label{display:grid;gap:6px;font-size:13px;color:var(--dim)}
 .yv-sug{display:grid;gap:8px}.yv-sug>b{font-size:14px}.yv-sug small{color:var(--dim);font-size:12.5px;line-height:1.5}.yv-tip{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--paper);cursor:pointer;font:inherit}.yv-tip b{font-size:16px;color:var(--green)}.yv-tip span{font-size:13px;color:var(--dim)}
+.yv-posted{margin:0;font-size:12.5px;line-height:1.45;color:var(--dim)}.yv-pub{color:#9cc8ff}.yv-prv{color:#ffc94d}
 .yv-vf{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 14px}.yv-vf input{flex:1;min-width:200px}.yv-vf select{width:auto}
 .yv-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);font:700 13.5px inherit;cursor:pointer}.yv-chip.yv-on{background:var(--paper);color:#111;border-color:var(--paper)}
 .yv-vg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}

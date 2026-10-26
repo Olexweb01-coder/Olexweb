@@ -2,7 +2,7 @@
 import { currentUser, sameOrigin, ownerOnly, clientIp } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
-import { syncYouTube, disconnect, YtError } from '@/lib/site/youtube'
+import { syncYouTube, disconnect, YtError, researchPostingTimes, timeResearch, checkUploads } from '@/lib/site/youtube'
 import { findIdeas, decideIdea } from '@/lib/site/ideas'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
 import { progressOf } from '@/lib/site/progress'
@@ -36,6 +36,11 @@ export async function POST(request) {
       } catch (e) { throw new Refused(e.message) }
     }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
+    if (body.action === 'research-times') {
+      const r = await timeResearch(); if (r && r.researched_at && Date.now() - new Date(r.researched_at).getTime() < 3600e3) throw new Refused('Researched less than an hour ago. Try again later.')
+      try { return await researchPostingTimes() } catch (e) { throw new Refused(e.message) }
+    }
+    if (body.action === 'check-status') { try { return await checkUploads(true) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'posting-times') { try { return await savePostingTimes(body) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'publish-settings') { try { return await savePublishSettings(body) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'send-to-factory') {

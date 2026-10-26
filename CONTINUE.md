@@ -181,3 +181,10 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Tests: fQ.mjs (queue + two-a-day), fD/fD2/fE/fG3 use post-now. Note: run3 (ideas) fails in the sandbox only because the
   sandbox can now reach the live internet (real feeds mix into fake test data); not a code problem.
 - Next: Progress tab (preview first), then Course & links redesign (preview first).
+- Best times (built): weekly research (youtube.js researchPostingTimes): 4 niche searches of Shorts from the last 30 days
+  (order=viewCount, ~400 quota units/week) → per-Lagos-hour median views/day (summary only, deleted after 30 days and on
+  Disconnect) + viewers' countries (Analytics, dimension=country). publish.js bestTimes() ranks hours: niche 50%,
+  audience-awake 30%, own results 20%; top 3, ≥2 h apart, each with its reasons. "Research now" (1-hour cooldown).
+- Status: checkUploads() asks YouTube (videos.list part=status) for Private/Public of recent uploads; on opening Videos
+  (at most every 10 min) and "Check status". Cards: "Posted to YouTube · date, time · Private/Public (checked x ago)".
+- Tests: fT.mjs (research, status, Disconnect clean-up). Stand-in Google: niche search, countries, /_privacy.

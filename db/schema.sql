@@ -426,3 +426,7 @@ update aoc_settings set goal = 100, close_when_full = false, accepting = true, c
 alter table yt_scripts add column if not exists queue_pos int;      -- null = not queued; lower goes first
 create index if not exists yt_scripts_queue on yt_scripts (queue_pos) where queue_pos is not null;
 alter table yt_settings add column if not exists publish_time2 text;   -- a second daily slot ("2 videos a day"); null = one a day
+-- best posting times: a weekly SUMMARY of the niche (no competitor videos kept) + where his viewers are; status checks
+create table if not exists yt_time_research (id int primary key default 1 check (id = 1), researched_at timestamptz, videos int not null default 0,
+  hours jsonb not null default '{}'::jsonb, countries jsonb not null default '[]'::jsonb, terms text);
+alter table yt_settings add column if not exists status_checked_at timestamptz;
