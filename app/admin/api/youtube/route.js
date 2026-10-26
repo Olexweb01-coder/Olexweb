@@ -7,7 +7,7 @@ import { findIdeas, decideIdea } from '@/lib/site/ideas'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
 import { progressOf } from '@/lib/site/progress'
 import { sendToFactory } from '@/lib/site/factory'
-import { uploadVideo, savePublishSettings } from '@/lib/site/publish'
+import { savePublishSettings, savePostingTimes, queueAdd, queueRemove, queueMove, postNow } from '@/lib/site/publish'
 import { writeLong } from '@/lib/site/longform'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -19,17 +19,24 @@ export async function POST(request) {
   const body = await readJson(request); if (!body) return refuse('Request refused.', 400)
   return respond(async () => {
     if (body.action === 'sync') { try { return await syncYouTube() } catch (e) { if (e instanceof YtError) throw new Refused(e.message); throw e } }
-    if (body.action === 'disconnect') { await disconnect(u.id, clientIp()); return { ok: true } }
+    if (body.action === 'disconnect') { if (body.confirm !== 'DISCONNECT') throw new Refused('Type DISCONNECT to confirm.'); await disconnect(u.id, clientIp()); return { ok: true } }
     if (body.action === 'find-ideas') { try { return await findIdeas() } catch (e) { throw new Refused(/already running|busy|limit|AI key/i.test(e.message) ? e.message : 'The search for ideas failed: ' + e.message) } }
     if (body.action === 'decide') {
       if (!['picked', 'skipped', 'new'].includes(body.status) || !Number.isInteger(body.id)) throw new Refused('Request refused.')
       const r = await decideIdea(body.id, body.status); if (!r) throw new Refused('That idea is no longer there.'); return r
     }
-    if (body.action === 'upload') {
+    if (['queue-add', 'queue-remove', 'queue-move', 'post-now'].includes(body.action)) {
       if (!Number.isInteger(body.id)) throw new Refused('Request refused.')
-      try { return await uploadVideo(body.id) } catch (e) { throw new Refused(e.message) }
+      try {
+        if (body.action === 'queue-add') return await queueAdd(body.id)
+        if (body.action === 'queue-remove') return await queueRemove(body.id)
+        if (body.action === 'queue-move') return await queueMove(body.id, body.dir === -1 ? -1 : 1)
+        if (body.confirm !== true) throw new Error('Confirm to post this video now.')
+        return await postNow(body.id)
+      } catch (e) { throw new Refused(e.message) }
     }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
+    if (body.action === 'posting-times') { try { return await savePostingTimes(body) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'publish-settings') { try { return await savePublishSettings(body) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'send-to-factory') {
       if (!Number.isInteger(body.id)) throw new Refused('Request refused.')

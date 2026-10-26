@@ -168,3 +168,16 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Vercel cuts requests at 60 s here: anything that waits on another service needs its own deadline.
 - GitHub's run logs for the public factory are readable by anyone: the worker never prints secrets or signed URLs.
 - Video pieces: 1 MiB (Vercel's request limit is 4.5 MB; YouTube wants multiples of 256 KiB).
+
+## YouTube Stage 1 (built): queue, Videos tab, posting times, safe Disconnect
+- Queue: yt_scripts.queue_pos; uploads ONLY from the queue, one per daily slot (publish_time, optional publish_time2 = 2 a day),
+  each upload records its slot (upload.slot "YYYY-MM-DD HH:MM"). Private mode: uploads at the slot time; Scheduled: publishAt
+  the next free slot (today/tomorrow only). Autopilot auto-queues finished videos; "Post now" (confirm) is the only bypass
+  (upload.special; doesn't use a slot). Long videos take a slot like any other. lib/site/publish.js (queueList, uploadNext, ...).
+- Videos tab: components/admin/YouTubeVideos.jsx (all classes prefixed yv-: admin's global .vc/.act/.chip clashed).
+- Best times: YouTube Analytics has no hourly data, so bestTimes() learns from his own Shorts (median views by Lagos posting
+  hour, needs 8+ videos and 2+ hours); until then START_TIMES 12:00 / 18:00 / 20:00 with reasons.
+- Disconnect: dialog + server both require typing DISCONNECT.
+- Tests: fQ.mjs (queue + two-a-day), fD/fD2/fE/fG3 use post-now. Note: run3 (ideas) fails in the sandbox only because the
+  sandbox can now reach the live internet (real feeds mix into fake test data); not a code problem.
+- Next: Progress tab (preview first), then Course & links redesign (preview first).

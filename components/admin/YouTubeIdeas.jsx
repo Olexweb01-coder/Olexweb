@@ -15,8 +15,9 @@ const tone = (n) => (n >= 75 ? 'var(--green)' : n >= 60 ? '#ffd166' : 'rgba(242,
 export function YouTubeTabs({ current }) {
   return (<div className="seg" role="tablist" aria-label="YouTube" style={{ marginBottom: 14 }}>
     <a href="/admin/youtube" role="tab" aria-selected={current === 'analytics'} aria-pressed={current === 'analytics'} className="segl">Analytics</a>
-    <a href="/admin/youtube?view=ideas" role="tab" aria-selected={current === 'ideas'} aria-pressed={current === 'ideas'} className="segl">Ideas</a>
+    <a href="/admin/youtube?view=videos" role="tab" aria-selected={current === 'videos'} aria-pressed={current === 'videos'} className="segl">Videos</a>
     <a href="/admin/youtube?view=scripts" role="tab" aria-selected={current === 'scripts'} aria-pressed={current === 'scripts'} className="segl">Scripts</a>
+    <a href="/admin/youtube?view=ideas" role="tab" aria-selected={current === 'ideas'} aria-pressed={current === 'ideas'} className="segl">Ideas</a>
   </div>)
 }
 

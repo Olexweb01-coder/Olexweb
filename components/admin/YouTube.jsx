@@ -32,14 +32,14 @@ const NOTES = {
 export default function YouTube({ data, note }) {
   const router = useRouter(), d = data, a = d.account
   const [busy, setBusy] = useState(''), [sort, setSort] = useState('new'), [type, setType] = useState('all')
-  const [msg, setMsg] = useState(NOTES[note] || null)
+  const [msg, setMsg] = useState(NOTES[note] || null), [dis, setDis] = useState(false), [typed, setTyped] = useState('')
   useEffect(() => { if (note) window.history.replaceState(null, '', '/admin/youtube' + (d.days !== 28 ? '?days=' + d.days : '')) }, [note, d.days])
 
-  async function act(action) {
-    if (action === 'disconnect' && !window.confirm('Disconnect YouTube? Google’s access is withdrawn and, as YouTube’s rules require, the channel numbers stored here are deleted. Your ideas, scripts and videos stay.')) return
-    setBusy(action); setMsg(null)
+  async function act(action, extra = {}) {
+    if (action === 'disconnect' && extra.confirm !== 'DISCONNECT') { setTyped(''); setDis(true); return }   // opens the type-to-confirm dialog
+    setBusy(action); setMsg(null); setDis(false)
     try {
-      const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action }) })
+      const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...extra }) })
       const j = await r.json().catch(() => ({}))
       if (r.status === 401) { window.location.assign('/admin/login'); return }
       if (!r.ok) setMsg(['bad', j.error || 'Something went wrong. Try again.'])
@@ -72,7 +72,18 @@ export default function YouTube({ data, note }) {
   let rows = vids.filter((v) => type === 'all' || (type === 'shorts' ? v.is_short : !v.is_short))
   rows = [...rows].sort(sort === 'views' ? (x, y) => y.views - x.views : sort === 'held' ? (x, y) => (y.avg_view_pct ?? -1) - (x.avg_view_pct ?? -1) : sort === 'moving' ? (x, y) => (growth[y.video_id] || 0) - (growth[x.video_id] || 0) : () => 0)
 
-  return (<>
+  const disDialog = dis ? <div role="dialog" aria-modal="true" aria-label="Disconnect YouTube" style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.6)', display: 'grid', placeItems: 'center', padding: 16 }}>
+    <div style={{ width: 'min(94vw,480px)', padding: 22, borderRadius: 22, background: 'var(--raise)', border: '1px solid var(--line)' }}>
+      <h3 style={{ margin: '0 0 8px' }}>Disconnect YouTube?</h3>
+      <p style={{ margin: '0 0 8px', color: 'var(--dim)', lineHeight: 1.55 }}>This is a big step:</p>
+      <ul style={{ margin: '0 0 12px', paddingLeft: 18, color: 'var(--dim)', lineHeight: 1.6, fontSize: 14.5 }}><li>Google access is removed for this admin</li><li>All YouTube numbers stored here are deleted (YouTube’s rules)</li><li>Uploads and the daily queue stop until you connect again</li></ul>
+      <p style={{ margin: '0 0 6px', color: 'var(--dim)' }}>Your ideas, scripts and videos stay. Type <b style={{ color: 'var(--paper)' }}>DISCONNECT</b> to confirm.</p>
+      <input className="input" value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus aria-label="Type DISCONNECT to confirm" autoComplete="off" />
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 14 }}>
+        <button className="btn btn-line" onClick={() => setDis(false)}>Cancel</button>
+        <button className="btn" style={{ background: '#ff8a8a', color: '#2a0000', opacity: typed === 'DISCONNECT' ? 1 : 0.35 }} disabled={typed !== 'DISCONNECT' || !!busy} onClick={() => act('disconnect', { confirm: 'DISCONNECT' })}>Disconnect</button>
+      </div></div></div> : null
+  return (<>{disDialog}
     <div className="top"><h1 className="d">YouTube</h1></div>
     <YouTubeTabs current="analytics" />
     {banner}

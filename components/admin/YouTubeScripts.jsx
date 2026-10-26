@@ -70,7 +70,7 @@ function Script({ s, busy, run, factory, rendering }) {
         <b style={{ color: 'var(--paper)', fontSize: 16 }}>{s.kind === 'long' ? `Vol. ${s.script.volume} is ready` : `Part ${s.part} is ready`}</b><br />
         {Math.round(s.video.seconds || 0)} seconds · {s.video.width}×{s.video.height} · {(s.video.bytes / 1048576).toFixed(1)} MB<br />
         Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
-        <div style={{ marginTop: 10 }}><button className="btn btn-green" disabled={!!busy} onClick={() => run('u' + s.id, { action: 'upload', id: s.id }, (j) => j.publishAt ? 'Uploaded and scheduled.' : 'Uploaded to YouTube (private).')}>{busy === 'u' + s.id ? 'Uploading…' : s.upload ? 'Carry on uploading' : 'Upload to YouTube'}</button></div>
+        <div style={{ marginTop: 10 }}>{s.queue_pos != null ? <a className="btn btn-line" href="/admin/youtube?view=videos">Queued: see Up next</a> : <button className="btn btn-green" disabled={!!busy} onClick={() => run('q' + s.id, { action: 'queue-add', id: s.id }, 'Added to the queue: one video a day.')}>{busy === 'q' + s.id ? 'Adding…' : 'Add to queue'}</button>}</div>
       </div>
     </section> : null}
     {s.status === 'uploaded' ? <p style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(143,227,106,.35)', fontSize: 14, lineHeight: 1.6 }}>

@@ -421,3 +421,8 @@ alter table aoc_settings add column if not exists close_when_full boolean not nu
 alter table aoc_settings add column if not exists accepting boolean not null default true;
 alter table aoc_settings add column if not exists flyer_version int not null default 0;
 update aoc_settings set goal = 100, close_when_full = false, accepting = true, content = '{}', flyer_version = 3 where id = 1 and flyer_version < 3;   -- once only
+
+-- ---------- the posting queue: one video a day (safe to run again) ----------
+alter table yt_scripts add column if not exists queue_pos int;      -- null = not queued; lower goes first
+create index if not exists yt_scripts_queue on yt_scripts (queue_pos) where queue_pos is not null;
+alter table yt_settings add column if not exists publish_time2 text;   -- a second daily slot ("2 videos a day"); null = one a day
