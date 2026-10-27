@@ -457,3 +457,7 @@ insert into dir_settings (id) values (1) on conflict do nothing;
 alter table assistant_settings drop constraint if exists assistant_settings_pace_check;
 alter table assistant_settings add constraint assistant_settings_pace_check check (pace between 1 and 21);
 alter table assistant_settings add column if not exists research_at timestamptz;   -- last extra research for high paces
+-- YouTube's own Approval/Autopilot switch (separate from the blog's); starts as a copy of the shared setting, once
+alter table yt_settings add column if not exists yt_mode text check (yt_mode in ('approval', 'autopilot'));
+update yt_settings set yt_mode = coalesce((select mode from assistant_settings where id = 1), 'approval') where id = 1 and yt_mode is null;
+alter table dir_entries add column if not exists yt_linked_at timestamptz;   -- "guide link added to the Short" (older Shorts, done by hand)

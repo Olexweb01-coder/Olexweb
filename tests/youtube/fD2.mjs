@@ -5,9 +5,9 @@ const db = new pg.Client({ connectionString: 'postgres://olex:olex@localhost/ole
 let pass = 0, failn = 0
 const check = (ok, what, extra = '') => { if (ok) { pass++; console.log('  ✓ ' + what) } else { failn++; console.log('  ✗ ' + what + (extra ? '  → ' + extra : '')) } }
 const ID2 = Number(fs.readFileSync('/tmp/fid2', 'utf8')), phase = process.argv[2] || 'all'
-await db.query("update assistant_settings set mode = 'autopilot'"); await db.query("update yt_idea_runs set last_run = now()")
+await db.query("update yt_settings set yt_mode = 'autopilot'"); await db.query("update yt_idea_runs set last_run = now()")
 if (phase !== 'scheduled') {
-await db.query("update yt_settings set publish_mode = 'private'")
+await db.query("update yt_settings set publish_mode = 'private', publish_time = '00:00'")
 await db.query("update yt_scripts set uploaded_at = now() - interval '1 day' where status = 'uploaded'")   // yesterday's upload
 let r0 = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }), j0 = await r0.json()
 const S0 = await (await fetch(G + '/_state')).json(), m0 = S0.sessions[S0.sessions.length - 1].meta
@@ -27,7 +27,8 @@ check(meta.status.privacyStatus === 'private' && at.getUTCHours() === 17 && at.g
 await db.query("insert into yt_scripts (idea_id, status, script, package, video, approved_at) select (select id from yt_ideas where name ilike 'PaletteForge%' limit 1), 'rendered', script, package, video, now() from yt_scripts where id = $1 on conflict (idea_id) do update set status = 'rendered'", [ID2]).catch((e) => console.log('   (setup:', e.message, ')'))
 const r2 = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }), j2 = await r2.json()
 const waiting = (await db.query("select count(*)::int n from yt_scripts where status = 'rendered'")).rows[0].n
-check(!j2.uploaded && waiting >= 1, 'only one a day: with another finished video waiting, the next run the same day uploads nothing more')
-await db.query("update assistant_settings set mode = 'approval'"); await db.query("update yt_settings set publish_mode = 'private'")
+const days = (await db.query("select upload from yt_scripts where status = 'uploaded' and uploaded_at > now() - interval '1 hour'")).rows.map((r) => r.upload && r.upload.publishAt && r.upload.publishAt.slice(0, 10))
+check(new Set(days).size === days.length, 'one a day: every scheduled video gets its own day, never two on the same day (' + days.join(', ') + ')')
+await db.query("update yt_settings set yt_mode = 'approval'"); await db.query("update yt_settings set publish_mode = 'private', publish_time = '18:00'")
 console.log(`  (${pass} passed, ${failn} failed)`)
 await db.end(); process.exit(failn ? 1 : 0)

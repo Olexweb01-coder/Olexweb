@@ -20,6 +20,7 @@ export async function POST(request) {
         case 'rewrite': return await D.rewrite(id())
         case 'delete': return await D.removeEntry(id())
         case 'settings': return await D.saveSettings(b)
+        case 'linked': return await D.markLinked(id())
         default: throw new D.DirError('Unknown action.')
       }
     } catch (e) { if (e instanceof D.DirError) throw new Refused(e.message); throw e }

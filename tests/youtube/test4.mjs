@@ -8,7 +8,7 @@ const post = (body, t = T) => fetch(APP + '/admin/api/youtube', { method: 'POST'
 const ideaId = async (name) => (await db.query('select id from yt_ideas where name ilike $1', [name + '%'])).rows[0].id
 const scriptOf = async (iid) => (await db.query('select * from yt_scripts where idea_id = $1', [iid])).rows[0]
 const failing = (s) => s.checks.filter((c) => !c.ok).map((c) => c.key)
-await db.query('delete from yt_scripts'); await db.query("update assistant_settings set mode = 'approval' where id = 1")
+await db.query('delete from yt_scripts'); await db.query("update yt_settings set yt_mode = 'approval' where id = 1")
 const pf = await ideaId('PaletteForge'), gl = await ideaId('Gradient Lab'), fp = await ideaId('FontPair'), tl = await ideaId('tldraw')
 await db.query("update yt_ideas set status = 'picked', decided_at = now(), script_tried_at = null where id = any($1)", [[pf, gl, fp]])
 await db.query("update yt_ideas set status = 'new' where id = $1", [tl])
@@ -53,7 +53,7 @@ check(r.status === 400 && /didn’t load/.test(j.error) && !(await scriptOf(down
 await db.query('delete from yt_ideas where id = $1', [down])
 
 console.log('\n23. Autopilot')
-await db.query("update assistant_settings set mode = 'autopilot' where id = 1")
+await db.query("update yt_settings set yt_mode = 'autopilot' where id = 1")
 await db.query("update yt_ideas set status = 'picked', decided_at = now(), script_tried_at = null where id = $1", [tl])
 await db.query("update yt_idea_runs set last_run = now() where id = 1")                 // ideas aren't due, so the run writes a script
 let res = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }); j = await res.json()
@@ -63,7 +63,7 @@ const calls = (await (await fetch(G + '/_state')).json()).scriptCalls.filter((x)
 res = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }); j = await res.json()
 const calls2 = (await (await fetch(G + '/_state')).json()).scriptCalls.filter((x) => /tldraw/.test(x)).length
 check(!j.script && calls2 === calls, 'and it doesn’t write it twice')
-await db.query("update assistant_settings set mode = 'approval' where id = 1")
+await db.query("update yt_settings set yt_mode = 'approval' where id = 1")
 
 console.log('\n24. The Scripts page')
 res = await fetch(APP + '/admin/youtube?view=scripts', { headers: { cookie: '__Host-olex_sess=' + T } }); let html = (await res.text()).replace(/<!-- -->/g, '')

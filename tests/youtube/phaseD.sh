@@ -9,6 +9,7 @@ node fA.mjs > /tmp/fa.log || { cat /tmp/fa.log; exit 1; }
 OWNER=$(cat /tmp/ftok); ID=$(cat /tmp/fid); H="cookie: __Host-olex_sess=$OWNER"
 (cd /home/claude/olexweb-factory && node worker/run.mjs --id $ID --step job,upload 2>&1 | tail -1)
 send() { curl -s -X POST -H "$H" -H "Origin: http://localhost:3000" -H "Content-Type: application/json" -d "{\"action\":\"send-to-factory\",\"id\":$1}" http://localhost:3000/admin/api/youtube > /dev/null; cd /home/claude/olexweb-factory && node worker/run.mjs --id $1 --step job,upload 2>&1 | tail -1; cd /home/claude/yt-test; }
+node fYT0.mjs
 node fD.mjs "$EDITOR" || exit 1
 ID2=$(psql postgres://olex:olex@localhost/olexweb -qtAc "insert into yt_scripts (idea_id, status, script, package, approved_at) select (select id from yt_ideas where name ilike 'tldraw%' limit 1), 'approved', script, package, now() from yt_scripts where id=$ID on conflict (idea_id) do update set status='approved', part=null, upload=null, yt_video_id=null returning id")
 echo "$ID2" > /tmp/fid2
@@ -17,4 +18,5 @@ node fD2.mjs private
 send $ID2
 node fD2.mjs scheduled
 node fQ.mjs
+node fYT.mjs
 node fT.mjs

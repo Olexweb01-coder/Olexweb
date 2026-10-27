@@ -148,7 +148,15 @@ function Publishing({ st, run, busy }) {
   const changed = mode !== st.publish_mode || time !== st.publish_time || series !== st.series || inTitle !== (st.series_in_title !== false) || intro !== (st.spoken_intro !== false) || days.join(',') !== String(st.long_days || 'tue,fri') || Number(count) !== Number(st.long_count || 6)
   const tick = (v, set, label) => <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 14 }}><input type="checkbox" checked={v} onChange={(e) => set(e.target.checked)} style={{ width: 18, height: 18, accentColor: 'var(--green)' }} />{label}</label>
   const sample = (series || '').replace(/\b\w/g, (c) => c.toUpperCase())
-  return (<section style={{ ...card, marginBottom: 12, display: 'grid', gap: 10 }} aria-label="Publishing">
+  const [yt, setYt] = useState(st.yt_mode || 'approval')
+  return (<><section style={{ ...card, marginBottom: 12, display: 'grid', gap: 8 }} aria-label="YouTube automation">
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}><b style={{ fontSize: 14.5 }}>YouTube automation</b>
+      <div className="seg" role="group" aria-label="YouTube automation" style={{ margin: 0 }}>
+        <button type="button" aria-pressed={yt === 'approval'} disabled={!!busy} onClick={() => { setYt('approval'); run('ytm', { action: 'yt-mode', mode: 'approval' }, 'YouTube: each script waits for your approval.') }}>Approve each script</button>
+        <button type="button" aria-pressed={yt === 'autopilot'} disabled={!!busy} onClick={() => { setYt('autopilot'); run('ytm', { action: 'yt-mode', mode: 'autopilot' }, 'YouTube is on Autopilot.') }}>Autopilot</button></div></div>
+    <span style={{ fontSize: 13, color: 'var(--dim)' }}>{yt === 'autopilot' ? 'Scripts that pass every check go to the factory and into the posting queue by themselves.' : 'Scripts wait for you; approved ones go to the factory.'} Separate from the blog’s setting.</span>
+  </section>
+  <section style={{ ...card, marginBottom: 12, display: 'grid', gap: 10 }} aria-label="Publishing">
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
       <b style={{ fontSize: 14.5 }}>Publishing</b>
       <div className="seg" role="group" aria-label="How videos go up" style={{ margin: 0 }}>
@@ -171,5 +179,5 @@ function Publishing({ st, run, busy }) {
     </div>
     <span style={{ fontSize: 12.5, ...dim }}>On the chosen days, Autopilot writes a landscape video (about 5–8 minutes) from the latest finds that already went out as Shorts, with a chapter per site. Next: Vol. {st.long_volume || 1}.</span>
     {changed ? <div><button className="btn btn-green" disabled={!!busy} onClick={() => run('ps', { action: 'publish-settings', mode, time, series, inTitle, intro, longDays: days, longCount: count }, 'Publishing settings saved.')}>Save</button></div> : null}
-  </section>)
+  </section></>)
 }

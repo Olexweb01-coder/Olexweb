@@ -233,3 +233,11 @@ content. Add it after the audit is approved, since the audit describes one chann
   "How it works" tab). gapHours: ≤3/week → 48 h; above → max(6, floor(168/pace·0.8)). Above 3/week the quick run also
   drafts (draftIfDue) and refreshes research at most every 6 h (assistant_settings.research_at). Mode (approval/autopilot)
   is shared by the blog AND YouTube scripts. Tests: fPACE.mjs (8).
+- YouTube's own mode (built): yt_settings.yt_mode ('approval'|'autopilot'), copied once from assistant_settings.mode;
+  used by scripts.js, longform.js, autopilot quickRun (factory/queue) and the Videos tab. Switch at the top of the Scripts tab
+  (action yt-mode). The blog keeps assistant_settings.mode. Pace stays separate (blog pace vs YouTube posting times).
+- Guide links (built): publish.js guideLines() puts "Full guide (free): https://olexweb.com/tools/<slug>" as the FIRST line of
+  each Short's description (long videos: a list per site), only for live Directory pages. The Directory writes sites with
+  videos on the way first. Older Shorts: YouTube scopes are readonly + analytics + upload (no videos.update, and adding
+  youtube.force-ssl would affect the audit), so Admin → Directory lists them with Copy line / Open in Studio / Done
+  (dir_entries.yt_linked_at). Tests: fYT0.mjs + fYT.mjs (in phaseD).

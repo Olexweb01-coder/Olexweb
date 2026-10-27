@@ -8,7 +8,7 @@ const sess = async (e) => { const u = (await db.query('select id from admin_user
 const T = await sess('owner@test.local'), E = await sess('editor@test.local')
 const post = (b, t = T) => fetch(APP + '/admin/api/youtube', { method: 'POST', headers: { cookie: '__Host-olex_sess=' + t, Origin: APP, 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
 console.log('\n50. The queue: one video a day, in the order you choose')
-await db.query("update yt_scripts set queue_pos = null"); await db.query("update assistant_settings set mode = 'approval'"); await db.query("update yt_settings set publish_mode = 'private', publish_time = '23:59'")
+await db.query("update yt_scripts set queue_pos = null"); await db.query("update yt_settings set yt_mode = 'approval'"); await db.query("update yt_settings set publish_mode = 'private', publish_time = '23:59'")
 const base = (await db.query("select script, package, video from yt_scripts where video is not null limit 1")).rows[0]
 const ids = []
 for (const n of ['QueueA', 'QueueB', 'QueueC']) { const i = (await db.query("insert into yt_ideas (key, name, url, source, status) values ($1, $1, 'https://q.test', 'Show HN', 'made') on conflict (key) do update set status = 'made' returning id", [n])).rows[0].id
@@ -21,12 +21,12 @@ await post({ action: 'queue-move', id: ids[2], dir: -1 }); check(JSON.stringify(
 await post({ action: 'queue-remove', id: ids[0] }); check(JSON.stringify(await order()) === JSON.stringify([ids[2], ids[1]]), 'Remove takes it out of the queue (the video stays in the library)')
 const appr = (await db.query("select id from yt_scripts where status <> 'rendered' limit 1")).rows[0]; if (appr) { r = await post({ action: 'queue-add', id: appr.id }); check(r.status === 400, 'only finished videos can be queued') }
 r = await post({ action: 'post-now', id: ids[2] }); check(r.status === 400, '“Post now” without confirming is refused')
-await db.query("update assistant_settings set mode = 'autopilot'"); await db.query("update yt_idea_runs set last_run = now()")
+await db.query("update yt_settings set yt_mode = 'autopilot'"); await db.query("update yt_idea_runs set last_run = now()")
 r = await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } }); const j = await r.json()
 check(!j.uploaded, 'before the day’s posting time (23:59 here), nothing goes out, however many are queued', JSON.stringify(j).slice(0, 120))
 const auto = (await db.query('select queue_pos from yt_scripts where id = $1', [ids[0]])).rows[0].queue_pos
 check(auto !== null, 'Autopilot adds finished videos to the queue by itself')
-await db.query("update assistant_settings set mode = 'approval'"); await db.query('update yt_scripts set queue_pos = null where id = $1', [ids[0]])
+await db.query("update yt_settings set yt_mode = 'approval'"); await db.query('update yt_scripts set queue_pos = null where id = $1', [ids[0]])
 const html = (await (await fetch(APP + '/admin/youtube?view=videos', { headers: { cookie: '__Host-olex_sess=' + T } })).text()).replace(/<!-- -->/g, '')
 const need = ['Up next', 'one video a day', 'at 23:59', 'Search videos', 'Most views', 'Add to queue'].filter((x) => !html.includes(x))
 check(!need.length, 'the Videos tab shows Up next, search, sorting and the actions', 'missing: ' + need.join(', ') + ' | ' + (html.match(/Up next[^<]{0,80}/) || [''])[0])
@@ -48,5 +48,5 @@ r = await post({ action: 'publish-settings', mode: 'private', time: '09:00', ser
 check(r.status === 200 && (await db.query('select publish_time2 from yt_settings')).rows[0].publish_time2 === '21:00', 'saving the Scripts tab’s publishing form keeps your second time (it never quietly drops to one a day)')
 await post({ action: 'posting-times', perDay: 1, time: '18:00' }); check((await db.query('select publish_time2 from yt_settings')).rows[0].publish_time2 === null, 'back to one a day in one tap')
 check(h2.includes('Suggested times') || h2.includes('Best for your channel') || true, 'best-time suggestions are offered (shown when Posting times is opened)')
-await db.query("update assistant_settings set mode = 'approval'"); await db.query("update yt_settings set publish_time = '18:00', publish_time2 = null, publish_mode = 'private'"); await db.query('delete from yt_scripts where id = any($1)', [ids])
+await db.query("update yt_settings set yt_mode = 'approval'"); await db.query("update yt_settings set publish_time = '18:00', publish_time2 = null, publish_mode = 'private'"); await db.query('delete from yt_scripts where id = any($1)', [ids])
 console.log(`  (${pass} passed, ${failn} failed)`); await db.end(); process.exit(failn ? 1 : 0)

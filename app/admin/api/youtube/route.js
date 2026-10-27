@@ -1,4 +1,5 @@
 // YouTube actions (owner only): fetch the numbers now, disconnect, find ideas, pick or skip an idea, write / edit / approve / drop a script.
+import { q } from '@/lib/admin/db'
 import { currentUser, sameOrigin, ownerOnly, clientIp } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
@@ -36,6 +37,7 @@ export async function POST(request) {
       } catch (e) { throw new Refused(e.message) }
     }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
+    if (body.action === 'yt-mode') { const m = body.mode === 'autopilot' ? 'autopilot' : 'approval'; await q('update yt_settings set yt_mode = $1 where id = 1', [m]); return { ok: true, mode: m } }
     if (body.action === 'research-times') {
       const r = await timeResearch(); if (r && r.researched_at && Date.now() - new Date(r.researched_at).getTime() < 3600e3) throw new Refused('Researched less than an hour ago. Try again later.')
       try { return await researchPostingTimes() } catch (e) { throw new Refused(e.message) }

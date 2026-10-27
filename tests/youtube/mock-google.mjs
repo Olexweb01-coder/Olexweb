@@ -23,6 +23,7 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/_set') { for (const [k, v] of p) S[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v; return send(res, 200, { ok: true }) }
   if (u.pathname === '/indexnow' && req.method === 'POST') { let raw = ''; for await (const ch of req) raw += ch; S.indexnow = (S.indexnow || []).concat([JSON.parse(raw)]); return send(res, 200, '') }
   if (u.pathname === '/_indexnow') return send(res, 200, { calls: S.indexnow || [] })
+  if (u.pathname === '/_metas') return send(res, 200, { metas: (S.sessions || []).map((x) => x.meta) })
   if (u.pathname === '/_privacy') { S.privacy = S.privacy || {}; S.privacy[p.get('id')] = p.get('p'); return send(res, 200, { ok: true }) }
   if (u.pathname === '/auth') {                       // the consent screen: approve straight away
     const code = 'code-' + Math.random().toString(36).slice(2)
