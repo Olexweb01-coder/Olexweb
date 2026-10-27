@@ -453,3 +453,7 @@ create index if not exists dir_entries_live on dir_entries (status, published_at
 create table if not exists dir_daily (slug text not null, day date not null, views int not null default 0, leads int not null default 0, primary key (slug, day));
 create table if not exists dir_settings (id int primary key default 1 check (id = 1), per_day int not null default 12, auto_publish boolean not null default true, last_ping jsonb);
 insert into dir_settings (id) values (1) on conflict do nothing;
+-- blog pace: up to 21 articles a week (was 1–3)
+alter table assistant_settings drop constraint if exists assistant_settings_pace_check;
+alter table assistant_settings add constraint assistant_settings_pace_check check (pace between 1 and 21);
+alter table assistant_settings add column if not exists research_at timestamptz;   -- last extra research for high paces

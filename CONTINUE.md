@@ -229,3 +229,7 @@ content. Add it after the audit is approved, since the audit describes one chann
   CRON_SECRET repo secret). Vercel's own cron only runs twice a day.
 - Next: news briefs (sourced explainers), comparisons/guides from directory facts, free tools, Search Console learning loop,
   Instagram/Facebook Reels, affiliate links.
+- Blog pace (built): 1–21 articles a week (DB check, API, schedule, chat, settings UI with 1/2/3/5/7 + Custom in the
+  "How it works" tab). gapHours: ≤3/week → 48 h; above → max(6, floor(168/pace·0.8)). Above 3/week the quick run also
+  drafts (draftIfDue) and refreshes research at most every 6 h (assistant_settings.research_at). Mode (approval/autopilot)
+  is shared by the blog AND YouTube scripts. Tests: fPACE.mjs (8).

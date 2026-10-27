@@ -42,7 +42,7 @@ export async function POST(request) {
     if (b.action === 'memory-delete') return deleteLesson(id(b.id))
     if (b.action === 'run') return dailyRun()
     if (b.action === 'settings') {
-      const mode = b.mode === 'autopilot' ? 'autopilot' : 'approval', pace = Math.min(3, Math.max(1, Number(b.pace) || 2)), hours = [7, 12, 24].includes(Number(b.hours)) ? Number(b.hours) : 24
+      const mode = b.mode === 'autopilot' ? 'autopilot' : 'approval', pace = Math.min(21, Math.max(1, Math.round(Number(b.pace)) || 2)), hours = [7, 12, 24].includes(Number(b.hours)) ? Number(b.hours) : 24
       const topics = (Array.isArray(b.topics) ? b.topics : []).map((t) => String(t).trim()).filter((t) => TOPIC.test(t)).slice(0, 8)
       if (!topics.length) throw new Refused('Add at least one topic.')
       const socials = {}; for (const k of ['linkedin', 'x', 'facebook']) { const v = String((b.socials || {})[k] || '').trim(); if (v && !/^https:\/\/[^\s<>"]{4,200}$/.test(v)) throw new Refused('Social links need to start with https://'); socials[k] = v }

@@ -53,7 +53,7 @@ export default function AssistantBoard({ ready, scheduled, pending = [], pausedU
       {research.length ? <ul className="rows plan">{research.slice(0, 5).map((t) => <li key={t.id} className="row"><span className="ic">○</span><span><span className="row-t">{t.topic}</span><span className="row-s">{t.searches[0]}</span></span><span className="pill res">Researched</span></li>)}</ul> : <div className="empty">Research runs every morning.</div>}
       <h2 className="section-t">Published by Olex AI</h2>
       {published.length ? <ul className="rows plan">{published.map((p) => <li key={p.id}><a className="row click" href={'/insights/' + p.slug} target="_blank" rel="noopener" style={{ textDecoration: 'none', color: 'inherit' }}><span className="ic">✓</span><span><span className="row-t">{p.title}</span><span className="row-s">{day(p.published_on)}</span></span><span className="pill">View</span></a></li>)}</ul> : <div className="empty">Nothing yet.</div>}
-      <p className="note">{settings.pace} article{settings.pace === 1 ? '' : 's'} a week at most, never two days in a row. {scheduled ? 'The daily run happens every morning.' : 'The daily run isn\u2019t scheduled yet: add CRON_SECRET in Vercel.'}</p>
+      <p className="note">{settings.pace} article{settings.pace === 1 ? '' : 's'} a week at most, {settings.pace <= 3 ? 'never two days in a row' : 'spread through the week'}. {scheduled ? 'The daily run happens every morning.' : 'The daily run isn\u2019t scheduled yet: add CRON_SECRET in Vercel.'}</p>
     </>) : <Settings settings={settings} busy={busy} setBusy={setBusy} speed={speed} providers={providers} />}
   </>)
 }
@@ -73,7 +73,9 @@ function Settings({ settings, busy, setBusy, speed, providers }) {
     {mode === 'autopilot' ? <><h2 className="section-t">Review window</h2>
       <div className="seg" role="group" aria-label="Hours before a draft publishes">{[7, 12, 24].map((h) => <button key={h} aria-pressed={hours === h} onClick={() => setHours(h)}>{h} hours</button>)}</div>
       <p className="note">You can also tell Olex AI in chat: “hold this draft”, “give it 12 more hours” or “publish it now”.</p></> : null}
-    <h2 className="section-t">Pace</h2><div className="seg" role="group" aria-label="Articles a week">{[1, 2, 3].map((n) => <button key={n} aria-pressed={pace === n} onClick={() => setPace(n)}>{n} a week</button>)}</div>
+    <h2 className="section-t">Pace</h2><div className="seg" role="group" aria-label="Articles a week" style={{ flexWrap: 'wrap' }}>{[1, 2, 3, 5, 7].map((n) => <button key={n} aria-pressed={pace === n} onClick={() => setPace(n)}>{n} a week</button>)}
+      <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center', padding: '0 10px', fontSize: 14 }}>Custom<input className="input" type="number" min={1} max={21} value={pace} onChange={(e) => setPace(Math.max(1, Math.min(21, Math.round(Number(e.target.value)) || 1)))} style={{ width: 76 }} aria-label="Custom articles a week" /></label></div>
+    <p className="note" style={{ marginTop: 6 }}>{pace <= 3 ? 'At least 2 days apart.' : `Spread through the week: about one every ${Math.max(6, Math.floor((168 / pace) * 0.8))} hours.`} Each article is researched from real sources and checked before it’s drafted. Up to 21 a week.</p>
     <h2 className="section-t">Topics it researches</h2>
     <div className="chips">{topics.map((x) => <span className="chip" key={x}>{x}<button aria-label={'Remove ' + x} onClick={() => setTopics(topics.filter((y) => y !== x))}>&times;</button></span>)}</div>
     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}><input className="input" value={t} onChange={(e) => setT(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add() } }} placeholder="For example: websites for restaurants" maxLength={60} /><button className="btn btn-line" onClick={add}>Add</button></div>
