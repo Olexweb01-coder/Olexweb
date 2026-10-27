@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 
 const OPEN = ['/admin/login', '/admin/api/sign-in', '/admin/api/verify-code', '/admin/manifest.webmanifest', '/admin/join', '/admin/api/join', '/admin/sw.js',
-  '/admin/api/youtube/callback']   // Google's way back: proven by a one-time state, not the (Strict) session cookie
+  '/admin/api/youtube/callback', '/admin/api/meta/callback']   // Google's way back: proven by a one-time state, not the (Strict) session cookie
 const PUBLIC = ['/review', '/api/review']      // clients' review pages: strict headers, no sign-in
 
 export function middleware(request) {

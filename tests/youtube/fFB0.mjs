@@ -11,10 +11,16 @@ await db.query("insert into dir_entries (slug, idea_id, name, url, status, conte
 console.log('\n73. Connecting the Facebook Page (Meta’s official login)')
 let r = await fetch(APP + '/admin/api/meta/connect', { headers: { cookie: '__Host-olex_sess=' + E }, redirect: 'manual' }); check(r.status >= 300 && /login/.test(r.headers.get('location') || ''), 'only you can connect a Page')
 r = await fetch(APP + '/admin/api/meta/connect', { headers: { cookie: '__Host-olex_sess=' + T }, redirect: 'manual' }); let loc = r.headers.get('location') || ''
-check(/\/v21\.0\/dialog\/oauth\?/.test(loc) && loc.includes('config_id=cfg-123') && loc.includes('redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fadmin%2Fapi%2Fmeta%2Fcallback') && /state=[\w-]{20,}/.test(loc), 'Connect sends you to Meta’s login with the app’s configuration and an unguessable state')
+const sc = (r.headers.get('set-cookie') || '').match(/olex_meta_state=([^;]+)/), stateCookie = sc ? 'olex_meta_state=' + sc[1] : ''
+check(/\/v21\.0\/dialog\/oauth\?/.test(loc) && loc.includes('config_id=cfg-123') && loc.includes('redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fadmin%2Fapi%2Fmeta%2Fcallback') && /state=[\w-]{20,}/.test(loc) && stateCookie && /SameSite=Lax/i.test(r.headers.get('set-cookie')), 'Connect sends you to Meta’s login with the app’s configuration, an unguessable state, and a short-lived state cookie', loc.slice(0, 200))
 r = await fetch(loc, { redirect: 'manual' }); const back = r.headers.get('location')
-const forged = await fetch(back.replace(/state=[^&]+/, 'state=forged'), { headers: { cookie: '__Host-olex_sess=' + T }, redirect: 'manual' }); check(/fb=expired/.test(forged.headers.get('location') || ''), 'a forged or reused sign-in is refused')
-r = await fetch(back, { headers: { cookie: '__Host-olex_sess=' + T }, redirect: 'manual' }); check(/fb=connected/.test(r.headers.get('location') || ''), 'coming back from Meta connects the Page')
+const page = async (url, cookie) => { const x = await fetch(url, { headers: cookie ? { cookie } : {}, redirect: 'manual' }); return { s: x.status, h: await x.text() } }
+let pp = await page(back.replace(/state=[^&]+/, 'state=forged'), stateCookie); check(/fb=expired/.test(pp.h), 'a forged state is refused')
+pp = await page(back, ''); check(/fb=expired/.test(pp.h), 'coming back in a different browser (no state cookie) is refused')
+r = await fetch(APP + '/admin/api/meta/connect', { headers: { cookie: '__Host-olex_sess=' + T }, redirect: 'manual' }); loc = r.headers.get('location'); const sc2 = 'olex_meta_state=' + r.headers.get('set-cookie').match(/olex_meta_state=([^;]+)/)[1]
+const back2 = (await fetch(loc, { redirect: 'manual' })).headers.get('location')
+pp = await page(back2, sc2)                                     // like a real browser: Meta's hop carries only the Lax state cookie, not the Strict session
+check(pp.s === 200 && /fb=connected/.test(pp.h) && /http-equiv="refresh"/.test(pp.h), 'coming back from Meta (without the Strict session cookie) connects the Page, then hands back to the admin from this site')
 const pg1 = (await db.query('select page_id, name, token_enc, selected from meta_pages')).rows
 check(pg1.length === 1 && pg1[0].name === 'Olexweb' && pg1[0].selected && !pg1[0].token_enc.includes('page-token-777'), 'your Olexweb Page is chosen, and its posting key is stored encrypted (never in plain text)')
 const post = (b, t = T) => fetch(APP + '/admin/api/meta', { method: 'POST', headers: { cookie: '__Host-olex_sess=' + t, Origin: APP, 'Content-Type': 'application/json' }, body: JSON.stringify(b) })

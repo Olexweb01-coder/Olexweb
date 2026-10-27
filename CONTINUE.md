@@ -250,3 +250,4 @@ content. Add it after the audit is approved, since the audit describes one chann
   Daily limit counts meta_posts (log of every Reel). Serious Meta errors (190, 368/blocked, 10/200/3) pause + notify
   (kind 'facebook'). Panel at top of YouTube → Videos. Privacy page has #facebook / #facebook-deletion. Instagram: off
   (ig_enabled) until that account is stable. Tests: fFB0.mjs + fFB.mjs in phaseD (75 pass).
+- Meta callback (fixed): like YouTube's, it's in middleware OPEN; proven by the one-time state (DB, 15 min, made by the owner) + a Lax 'olex_meta_state' cookie set at connect; returns a tiny page with meta refresh so the Strict session cookie travels again. redirect_uri always SITE_ORIGIN() (https://olexweb.com). Meta app: the Valid OAuth Redirect URI must be a saved TAG (typed, no leading spaces) and the Website platform added.
