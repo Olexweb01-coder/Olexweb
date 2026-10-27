@@ -213,3 +213,19 @@ content. Add it after the audit is approved, since the audit describes one chann
   Photos: components/admin/Uploaders.jsx PhotoUpload crops in the browser (4:5 chest-up guide; 1.91 for link previews) and posts
   to the existing /admin/api/upload (WebP, /media/img/...). Full preview: /admin/pages/[id]/preview (saves first).
   Housekeeping helper dropUnfinished() exists for half-uploaded files (not yet scheduled). Tests: fUP.mjs (14).
+
+## The Olexweb Directory (built): the marketing engine's first piece
+- Lane: useful tools, AI and tech for creators and small businesses (he chose this; no general/sports news, which carries
+  spam-policy, AdSense, accuracy and legal risk).
+- lib/site/editorial.js: RULEBOOK (AI instructions) + checkEntry (HARD checks: ≥3 facts each with an exact quote from the site,
+  pricing only with proof, banned hype/filler words, no emoji/!, lengths; quality score). Failing pages stay private drafts.
+- lib/site/directory.js: writeEntry (reads the site: title + meta description + text; thin <400 chars refused; one repair
+  pass), directoryRun (quick run: 2 per run, daily cap dir_settings.per_day default 12, best research ideas first, score ≥55),
+  IndexNow announce (key = sha256('indexnow:'+AUTH_SECRET)[0:32], served at /api/indexnow), views/leads (dir_daily).
+- Public: /tools (DirLibrary.jsx: search, categories, price), /tools/[slug] (DirEntry.jsx: facts with quotes, Short via
+  click-to-load, how to start, our take, FAQ + JSON-LD WebPage/Breadcrumb/FAQPage, alternatives, offer = newest live page →
+  else AOC → else /me, tracked ?from=tools-<slug>). Sitemap includes them. Admin: /admin/directory (AdminDirectory.jsx).
+- Runner: olexweb-factory/.github/workflows/olex-runner.yml pings /api/assistant/cron?run=due every 10 min (needs the
+  CRON_SECRET repo secret). Vercel's own cron only runs twice a day.
+- Next: news briefs (sourced explainers), comparisons/guides from directory facts, free tools, Search Console learning loop,
+  Instagram/Facebook Reels, affiliate links.

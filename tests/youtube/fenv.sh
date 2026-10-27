@@ -7,5 +7,7 @@ export STORAGE_ENDPOINT=http://localhost:4560 STORAGE_BUCKET=olex STORAGE_ACCESS
 export OLEX_API=http://localhost:3000
 export YT_UPLOAD_BASE=http://localhost:4555
 export STORAGE_TIMEOUT_MS=1500
-export ASSISTANT_TEST_HOSTS=paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555 FACTORY_TEST_HOSTS=paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555
+export ASSISTANT_TEST_HOSTS=dirtool.test:4555,fibtool.test:4555,paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555 FACTORY_TEST_HOSTS=paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555
 export GEMINI_API_KEY=test-key ASSISTANT_GEMINI_BASE=http://localhost:4555 ASSISTANT_GEMINI_RETRY_MS=10
+
+export INDEXNOW_ENDPOINT=http://localhost:4555/indexnow

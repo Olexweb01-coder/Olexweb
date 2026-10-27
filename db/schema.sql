@@ -443,3 +443,13 @@ alter table site_links add column if not exists url text;            -- a short 
 alter table site_links alter column phone drop not null;
 create table if not exists page_files (id text primary key, name text not null, mime text not null, bytes bigint not null, pieces int not null,
   piece_size int not null, got int[] not null default '{}', ready boolean not null default false, created_at timestamptz not null default now());
+
+-- ---------- The Olexweb Directory: a page for every useful website the research engine finds (olexweb.com/tools/<slug>) ----------
+create table if not exists dir_entries (id serial primary key, slug text not null unique, idea_id int unique references yt_ideas(id) on delete set null,
+  name text not null, url text not null, category text, status text not null default 'draft' check (status in ('draft', 'live', 'blocked')),
+  content jsonb not null default '{}'::jsonb, quality jsonb not null default '{}'::jsonb, views int not null default 0, leads int not null default 0,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(), published_at timestamptz);
+create index if not exists dir_entries_live on dir_entries (status, published_at desc);
+create table if not exists dir_daily (slug text not null, day date not null, views int not null default 0, leads int not null default 0, primary key (slug, day));
+create table if not exists dir_settings (id int primary key default 1 check (id = 1), per_day int not null default 12, auto_publish boolean not null default true, last_ping jsonb);
+insert into dir_settings (id) values (1) on conflict do nothing;

@@ -21,6 +21,8 @@ http.createServer(async (req, res) => {
   log.push(req.method + ' ' + u.pathname)
   if (u.pathname === '/_state') return send(res, 200, { ...S, issued: [...S.issued], log })
   if (u.pathname === '/_set') { for (const [k, v] of p) S[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v; return send(res, 200, { ok: true }) }
+  if (u.pathname === '/indexnow' && req.method === 'POST') { let raw = ''; for await (const ch of req) raw += ch; S.indexnow = (S.indexnow || []).concat([JSON.parse(raw)]); return send(res, 200, '') }
+  if (u.pathname === '/_indexnow') return send(res, 200, { calls: S.indexnow || [] })
   if (u.pathname === '/_privacy') { S.privacy = S.privacy || {}; S.privacy[p.get('id')] = p.get('p'); return send(res, 200, { ok: true }) }
   if (u.pathname === '/auth') {                       // the consent screen: approve straight away
     const code = 'code-' + Math.random().toString(36).slice(2)
@@ -75,7 +77,9 @@ http.createServer(async (req, res) => {
       squoosh: ['Squoosh', 'Compress images in your browser. Free and open source, by Google.'],
       tldraw: ['tldraw', 'A free whiteboard in your browser. No sign up.'],
       gradientlab: ['Gradient Lab', 'Make beautiful mesh gradients and export them free.'],
-      fontpair: ['FontPair', 'Find Google Font pairings that work together. Free.'] }
+      fontpair: ['FontPair', 'Find Google Font pairings that work together. Free.'],
+      dirtool: ['DirTool: flowcharts from plain words', 'DirTool turns rough notes into clean flowcharts in your browser. Type your steps in plain words and DirTool draws the diagram for you. It is free to use with no sign up required. You can export your diagram as PNG or SVG and share a link with your team. DirTool works on phones, tablets and computers. Paid plans add team folders and custom branding for businesses. Students use DirTool to plan essays and projects, and freelancers use it to explain processes to clients.'],
+      fibtool: ['FibTool', 'FibTool turns rough notes into clean flowcharts in your browser. Type your steps in plain words and FibTool draws the diagram for you. It is free to use with no sign up required. You can export your diagram as PNG or SVG and share a link with your team. FibTool works on phones, tablets and computers. Paid plans add team folders and custom branding for businesses. Students use FibTool to plan essays and projects, and freelancers use it to explain processes to clients.'] }
     const pg = PAGES[k]; if (!pg) return send(res, 404, 'nope', { 'Content-Type': 'text/html' })
     return send(res, 200, `<html><head><title>${pg[0]}</title><meta name="description" content="${pg[1]}"></head><body><h1>${pg[0]}</h1><p>${pg[1]}</p></body></html>`, { 'Content-Type': 'text/html; charset=utf-8' })
   }
@@ -88,6 +92,19 @@ http.createServer(async (req, res) => {
       const given = /14 Nov/.test(prompt), out = { title: 'Build With AI', kicker: 'Free webinar', tagline: 'Watch an idea become a live website in one hour.', intro: 'A practical session.', learnTitle: 'What you’ll see',
         learn: ['Planning with AI', 'Building live', 'Publishing it', 'Your questions'], whoFor: 'Students and freelancers.', cta: 'Save my seat', preview: 'A free live session.', hostBio: 'Olaitan builds with AI.',
         faq: [{ q: 'Is it free?', a: 'Yes.' }], when: given ? '2026-11-14T19:00' : '', minutes: given ? 60 : 0, platform: given ? 'Google Meet' : '[add the platform]', venue: '', address: '' }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (prompt.includes('Write the Olexweb Directory page')) {      // Directory: DirTool = honest; FibTool = invents a quote (must be caught)
+      const fib = prompt.includes('Name: FibTool'), N = fib ? 'FibTool' : 'DirTool'
+      const out = { title: N + ': flowcharts from plain words', metaDescription: N + ' turns rough notes into clean flowcharts in your browser. Free to use with no sign up, for students and freelancers.',
+        oneLiner: 'Type your steps in plain words and get a clean flowchart.', summary: N + ' turns rough notes into clean flowcharts in your browser. You type the steps in plain words and it draws the diagram, then you export it or share a link. It suits students planning projects and freelancers explaining a process.',
+        facts: [{ claim: 'It draws diagrams from plain words.', quote: 'Type your steps in plain words and ' + N + ' draws the diagram for you.' }, { claim: 'Free with no sign-up.', quote: 'It is free to use with no sign up required.' },
+          { claim: 'Exports PNG or SVG.', quote: fib ? 'Trusted by over 2 million teams worldwide.' : 'You can export your diagram as PNG or SVG and share a link with your team.' }],
+        pricing: { status: 'freemium', claim: 'Free to use; paid plans add team features.', quote: 'Paid plans add team folders and custom branding for businesses.' },
+        whoFor: ['Students planning projects', 'Freelancers explaining processes'], howToStart: ['Open the site.', 'Type your steps, one per line.', 'Export as PNG or SVG, or share the link.'],
+        ourTake: 'A quick way to turn messy notes into a diagram people understand. Worth it for one-off flowcharts; teams may want the paid folders.', goodFor: ['Quick flowcharts', 'Explaining a process'], watchOut: ['Team features need a paid plan'],
+        faq: [{ q: 'Is ' + N + ' free?', a: 'Yes, it is free to use with no sign-up; paid plans add team folders.' }, { q: 'How do I use ' + N + '?', a: 'Type your steps in plain words and it draws the diagram.' }, { q: 'Can I export?', a: 'Yes, as PNG or SVG.' }],
+        tags: ['diagrams', 'flowcharts', 'productivity'], thin: false, unsafe: false }
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
     }
     if (prompt.includes('Suggest 3 different options')) return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ options: ['Option one', 'Option two', 'Option three'] }) }] } }] })
