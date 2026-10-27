@@ -23,6 +23,21 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/_set') { for (const [k, v] of p) S[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v; return send(res, 200, { ok: true }) }
   if (u.pathname === '/indexnow' && req.method === 'POST') { let raw = ''; for await (const ch of req) raw += ch; S.indexnow = (S.indexnow || []).concat([JSON.parse(raw)]); return send(res, 200, '') }
   if (u.pathname === '/_indexnow') return send(res, 200, { calls: S.indexnow || [] })
+  // ---- stand-in Meta (Facebook Login for Business + Pages Reels API) ----
+  if (u.pathname === '/v21.0/dialog/oauth') { S.fbDialog = Object.fromEntries(p); return send(res, 302, '', { Location: p.get('redirect_uri') + '?code=fbcode&state=' + encodeURIComponent(p.get('state')) }) }
+  if (u.pathname === '/v21.0/oauth/access_token') { if (p.get('code') === 'fbcode' && p.get('client_secret') === 'meta-secret') return send(res, 200, { access_token: 'fb-user-short' }); if (p.get('fb_exchange_token') === 'fb-user-short') return send(res, 200, { access_token: 'fb-user-long' }); return send(res, 400, { error: { message: 'bad code', code: 100 } }) }
+  if (u.pathname === '/v21.0/me/accounts') return p.get('access_token') === 'fb-user-long' ? send(res, 200, { data: [{ id: '777', name: 'Olexweb', access_token: 'page-token-777', tasks: ['CREATE_CONTENT', 'MANAGE'] }] }) : send(res, 400, { error: { message: 'bad token', code: 190 } })
+  if (u.pathname === '/v21.0/777/video_reels' && req.method === 'POST') {
+    let raw = ''; for await (const ch of req) raw += ch; const f = new URLSearchParams(raw)
+    if (f.get('access_token') !== 'page-token-777') return send(res, 400, { error: { message: 'Invalid OAuth access token.', code: 190 } })
+    if (S.fbBlock) return send(res, 400, { error: { message: 'You’re temporarily blocked from performing this action.', code: 368 } })
+    if (f.get('upload_phase') === 'start') { S.fbN = (S.fbN || 0) + 1; return send(res, 200, { video_id: 'fbv' + S.fbN, upload_url: 'x' }) }
+    if (f.get('upload_phase') === 'finish') { S.fbPosts = (S.fbPosts || []).concat([{ video_id: f.get('video_id'), description: f.get('description'), state: f.get('video_state') }]); return send(res, 200, { success: true }) }
+  }
+  if (u.pathname.startsWith('/video-upload/v21.0/') && req.method === 'POST') { const chunks = []; for await (const c of req) chunks.push(c); const b = Buffer.concat(chunks)
+    if (req.headers.authorization !== 'OAuth page-token-777') return send(res, 400, { error: { message: 'bad token', code: 190 } })
+    S.fbUploads = (S.fbUploads || []).concat([{ id: u.pathname.split('/').pop(), bytes: b.length, said: Number(req.headers.file_size) }]); return send(res, 200, { success: true }) }
+  if (u.pathname === '/_fb') return send(res, 200, { posts: S.fbPosts || [], uploads: S.fbUploads || [], dialog: S.fbDialog || null })
   if (u.pathname === '/_metas') return send(res, 200, { metas: (S.sessions || []).map((x) => x.meta) })
   if (u.pathname === '/_privacy') { S.privacy = S.privacy || {}; S.privacy[p.get('id')] = p.get('p'); return send(res, 200, { ok: true }) }
   if (u.pathname === '/auth') {                       // the consent screen: approve straight away

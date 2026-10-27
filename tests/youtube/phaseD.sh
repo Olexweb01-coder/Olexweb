@@ -14,9 +14,11 @@ node fD.mjs "$EDITOR" || exit 1
 ID2=$(psql postgres://olex:olex@localhost/olexweb -qtAc "insert into yt_scripts (idea_id, status, script, package, approved_at) select (select id from yt_ideas where name ilike 'tldraw%' limit 1), 'approved', script, package, now() from yt_scripts where id=$ID on conflict (idea_id) do update set status='approved', part=null, upload=null, yt_video_id=null returning id")
 echo "$ID2" > /tmp/fid2
 send $ID2
+node fFB0.mjs
 node fD2.mjs private
 send $ID2
 node fD2.mjs scheduled
 node fQ.mjs
 node fYT.mjs
+node fFB.mjs
 node fT.mjs

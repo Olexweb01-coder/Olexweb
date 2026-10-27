@@ -1,6 +1,6 @@
 'use client'
 // The Videos tab: the one-a-day queue ("Up next"), and every finished or uploaded video with search, filters and sorting.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 
@@ -18,6 +18,14 @@ export default function YouTubeVideos({ data }) {
   const [q, setQ] = useState(''), [show, setShow] = useState('all'), [sort, setSort] = useState('newest'), [since, setSince] = useState('any')
   const [play, setPlay] = useState(null), [confirm, setConfirm] = useState(null)
   const [edit, setEdit] = useState(false), [per, setPer] = useState(data.queue.perDay), [t1, setT1] = useState(data.queue.times[0]), [t2, setT2] = useState(data.queue.times[1] || '20:00')
+  const FB = data.meta, [fbNote, setFbNote] = useState('')
+  useEffect(() => { const k = new URLSearchParams(window.location.search).get('fb'); if (!k) return
+    setFbNote({ connected: 'Facebook connected.', cancelled: 'Connecting was cancelled.', expired: 'That took too long. Try connecting again.', nopages: 'No Page found that this account can post to. Make sure you’re an admin of the Page and allowed it.', failed: 'Connecting didn’t work. Try again.', notready: 'Add META_APP_ID, META_APP_SECRET and META_CONFIG_ID in Vercel, then redeploy.' }[k] || '') }, [])
+  async function meta(body, ok) {
+    setBusy('meta' + body.action); setErr('')
+    try { const r = await fetch('/admin/api/meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) }), j = await r.json().catch(() => ({}))
+      if (!r.ok) setErr(j.error || 'Something went wrong.'); else { toast(ok); router.refresh() } } catch { setErr('No connection. Try again.') } finally { setBusy('') }
+  }
   const B = data.best, Q = data.queue, queuedIds = new Set(Q.items.map((x) => x.id))
   async function call(body, ok) {
     setBusy(body.action + (body.id || '')); setErr('')
@@ -42,6 +50,20 @@ export default function YouTubeVideos({ data }) {
 
   return (<>
     {err ? <p className="err" role="alert">{err}</p> : null}
+    {FB ? <section className="yv-fb" aria-label="Facebook Reels">
+      <div className="yv-fbh"><svg viewBox="0 0 24 24" className="yv-fbi" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M13.5 20v-6.5H16l.4-3h-2.9V9c0-.9.3-1.4 1.5-1.4h1.5V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.6 1.3-3.6 3.7v1.8H8v3h2.7V20" /></svg>
+        <b>Facebook Reels</b>{FB.page ? <span className="yv-fbp">{FB.page.name}</span> : null}
+        {FB.page ? <span className={'yv-st yv-' + (FB.paused ? 'youtube' : FB.enabled ? 'ready' : 'youtube')}>{FB.paused ? 'Paused' : FB.enabled ? 'On' : 'Off'}</span> : null}</div>
+      {fbNote ? <p className="yv-fbn">{fbNote}</p> : null}
+      {!FB.ready ? <p className="yv-fbn">Add META_APP_ID, META_APP_SECRET and META_CONFIG_ID in Vercel, then redeploy, to connect your Page.</p>
+        : !FB.pages.length ? <div className="yv-fbr"><a className="btn btn-green" href="/admin/api/meta/connect">Connect your Facebook Page</a><span className="yv-fbn">Each Short that goes to YouTube can also post as a Reel, with its guide link. Instagram stays off until that account has been stable for a while.</span></div>
+        : !FB.page ? <div className="yv-fbr"><span className="yv-fbn">Which Page should Reels go to?</span>{FB.pages.map((p) => <button key={p.page_id} className="btn btn-line" disabled={!!busy} onClick={() => meta({ action: 'select', page: p.page_id }, 'Page chosen: ' + p.name)}>{p.name}</button>)}</div>
+        : <>{FB.paused ? <div className="yv-fbw"><b>Posting is paused</b><span>Because {FB.paused.reason}</span><button className="btn btn-green" disabled={!!busy} onClick={() => meta({ action: 'resume' }, 'Facebook posting resumed.')}>Resume</button></div> : null}
+          <div className="yv-fbr"><div className="seg" role="group" aria-label="Post Shorts as Facebook Reels" style={{ margin: 0 }}><button type="button" aria-pressed={FB.enabled} disabled={!!busy} onClick={() => meta({ action: 'enable', on: true }, 'Each Short will also post as a Facebook Reel.')}>Post each Short as a Reel</button><button type="button" aria-pressed={!FB.enabled} disabled={!!busy} onClick={() => meta({ action: 'enable', on: false }, 'Facebook posting is off.')}>Off</button></div>
+            <label className="yv-fbn" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>Up to<select className="input" value={FB.perDay} onChange={(e) => meta({ action: 'per-day', n: Number(e.target.value) }, 'Saved.')} style={{ width: 'auto' }}>{[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}</select>a day</label>
+            <button className="btn btn-line" style={{ marginLeft: 'auto' }} disabled={!!busy} onClick={() => { if (window.prompt('Disconnect Facebook? Posting stops and the Page’s key is deleted from your admin. Type DISCONNECT to confirm.') === 'DISCONNECT') meta({ action: 'disconnect', confirm: 'DISCONNECT' }, 'Facebook disconnected.') }}>Disconnect</button></div>
+          <span className="yv-fbn">Only Shorts post (long videos stay on YouTube). If Meta ever reports a block or an expired sign-in, posting pauses by itself and you get a notification.</span></>}
+    </section> : null}
     <section className="yv-vq" aria-label="Up next">
       <div className="yv-vqh"><b>Up next · {Q.perDay === 2 ? 'two videos a day' : 'one video a day'} at {Q.time} <button className="yv-link" onClick={() => setEdit(!edit)} aria-expanded={edit}>{edit ? 'Close' : 'Posting times'}</button></b><span style={dim}>Approving more never posts more. {data.autopilot ? 'Autopilot adds finished videos here.' : 'Add finished videos from the library.'}</span></div>
       {edit ? <div className="yv-pt2">
@@ -81,6 +103,7 @@ export default function YouTubeVideos({ data }) {
         {s === 'public' || s === 'youtube' ? <div className="yv-stats"><span><b>{v.views ?? 0}</b> views</span>{v.watched ? <span><b>{Math.round(v.watched)}%</b> watched</span> : null}</div> : null}
         {s === 'ready' ? <div className="yv-act"><button className="yv-p" disabled={!!busy} onClick={() => call({ action: 'queue-add', id: v.id }, 'Added to the queue.')}>Add to queue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
         {s === 'queued' ? <div className="yv-act"><button disabled={!!busy} onClick={() => call({ action: 'queue-remove', id: v.id }, 'Removed from the queue.')}>Unqueue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
+        {v.fb ? <span className="yv-fbc">{v.fb.status === 'posted' && v.fb.id ? <a href={'https://www.facebook.com/reel/' + v.fb.id} target="_blank" rel="noopener noreferrer">Also on Facebook ↗</a> : v.fb.status === 'pending' ? 'Facebook: waiting (next Reel)' : v.fb.status === 'failed' ? 'Facebook: not posted yet' : null}</span> : null}
         <div className="yv-meta"><span>{s === 'public' || s === 'youtube' ? 'Up ' + when(v.uploadedAt) : 'Made ' + when(v.madeAt)}</span>{v.ytId ? <a href={'https://studio.youtube.com/video/' + v.ytId + '/edit'} target="_blank" rel="noopener noreferrer">Studio ↗</a> : <a href="/admin/youtube?view=scripts">Script</a>}</div>
       </div>
     </article> })}</div> : <p style={dim}>{data.videos.length ? 'No videos match these filters.' : 'No finished videos yet. Send an approved script to the factory from the Scripts tab.'}</p>}
@@ -108,6 +131,9 @@ export default function YouTubeVideos({ data }) {
 .yv-pt2{display:grid;gap:12px;margin:0 0 14px;padding:14px;border-radius:16px;border:1px solid var(--line);background:rgba(242,239,233,.03)}.yv-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}.yv-row label{display:grid;gap:6px;font-size:13px;color:var(--dim)}
 .yv-sug{display:grid;gap:8px}.yv-sug>b{font-size:14px}.yv-sug small{color:var(--dim);font-size:12.5px;line-height:1.5}.yv-tip{display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--paper);cursor:pointer;font:inherit}.yv-tip b{font-size:16px;color:var(--green)}.yv-tip span{font-size:13px;color:var(--dim)}
 .yv-posted{margin:0;font-size:12.5px;line-height:1.45;color:var(--dim)}.yv-pub{color:#9cc8ff}.yv-prv{color:#ffc94d}
+.yv-fb{display:grid;gap:10px;margin-bottom:12px;padding:16px;border-radius:20px;background:var(--raise);border:1px solid var(--line)}.yv-fbh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.yv-fbh b{font-size:16px}
+.yv-fbi{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;color:var(--green)}.yv-fbp{font-size:13.5px;color:var(--dim)}.yv-fbr{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.yv-fbn{font-size:13px;color:var(--dim);margin:0}
+.yv-fbw{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px;border-radius:14px;border:1px solid rgba(255,138,138,.4);background:rgba(255,138,138,.06)}.yv-fbw span{font-size:13.5px;color:var(--dim);flex:1;min-width:200px}.yv-fbc{font-size:12.5px;color:var(--dim)}.yv-fbc a{color:var(--green)}
 .yv-vf{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 14px}.yv-vf input{flex:1;min-width:200px}.yv-vf select{width:auto}
 .yv-chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);font:700 13.5px inherit;cursor:pointer}.yv-chip.yv-on{background:var(--paper);color:#111;border-color:var(--paper)}
 .yv-vg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}

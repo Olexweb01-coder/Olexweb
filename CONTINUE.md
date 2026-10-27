@@ -241,3 +241,12 @@ content. Add it after the audit is approved, since the audit describes one chann
   videos on the way first. Older Shorts: YouTube scopes are readonly + analytics + upload (no videos.update, and adding
   youtube.force-ssl would affect the audit), so Admin → Directory lists them with Copy line / Open in Studio / Done
   (dir_entries.yt_linked_at). Tests: fYT0.mjs + fYT.mjs (in phaseD).
+- Facebook Reels (built): lib/site/meta.js with Meta app "Olexweb Publisher" (dev mode, own Page; env META_APP_ID,
+  META_APP_SECRET, META_CONFIG_ID; Facebook Login for Business config with pages_show_list, pages_read_engagement,
+  pages_manage_posts). Connect: /admin/api/meta/connect → Meta → /admin/api/meta/callback (state hashed, 15 min; admin user
+  ids are TEXT). Page tokens encrypted (meta_pages). Posting: Reels API start → rupload bytes → finish PUBLISHED, caption =
+  title + guide link + hashtags. Shorts only. A Short is marked fb={status:'pending'} at YouTube upload ONLY when its copy is
+  kept for Facebook (else dropped as before); poster picks pending/failed(<3 tries); pending >4 days → dropped+skipped.
+  Daily limit counts meta_posts (log of every Reel). Serious Meta errors (190, 368/blocked, 10/200/3) pause + notify
+  (kind 'facebook'). Panel at top of YouTube → Videos. Privacy page has #facebook / #facebook-deletion. Instagram: off
+  (ig_enabled) until that account is stable. Tests: fFB0.mjs + fFB.mjs in phaseD (75 pass).

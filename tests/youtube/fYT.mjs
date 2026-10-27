@@ -19,7 +19,7 @@ check(h.includes('YouTube automation') && h.includes('Approve each script') && h
 console.log('\n71. Every Short’s description starts with its free guide')
 const metas = (await (await fetch(G + '/_metas')).json()).metas.filter((x) => x && x.snippet)
 const withGuide = metas.filter((x) => /^Full guide \(free\): https:\/\/olexweb\.com\/tools\/guide-\d+/.test(x.snippet.description))
-check(metas.length > 0 && withGuide.length === metas.length, `the first line of each uploaded description is “Full guide (free): olexweb.com/tools/…” (${withGuide.length} of ${metas.length})`, metas[0] && metas[0].snippet.description.slice(0, 120))
+check(metas.length > 0 && withGuide.length === metas.length, `the first line of each uploaded description is “Full guide (free): olexweb.com/tools/…” (${withGuide.length} of ${metas.length})`, metas.map((m) => m.snippet.title.slice(0, 30) + ' | ' + m.snippet.description.slice(0, 50)).join(' || '))
 console.log('\n72. Older Shorts: a one-tap helper')
 const ad = (await (await fetch(APP + '/admin/directory', { headers: { cookie: '__Host-olex_sess=' + T } })).text()).replace(/<!-- -->/g, '')
 const need = (await db.query("select count(*)::int n from dir_entries d join yt_scripts s on s.idea_id = d.idea_id and s.status = 'uploaded' and s.yt_video_id is not null where d.status = 'live' and d.yt_linked_at is null")).rows[0].n

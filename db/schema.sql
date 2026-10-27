@@ -461,3 +461,13 @@ alter table assistant_settings add column if not exists research_at timestamptz;
 alter table yt_settings add column if not exists yt_mode text check (yt_mode in ('approval', 'autopilot'));
 update yt_settings set yt_mode = coalesce((select mode from assistant_settings where id = 1), 'approval') where id = 1 and yt_mode is null;
 alter table dir_entries add column if not exists yt_linked_at timestamptz;   -- "guide link added to the Short" (older Shorts, done by hand)
+
+-- ---------- Facebook Page Reels (Meta's official API; own Page; Instagram later) ----------
+create table if not exists meta_oauth_states (state_hash text primary key, user_id text, created_at timestamptz not null default now());
+create table if not exists meta_pages (page_id text primary key, name text not null, token_enc text not null, tasks jsonb not null default '[]'::jsonb, selected boolean not null default false, added_at timestamptz not null default now());
+create table if not exists meta_settings (id int primary key default 1 check (id = 1), enabled boolean not null default false, per_day int not null default 1 check (per_day between 1 and 3),
+  paused_at timestamptz, paused_reason text, connected_at timestamptz, ig_enabled boolean not null default false);
+insert into meta_settings (id) values (1) on conflict do nothing;
+alter table yt_scripts add column if not exists fb jsonb;     -- {status: posted|failed|skipped, video_id, at, error, tries}
+alter table meta_oauth_states alter column user_id type text using user_id::text;   -- admin user ids are text (uuid)
+create table if not exists meta_posts (id serial primary key, script_id int, video_id text, at timestamptz not null default now());   -- every Reel posted: the daily limit counts these

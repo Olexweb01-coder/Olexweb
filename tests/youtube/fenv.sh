@@ -11,3 +11,5 @@ export ASSISTANT_TEST_HOSTS=dirtool.test:4555,fibtool.test:4555,paletteforge.tes
 export GEMINI_API_KEY=test-key ASSISTANT_GEMINI_BASE=http://localhost:4555 ASSISTANT_GEMINI_RETRY_MS=10
 
 export INDEXNOW_ENDPOINT=http://localhost:4555/indexnow
+
+export META_APP_ID=meta-app META_APP_SECRET=meta-secret META_CONFIG_ID=cfg-123 META_GRAPH_BASE=http://localhost:4555 META_DIALOG_BASE=http://localhost:4555 META_RUPLOAD_BASE=http://localhost:4555
