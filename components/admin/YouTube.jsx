@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import { YouTubeTabs } from './YouTubeIdeas'
+import AutomationHead from './AutomationTabs'
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-GB')
 const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border: '1px solid var(--line)' }
@@ -50,7 +51,7 @@ export default function YouTube({ data, note }) {
   const banner = msg ? <p role={msg[0] === 'bad' ? 'alert' : 'status'} style={{ ...card, margin: '0 0 14px', padding: '13px 16px', fontSize: 14.5, lineHeight: 1.55, borderColor: msg[0] === 'bad' ? 'rgba(255,107,107,.45)' : 'rgba(143,227,106,.45)' }}>{msg[1]}</p> : null
 
   if (!d.ready) return (<>
-    <div className="top"><h1 className="d">YouTube</h1></div>{banner}
+    <AutomationHead current="youtube" />{banner}
     <section style={card}><h2 style={h2}>Almost ready</h2><p style={{ margin: 0, lineHeight: 1.6, ...dim }}>Add <b>YT_CLIENT_ID</b> and <b>YT_CLIENT_SECRET</b> in Vercel (Settings → Environment Variables, Production), redeploy, and the Connect button appears here.</p></section>
   </>)
 
@@ -61,7 +62,7 @@ export default function YouTube({ data, note }) {
     <a className="btn btn-green" href="/admin/api/youtube/connect">Connect YouTube</a>
   </section>)
 
-  if (!a || !a.channel_id) return (<><div className="top"><h1 className="d">YouTube</h1></div><YouTubeTabs current="analytics" />{banner}{connect(false)}</>)
+  if (!a || !a.channel_id) return (<><AutomationHead current="youtube" /><YouTubeTabs current="analytics" />{banner}{connect(false)}</>)
 
   const t = d.totals || {}, b = d.before || {}, series = d.series || [], max = Math.max(1, ...series.map((s) => s.views))
   const change = (now, then) => (then ? Math.round(((now - then) / then) * 100) : null)
@@ -84,7 +85,7 @@ export default function YouTube({ data, note }) {
         <button className="btn" style={{ background: '#ff8a8a', color: '#2a0000', opacity: typed === 'DISCONNECT' ? 1 : 0.35 }} disabled={typed !== 'DISCONNECT' || !!busy} onClick={() => act('disconnect', { confirm: 'DISCONNECT' })}>Disconnect</button>
       </div></div></div> : null
   return (<>{disDialog}
-    <div className="top"><h1 className="d">YouTube</h1></div>
+    <AutomationHead current="youtube" />
     <YouTubeTabs current="analytics" />
     {banner}
     {!d.connected ? connect(true) : null}

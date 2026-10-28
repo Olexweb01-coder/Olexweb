@@ -18,7 +18,7 @@ export default async function AppLayout({ children }) {
     owner && ['/admin/assistant', 'assistant', 'Olex Assistant'],
     owner && ['/admin/memory', 'memory', 'Memory'],
     ['/admin/blog', 'blog', 'Olex Blog'],
-    owner && ['/admin/youtube', 'youtube', 'YouTube'],
+    owner && ['/admin/automation', 'youtube', 'Automation', 0, ['/admin/youtube']],
     owner && ['/admin/pages', 'link', 'Pages & links'],
     owner && ['/admin/directory', 'link', 'Directory'],
     ['/admin/projects', 'work', 'Projects'],

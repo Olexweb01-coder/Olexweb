@@ -11,5 +11,5 @@ export async function GET(request) {
     const { url, state } = await connectUrl(SITE_ORIGIN(), u.id), res = NextResponse.redirect(url)
     res.cookies.set('olex_meta_state', state, { httpOnly: true, secure: SITE_ORIGIN().startsWith('https:'), sameSite: 'lax', path: '/admin/api/meta', maxAge: 900 })
     return res
-  } catch (e) { console.error('meta connect', e.message); return NextResponse.redirect(new URL('/admin/youtube?view=videos&fb=' + (/META_APP_ID/.test(e.message) ? 'notready' : 'failed'), request.url)) }
+  } catch (e) { console.error('meta connect', e.message); return NextResponse.redirect(new URL('/admin/automation/facebook?fb=' + (/META_APP_ID/.test(e.message) ? 'notready' : 'failed'), request.url)) }
 }

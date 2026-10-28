@@ -1,4 +1,4 @@
-// Facebook posting settings (owner only): choose the Page, on/off, Reels a day, resume after a pause, disconnect.
+// Facebook posting settings (owner only): choose the Page, on/off, Reels a day and their times, resume after a pause, disconnect.
 import { currentUser, sameOrigin, ownerOnly } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
@@ -14,6 +14,7 @@ export async function POST(request) {
       if (b.action === 'select') return await M.selectPage(b.page)
       if (b.action === 'enable') return await M.setEnabled(b.on === true)
       if (b.action === 'per-day') return await M.setPerDay(b.n)
+      if (b.action === 'times') return await M.setTimes(b.times)
       if (b.action === 'resume') return await M.resume()
       if (b.action === 'disconnect') { if (b.confirm !== 'DISCONNECT') throw new M.MetaError('Type DISCONNECT to confirm.'); return await M.disconnect() }
       throw new M.MetaError('Unknown action.')

@@ -15,7 +15,7 @@ export async function GET(request) {
     else if (!mine || mine !== p.get('state')) k = 'expired'                   // not the browser that started it
     else { const r = await finishConnect(SITE_ORIGIN(), p.get('code'), p.get('state')); k = r.ok ? 'connected' : r.why }
   } catch (e) { console.error('meta callback', e.message); k = 'failed' }
-  const next = '/admin/youtube?view=videos&fb=' + encodeURIComponent(k)
+  const next = '/admin/automation/facebook?fb=' + encodeURIComponent(k)
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="refresh" content="0;url=${next}"><title>Facebook</title><meta name="robots" content="noindex">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0f1012;color:#f2efe9;font:16px/1.5 system-ui,sans-serif}a{color:#8fe36a}</style></head>

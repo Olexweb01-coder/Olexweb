@@ -251,3 +251,19 @@ content. Add it after the audit is approved, since the audit describes one chann
   (kind 'facebook'). Panel at top of YouTube → Videos. Privacy page has #facebook / #facebook-deletion. Instagram: off
   (ig_enabled) until that account is stable. Tests: fFB0.mjs + fFB.mjs in phaseD (75 pass).
 - Meta callback (fixed): like YouTube's, it's in middleware OPEN; proven by the one-time state (DB, 15 min, made by the owner) + a Lax 'olex_meta_state' cookie set at connect; returns a tiny page with meta refresh so the Strict session cookie travels again. redirect_uri always SITE_ORIGIN() (https://olexweb.com). Meta app: the Valid OAuth Redirect URI must be a saved TAG (typed, no leading spaces) and the Website platform added.
+
+## Automation, install 1 (28 Oct 2026)
+- New admin section **Automation** (/admin/automation): tabs Overview · YouTube (the existing /admin/youtube pages, under the
+  Automation heading; old links work, sidebar highlights Automation) · Facebook (/admin/automation/facebook) · Instagram (off).
+- Facebook has its OWN posting times (meta_settings.times, 1–3 a day, ≥2 h apart, Lagos) and its OWN queue: any finished Short
+  with its copy in storage (status rendered, or uploaded and fb pending/failed within 4 days), in part order. It does NOT wait
+  for YouTube. A slot is filled at most 3 h late; never two Reels within 60 min; meta_posts.slot records the slot.
+- Storage: a copy is deleted only when YouTube has it AND Facebook has posted it (or doesn't want it / gave up after 4 days or 3 tries).
+- Facebook caption: hook (title) · first sentence of the description · Full guide link (if live) · 3 hashtags (fbCaption).
+- Switching YouTube to Autopilot approves waiting drafts (needs_review still waits). Progress: "Waiting for your review".
+- Overview: production check (need = bigger of the channels' per-day, made per day this week, ready videos, days left) with
+  Make more (send next approved to the factory, else write the next script); a card per channel; Needs you.
+- Tests: tests/youtube/fAU.mjs (34 checks); phaseAU.sh = phaseD + fAU (110 checks, all pass). resetD.sh + seedD.sql give a clean
+  test database (fresh DBs lacked sample ideas tldraw/PaletteForge/Queue* that the old sandbox had). Run long suites detached:
+  setsid nohup sh -c '...' & (plain background jobs are stopped between steps).
+- Next: install 2 = Library tab (per-channel ticks, Add your own idea).

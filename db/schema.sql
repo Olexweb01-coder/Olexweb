@@ -471,3 +471,6 @@ insert into meta_settings (id) values (1) on conflict do nothing;
 alter table yt_scripts add column if not exists fb jsonb;     -- {status: posted|failed|skipped, video_id, at, error, tries}
 alter table meta_oauth_states alter column user_id type text using user_id::text;   -- admin user ids are text (uuid)
 create table if not exists meta_posts (id serial primary key, script_id int, video_id text, at timestamptz not null default now());   -- every Reel posted: the daily limit counts these
+-- Automation (Oct 2026): Facebook has its own posting times and queue, separate from YouTube's
+alter table meta_settings add column if not exists times text;                    -- '13:00,20:00' (Lagos); empty = defaults for per_day
+alter table meta_posts add column if not exists slot text;                        -- 'YYYY-MM-DD HH:MM' (Lagos) the Reel filled

@@ -27,7 +27,7 @@ export default function YouTubeProgress({ data }) {
     <div className="yp-tabs" role="tablist" aria-label="Progress">{T.map(([k, l, n]) => <button key={k} role="tab" aria-selected={tab === k} className={'yp-tab' + (tab === k ? ' yp-on' : '') + (k === 'needs' && n ? ' yp-alert' : '')} onClick={() => setTab(k)}>{l} <i>{n}</i></button>)}</div>
 
     {tab === 'needs' ? (data.needs.length ? data.needs.map((x, i) => <section key={i} className="yp-card yp-stuck">
-      <div className="yp-top"><b>{x.title}</b><span>{x.at ? 'Stopped ' + ago(x.at) : ''}</span></div>
+      <div className="yp-top"><b>{x.title}</b><span>{x.waiting ? 'Waiting for your review' : x.at ? 'Stopped ' + ago(x.at) : ''}</span></div>
       <p className="yp-why">{x.why}</p>
       <div className="yp-acts">
         {x.action === 'retry' ? <button className="btn btn-green" disabled={!!busy} onClick={() => retry(x.id)}>{busy === 'r' + x.id ? 'Sending…' : 'Try again'}</button> : null}

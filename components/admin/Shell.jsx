@@ -31,7 +31,7 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
     setTimeout(() => window.dispatchEvent(new Event('olex-look')), 0)
   }
   const isChat = owner && path === '/admin', openChat = isChat ? Number(params.get('c')) || null : null
-  const here = (href) => path === href || path.startsWith(href + '/')
+  const here = (href, also = []) => [href, ...also].some((h) => path === h || path.startsWith(h + '/'))
   function toggle() {
     if (window.matchMedia('(max-width: 900px)').matches) { setDrawer((d) => !d); return }
     setClosed((c) => { setCookie('olex_side', c ? 'open' : 'closed'); return !c })
@@ -54,8 +54,8 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
           </div>
           {owner ? <Link href="/admin" className={'newchat' + (isChat && !openChat ? ' on' : '')}>{Icon.compose}New chat</Link> : null}
           <nav className="side-nav" aria-label="Sections">
-            {nav.map(([href, ic, label, count]) => (
-              <Link key={href} href={href} className="nav-a" aria-current={here(href) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{count > 0 ? <span className="count">{count}</span> : null}</Link>
+            {nav.map(([href, ic, label, count, also]) => (
+              <Link key={href} href={href} className="nav-a" aria-current={here(href, also) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{count > 0 ? <span className="count">{count}</span> : null}</Link>
             ))}
           </nav>
           {owner ? <div className="side-chats">
