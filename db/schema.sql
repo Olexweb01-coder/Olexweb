@@ -474,3 +474,7 @@ create table if not exists meta_posts (id serial primary key, script_id int, vid
 -- Automation (Oct 2026): Facebook has its own posting times and queue, separate from YouTube's
 alter table meta_settings add column if not exists times text;                    -- '13:00,20:00' (Lagos); empty = defaults for per_day
 alter table meta_posts add column if not exists slot text;                        -- 'YYYY-MM-DD HH:MM' (Lagos) the Reel filled
+-- Meetings (Nov 2026): video meetings at olexweb.com/meet/<code>, hosted by the owner, joined by anyone with the link (LiveKit)
+create table if not exists meetings (id serial primary key, code text not null unique, title text not null, speakers text not null default 'everyone' check (speakers in ('everyone', 'invited')),
+  host_id text, created_at timestamptz not null default now(), started_at timestamptz, ended_at timestamptz, last_join_at timestamptz, joins int not null default 0);
+create index if not exists meetings_open on meetings (created_at desc) where ended_at is null;

@@ -267,3 +267,28 @@ content. Add it after the audit is approved, since the audit describes one chann
   test database (fresh DBs lacked sample ideas tldraw/PaletteForge/Queue* that the old sandbox had). Run long suites detached:
   setsid nohup sh -c '...' & (plain background jobs are stopped between steps).
 - Next: install 2 = Library tab (per-channel ticks, Add your own idea).
+
+## Meetings, install 1 (2 Nov 2026)
+- Video meetings on **LiveKit** (LiveKit Cloud free tier now, 5,000 min/month; own server on Oracle later = change 3 Vercel
+  settings only): `LIVEKIT_URL` (wss://…), `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`. Packages pinned: livekit-client 2.22.4,
+  livekit-server-sdk 2.19.1 (installs that add packages must run `npm install` in the PowerShell block).
+- Only the owner hosts (Admin → Meetings, `/admin/meetings`, AdminMeetings.jsx); public sign-up for hosts comes later.
+  Anyone with the link joins at `olexweb.com/meet/<code>` (codes like `kfd-wmpq-zrt`, letters without i/l/o) with just a name.
+- `lib/site/meet.js`: create/list/end/delete, `joinMeeting` (signed token, 6 h; host = owner session, identity `h_…`, guests
+  `g_…`; only the server sets identities), `hostAction` (allow-speak / stop-speak / remove via RoomServiceClient), room limit 100.
+  "Who can speak": everyone, or invited (guests listen, chat, raise a hand; the host lets them speak). Guests wait until the
+  host starts (`started_at`); ending deletes the LiveKit room. Table `meetings` (schema.sql).
+- Routes: `/api/meet` (public; GET state + whether the asker is the host, POST join; same-site only), `/admin/api/meetings`
+  (owner). The meeting page is OUTSIDE the admin middleware, so the admin's strict CSP/camera block are untouched.
+  Opened from WhatsApp, the Strict session cookie isn't sent with the page load: the page re-asks `/api/meet` (same-site
+  fetch carries it) and switches to host. `meet` is in RESERVED (pages.js).
+- Room (`components/meet/MeetRoom.jsx`, styles `app/meet/meet.css`, all classes `mt-`): lobby (name, mic, camera preview,
+  Data saver), tiles 16:9 on wide screens / filling on phones, voice ring from live audio level, chat (LiveKit data, topic
+  'chat', not stored), raise hand (participant attribute `hand`), screen share, People panel with host controls, Leave vs End
+  for everyone. Weak-network setup: adaptiveStream + dynacast, 360p max, simulcast 90/180, speech audio with RED + DTX, only
+  9 tiles get video, Data saver unsubscribes cameras. livekit-client loads after the page appears (first load 96 kB).
+- Tests: `tests/meet/run.sh` (local `livekit-server --dev`, next start, Postgres; 64 checks with two real Chrome browsers,
+  host laptop + guest phone). The binary: github.com/livekit/livekit releases (linux_amd64).
+- Next: install 2 = recording (prompt "Record this meeting?" at start, record button always on the bar, red Recording badge
+  for everyone, file saved on the host's device); install 3 = AI notes (reuse lib/assistant/voice.js transcription pool in
+  <4 MB pieces + the free AI pool); then Automation install 2 (Library tab, per-channel ticks, Add your own idea).
