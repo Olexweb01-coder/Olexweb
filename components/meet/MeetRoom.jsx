@@ -8,6 +8,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { MeetRecorder, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
 
 const SAVED_NAME = 'olexweb-meet-name'
+// on the Meet app (meet.olexweb.com) a meeting is /abc-defg-hij; on the main site it's /meet/abc-defg-hij
+const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
+const hereLink = (code) => `${location.origin}${onMeetApp() ? '' : '/meet'}/${code}`
 const MAX_TILES = 9
 const I = {
   mic: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>,
@@ -54,7 +57,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName }) {
+export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -167,7 +170,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       .on(E.Disconnected, (reason) => {
         const R = lk.DisconnectReason
         roomRef.current = null; levelEls.current.clear()
-        if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => { if (f) { toast('Recording saved: ' + f.name); if (f.notes) setNotesReady(true) } }).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
+        if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => { if (f) { toast('Recording saved: ' + f.name); if (f.notes && canNotes) setNotesReady(true) } }).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
         setPhase(endedRef.current || reason === R.ROOM_DELETED ? 'ended' : reason === R.PARTICIPANT_REMOVED ? 'removed' : 'left')
       })
     await room.connect(info.url, info.token)
@@ -248,7 +251,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
   async function hostDo(action, p) {
     if (action === 'remove' && !window.confirm(`Remove ${p.name || 'this person'} from the meeting?`)) return
-    try { await post('/admin/api/meetings', { action, code, identity: p.identity }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : `${p.name} was removed.`) }
+    try { await post('/api/meet/host', { action, code, identity: p.identity }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : `${p.name} was removed.`) }
     catch (e) { toast(e.message) }
   }
   async function startRec(audioOnly) {
@@ -265,7 +268,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     const r = recRef.current; if (!r) return
     recRef.current = null; setRec(null)
     if (roomRef.current) roomRef.current.localParticipant.setAttributes({ rec: '' }).catch(() => {})
-    try { const f = await r.stop(); toast(f ? 'Recording saved to this device: ' + f.name : 'Nothing was recorded.'); if (f && f.notes) setNotesReady(true) }
+    try { const f = await r.stop(); toast(f ? 'Recording saved to this device: ' + f.name : 'Nothing was recorded.'); if (f && f.notes && canNotes) setNotesReady(true) }
     catch { toast('The recording couldn’t be saved. Reopen this page to try again.') }
   }
   async function react(e) {
@@ -279,11 +282,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   async function endForAll() {
     setLeaving(false)
     if (recRef.current) await stopRec()
-    try { await post('/admin/api/meetings', { action: 'end', code }) } catch (e) { toast(e.message); return }
+    try { await post('/api/meet/host', { action: 'end', code }) } catch (e) { toast(e.message); return }
     endedRef.current = true; setPhase('ended'); if (roomRef.current) roomRef.current.disconnect()
   }
   async function copyLink() {
-    const url = location.origin + '/meet/' + code
+    const url = hereLink(code)
     try { await navigator.clipboard.writeText(url); toast('Meeting link copied.') } catch { window.prompt('Copy the meeting link:', url) }
   }
 
@@ -442,7 +445,7 @@ function When({ at, minutes, code, title, host }) {
   const mine = Intl.DateTimeFormat().resolvedOptions().timeZone, lagos = f('Africa/Lagos'), local = mine && mine !== 'Africa/Lagos' && f(mine) !== lagos ? f(mine) : null
   const m = Math.round(left / 60e3), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60
   const until = left <= 0 ? (left > -minutes * 60e3 ? 'Starting now' : 'This was the planned time') : `Starts in ${[d && `${d} day${d === 1 ? '' : 's'}`, h && `${h} hour${h === 1 ? '' : 's'}`, !d && mm && `${mm} minute${mm === 1 ? '' : 's'}`].filter(Boolean).join(' ') || 'under a minute'}`
-  const z = (x) => new Date(x).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''), url = `${location.origin}/meet/${code}`
+  const z = (x) => new Date(x).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''), url = hereLink(code)
   const google = 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${z(t)}/${z(t + minutes * 60e3)}`, details: 'Join the meeting: ' + url, location: url })
   return (<div className="mt-when">
     <p className="mt-when-at"><b>{lagos}</b> <span>Lagos time</span>{local ? <><br /><span>{local} your time</span></> : null}</p>

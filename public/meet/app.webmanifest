@@ -1,0 +1,17 @@
+{
+  "name": "Olexweb Meet",
+  "short_name": "Meet",
+  "description": "Free video meetings that keep working on a weak connection.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0b0a",
+  "theme_color": "#0a0b0a",
+  "categories": ["productivity", "business", "social"],
+  "icons": [
+    { "src": "/meet/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/meet/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/meet/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

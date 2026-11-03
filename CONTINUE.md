@@ -370,3 +370,30 @@ content. Add it after the audit is approved, since the audit describes one chann
 - A new course: add its data to COURSES in opsData and its actions next to course_accepting / course_goal.
 - Tests: tests/meet/olex.py (44; the AI's reply is set by the test through tests/meet/mock-ai.mjs /control chatReply, so it
   checks our side: data, cards, validation, danger, once-only, cancel). Whether the real model proposes well: try it live.
+
+## Olexweb Meet as its own app, install 1 (3 Nov 2026): meet.olexweb.com and accounts
+- Address: next.config.js rewrites/redirects with `has: host meet\..+`: / → /meet (MeetHome), /<code> → /meet/<code>,
+  /manifest.webmanifest, /sw.js, /favicon.ico, /apple-touch-icon.png → public/meet/*; every other path on the Meet address
+  goes to MAIN_ORIGIN (default https://olexweb.com). MEET_ORIGIN (runtime) turns on: links on the Meet address
+  (meetLink), guests on olexweb.com/meet/<code> forwarded there (Olaitan, signed in to the admin, stays), olexweb.com/meet →
+  Meet home. Don't set MEET_ORIGIN in Vercel until meet.olexweb.com's DNS works.
+- PWA: public/meet/app.webmanifest, sw.js (offline page only; caches nothing private), icon-192/512, maskable-512,
+  apple-touch-icon, logo-96; app/meet/icon.png + apple-icon.png. Icon = approved design I2 (green, dark camera, logo badge).
+- Accounts (lib/meet/auth.js): Google, Microsoft, GitHub, Facebook OAuth (MEET_GOOGLE_CLIENT_ID/_SECRET, MEET_MICROSOFT_…,
+  MEET_GITHUB_…, MEET_FACEBOOK_APP_ID/_SECRET; a button shows only when its keys exist). Return address:
+  <MEET_ORIGIN>/api/meet/auth/<provider>/callback. State signed with AUTH_SECRET in a 10-minute cookie; PKCE for Google and
+  Microsoft. Accounts merge by email only when verified (Google, GitHub); Microsoft/Facebook stay separate. Owner = verified
+  sign-in with the admin owner's email. Cookie __Host-meet_sess (HttpOnly, Secure, Lax; SHA-256 stored). Banned accounts
+  (meet_users.banned_at) are signed out and refused. Routes: /api/meet/auth/[provider](/callback), /api/meet/me.
+- Hosting: isHost() in lib/site/meet.js: admin owner; or the Meet account that made it (meetings.host_user); or the owner's
+  Meet account for admin-made meetings. /api/meet/host (host controls for any host), /api/meet/mine (a Meet account's list,
+  create, update, end, delete; fair use 30/day, 50 open). OWNERS filter keeps other people's meetings out of Admin →
+  Meetings, phone reminders and Olex AI. Deleting a Meet account deletes its meetings (FK on delete cascade).
+  AI notes and phone reminders stay Olaitan's; other hosts' guests use calendar invites.
+- Database: lib/meet/db.js uses MEET_DATABASE_URL(_POOLED) when set, else the main DB. db/meet-schema.sql (meetings +
+  meet_users, meet_identities, meet_sessions) is applied by admin-setup step 2b; the first run against an empty Meet DB copies
+  the meetings across exactly (row_to_json → json_populate_record), never twice.
+- Tests: tests/meet/app.py (61) with tests/meet/mock-oauth.mjs (checks state, secret, return address, PKCE); run.sh restarts
+  the site with MEET_ORIGIN=http://meet.localhost:3000 for it (Chrome sends *.localhost here).
+- Next: install 2 = guest details form (optional per meeting; name always; phone/email required/optional/off; extra
+  optional fields; kept 30 days by default, host can change) + attendance list after the meeting + CSV, Report, bans in admin.

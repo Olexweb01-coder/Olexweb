@@ -61,6 +61,31 @@ function weak(pw, email) {
   return null
 }
 
+// Olexweb Meet's tables (db/meet-schema.sql): in Meet's own database when MEET_DATABASE_URL is set, else in the main one.
+// The first time Meet's own database is used, the meetings made so far are copied across (the main copy is left as it was).
+async function meetDatabase(mainDb) {
+  const schema = fs.readFileSync(path.join(ROOT, 'db', 'meet-schema.sql'), 'utf8')
+  const url = process.env.MEET_DATABASE_URL
+  if (!url) { await mainDb.query(schema); ok('Meet uses the main database for now (add MEET_DATABASE_URL to give it its own)'); return }
+  const mdb = new pg.Client(dbConfig(url))
+  try { await mdb.connect() } catch (e) { no('Could not connect to Meet\u2019s database: ' + e.message); return }
+  try {
+    const host = new URL(url).hostname
+    if (host === new URL(process.env.DATABASE_URL).hostname && new URL(url).pathname === new URL(process.env.DATABASE_URL).pathname) { await mdb.query(schema); ok('MEET_DATABASE_URL is the main database: tables are ready'); return }
+    await mdb.query(schema)
+    ok('Connected to Meet\u2019s database ' + host + ' and its tables are ready')
+    const have = (await mdb.query('select count(*)::int n from meetings')).rows[0].n
+    // each row travels as JSON text, so every value (timestamps to the microsecond, notes, reminders) arrives exactly as it was
+    const old = (await mainDb.query("select to_regclass('public.meetings') as t")).rows[0].t ? (await mainDb.query('select row_to_json(m)::text as j from meetings m order by id')).rows : []
+    if (have || !old.length) { ok(have ? `${have} meeting${have === 1 ? '' : 's'} already there (not copied again)` : 'No earlier meetings to copy'); return }
+    await mdb.query('begin')
+    for (const r of old) await mdb.query('insert into meetings select * from json_populate_record(null::meetings, $1::json) on conflict (code) do nothing', [r.j])
+    await mdb.query("select setval(pg_get_serial_sequence('meetings', 'id'), greatest((select max(id) from meetings), 1))")
+    await mdb.query('commit')
+    ok(`Copied ${old.length} earlier meeting${old.length === 1 ? '' : 's'} to Meet\u2019s database`)
+  } catch (e) { await mdb.query('rollback').catch(() => {}); no('Meet\u2019s database: ' + e.message) } finally { await mdb.end().catch(() => {}) }
+}
+
 async function main() {
   console.log('Olexweb admin setup\n')
   loadEnv()
@@ -87,6 +112,9 @@ async function main() {
   await db.query("insert into schema_migrations (version) values ('2026-10-08-olex-ai-schedule-notify') on conflict do nothing")
   await db.query("insert into schema_migrations (version) values ('2026-10-09-speed-leads-gsc') on conflict do nothing")
   ok('Tables are ready')
+
+  step('2b. Meet database')
+  await meetDatabase(db)
 
   step('3. Content')
   const seed = JSON.parse(fs.readFileSync(path.join(ROOT, 'db', 'seed.json'), 'utf8'))

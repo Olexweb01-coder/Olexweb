@@ -58,9 +58,11 @@ function When({ when, setWhen, date, setDate, time, setTime, minutes, setMinutes
 // so the server's page and the browser's never mismatch (React hydration)
 function InBrowser({ children }) { const [on, setOn] = useState(false); useEffect(() => setOn(true), []); return on ? children : null }
 
-const link = (code) => `${typeof window === 'undefined' ? 'https://olexweb.com' : window.location.origin}/meet/${code}`
+let BASE = null                                                           // the Meet app's address, once MEET_ORIGIN is set
+const link = (code) => (BASE ? `${BASE}/${code}` : `${typeof window === 'undefined' ? 'https://olexweb.com' : window.location.origin}/meet/${code}`)
 
 export default function AdminMeetings({ data }) {
+  BASE = data.base || null
   const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
   const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
