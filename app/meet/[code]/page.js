@@ -13,5 +13,5 @@ export default async function MeetPage({ params }) {
   const m = await meetingState(code).catch(() => null)
   if (!m) notFound()
   const u = await currentUser().catch(() => null), host = !!(u && u.role === 'owner')
-  return <MeetRoom code={code} title={m.title} speakers={m.speakers} initialState={m.state} host={host} hostName={host ? u.name : ''} />
+  return <MeetRoom code={code} title={m.title} speakers={m.speakers} initialState={m.state} startsAt={m.startsAt || null} minutes={m.minutes || 60} host={host} hostName={host ? u.name : ''} />
 }

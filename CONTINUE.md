@@ -338,3 +338,20 @@ content. Add it after the audit is approved, since the audit describes one chann
   `upload` action removed when uploads moved to the queue (commit 3072f46), so phaseAU stops there on current code. Without
   it the chain gives 96 passed + 1 failure in fD2.mjs (it depends on fD's setup), identical before and after the Library.
   The factory repo's tests need out/video.mp4 in olexweb-factory (any vertical MP4, e.g. made with ffmpeg testsrc2).
+
+## Meetings, install 4 (3 Nov 2026): scheduling and reminders
+- meetings.starts_at (UTC; picked in Lagos time, UTC+1 all year), minutes, reminders (minutes before, sorted), reminders_auto
+  (smart), reminded (sent), start_notified_at. lib/site/meet.js: smartReminders() (>1 day → 1 day, 1 h, 30 min; later today →
+  1 h, 30 min; very soon → one of 10 or 5 min), createMeeting/updateMeeting (rescheduling clears `reminded` and recalculates
+  smart ones; your own stay), meetingReminders() in quickRun (lib/assistant/autopilot.js, every 10 minutes): sends only the
+  nearest due reminder (missed older ones are marked, not sent late), each once, none once you've started; "starting now" at
+  the start time. notify kind 'meeting' (also a switch in Notifications.jsx), link /admin/meetings#meet-<code>.
+- calendarFile(): /api/meet?calendar=1&code= (iCalendar, two alarms built in). Guest page (MeetRoom When): Lagos time, the
+  guest's own time, "Starts in…", Add to Google Calendar / Apple or Outlook. Rendered only in the browser.
+- Admin → Meetings: Start now / Schedule (date, time Lagos, length), reminder chips (smart or your own), Copy invite, Edit sheet.
+  Dates there use our own formatter (DAYS/MONTHS, UTC+1), not toLocaleString: Node and Chrome punctuate differently
+  ("Tue 3 Nov" vs "Tue, 3 Nov"), which caused React hydration errors (a bug since install 1, fixed here).
+- Tests: tests/meet/schedule.py (47; run by tests/meet/run.sh after e2e.py; CRON_SECRET set there). The admin's CSP blocks
+  Playwright's wait_for_function (string eval): use element waits on admin pages.
+- Notifications.jsx's own list still lacks switches for 'facebook', 'ideas' and 'window' (the server has them, on by default).
+- Next: install B = Olex AI actions (meetings, schedule, automation, courses) through tools.js (sectionData → proposeMore → runMore).

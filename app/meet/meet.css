@@ -205,3 +205,11 @@
 
 /* install 3: the AI notes banner */
 .mt-banner .mt-x-sm{width:30px;height:30px;margin-left:auto}.mt-banner .mt-x-sm svg{width:16px;height:16px}
+
+/* scheduling: when a meeting starts, and Add to calendar */
+.mt-when{display:grid;gap:6px;margin:0 0 18px;padding:14px 16px;border-radius:16px;background:var(--tile);border:1px solid var(--line);min-height:20px}
+.mt-when:empty{display:none}
+.mt-when p{margin:0}.mt-when-at b{font-weight:700}.mt-when-at span{color:var(--dim);font-size:14px}
+.mt-when-left{color:var(--green);font-weight:700;font-size:14.5px;font-variant-numeric:tabular-nums}
+.mt-cal{margin-top:6px}
+.mt a.mt-btn{color:var(--paper);text-decoration:none}.mt a.mt-btn.mt-go{color:var(--ink)}   /* links styled as buttons keep Olexweb's colours */

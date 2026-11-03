@@ -486,3 +486,11 @@ alter table meetings add column if not exists notes_by text;
 -- Automation install 2 (Nov 2026): the Library. Which channels each idea's Short goes to (ticks), and "Make it next".
 alter table yt_ideas add column if not exists channels jsonb not null default '{"youtube": true, "facebook": true}'::jsonb;
 alter table yt_ideas add column if not exists first boolean not null default false;   -- Make it next: ahead in scripts, factory and both queues
+-- Meetings, scheduling (Nov 2026): a start time, length, reminders (minutes before; smart defaults unless you set your own)
+alter table meetings add column if not exists starts_at timestamptz;
+alter table meetings add column if not exists minutes int not null default 60;
+alter table meetings add column if not exists reminders jsonb not null default '[]';
+alter table meetings add column if not exists reminders_auto boolean not null default true;   -- smart defaults: recalculated when rescheduled
+alter table meetings add column if not exists reminded jsonb not null default '[]';           -- reminders already sent (minutes before)
+alter table meetings add column if not exists start_notified_at timestamptz;
+create index if not exists meetings_upcoming on meetings (starts_at) where ended_at is null and starts_at is not null;

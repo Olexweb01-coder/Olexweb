@@ -54,7 +54,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, initialState, host: hostAtLoad, hostName }) {
+export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -296,7 +296,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
         : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
-        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1><p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
+        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
           {pending.length ? <div className="mt-pending" role="status">
@@ -306,6 +306,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
               <button type="button" className="mt-btn mt-xs mt-ghost" onClick={() => dropPending(x)}>Delete</button></div>)}
           </div> : null}
           <h1 className="mt-h">{title}</h1>
+          {startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} host={host} /> : null}
           <p className="mt-p">{host ? 'You’re the host. Joining starts the meeting for everyone with the link.' : speakers === 'invited' ? 'You’ll join as a listener. Raise your hand to ask to speak, and use the chat anytime.' : 'Check your name, mic and camera, then join.'}</p>
           <div className={'mt-preview' + (camOn ? ' on' : '')}>
             <video ref={previewRef} muted playsInline autoPlay className="mt-mirror" />
@@ -431,6 +432,24 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
   </div>)
 }
 
+// When a scheduled meeting starts: Lagos time, the guest's own time if it differs, how long until, and Add to calendar.
+// Rendered only in the browser (dates format slightly differently on servers), so the page never mismatches.
+function When({ at, minutes, code, title, host }) {
+  const [now, setNow] = useState(null)
+  useEffect(() => { setNow(Date.now()); const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t) }, [])
+  if (!now) return <div className="mt-when" aria-hidden="true" />
+  const t = new Date(at).getTime(), left = t - now, f = (tz) => new Date(at).toLocaleString('en-GB', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true }).replace(' at ', ', ')
+  const mine = Intl.DateTimeFormat().resolvedOptions().timeZone, lagos = f('Africa/Lagos'), local = mine && mine !== 'Africa/Lagos' && f(mine) !== lagos ? f(mine) : null
+  const m = Math.round(left / 60e3), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60
+  const until = left <= 0 ? (left > -minutes * 60e3 ? 'Starting now' : 'This was the planned time') : `Starts in ${[d && `${d} day${d === 1 ? '' : 's'}`, h && `${h} hour${h === 1 ? '' : 's'}`, !d && mm && `${mm} minute${mm === 1 ? '' : 's'}`].filter(Boolean).join(' ') || 'under a minute'}`
+  const z = (x) => new Date(x).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''), url = `${location.origin}/meet/${code}`
+  const google = 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${z(t)}/${z(t + minutes * 60e3)}`, details: 'Join the meeting: ' + url, location: url })
+  return (<div className="mt-when">
+    <p className="mt-when-at"><b>{lagos}</b> <span>Lagos time</span>{local ? <><br /><span>{local} your time</span></> : null}</p>
+    <p className="mt-when-left">{until}</p>
+    {left > 0 && !host ? <div className="mt-row mt-cal"><a className="mt-btn mt-sm" href={google} target="_blank" rel="noopener">Add to Google Calendar</a><a className="mt-btn mt-sm" href={'/api/meet?calendar=1&code=' + code} download="meeting.ics">Apple or Outlook calendar</a></div> : null}
+  </div>)
+}
 function Elapsed({ from }) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])

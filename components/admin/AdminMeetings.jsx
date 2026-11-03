@@ -6,16 +6,69 @@ import { useRouter } from 'next/navigation'
 import { toast, Sheet } from './ui'
 import { makeNotes, notesAudio, dropNotesAudio, notesText, download } from '@/components/meet/notes'
 
-const when = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+// Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
+// ("Tue 3 Nov" vs "Tue, 3 Nov"), which made React redraw the page. Lagos is UTC+1 all year (no daylight saving).
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const parts = (iso) => { const d = new Date(new Date(iso).getTime() + 3600e3); return { wd: d.getUTCDay(), day: d.getUTCDate(), mon: d.getUTCMonth(), h: d.getUTCHours(), mi: String(d.getUTCMinutes()).padStart(2, '0') } }
+const when = (iso) => { const p = parts(iso); return `${DAYS[p.wd].slice(0, 3)} ${p.day} ${MONTHS[p.mon].slice(0, 3)}, ${String(p.h).padStart(2, '0')}:${p.mi}` }
+// scheduling, in Lagos time (UTC+1 all year)
+const lagosNow = () => new Date(Date.now() + 3600e3).toISOString()
+function nextSlot() { const d = new Date(Date.now() + 3600e3 + 90 * 60e3); d.setUTCMinutes(d.getUTCMinutes() < 30 ? 30 : 60, 0, 0); return d.toISOString() }
+const toIso = (date, time) => (date && time ? new Date(`${date}T${time}:00+01:00`).toISOString() : null)
+const lagosParts = (iso) => { const x = new Date(new Date(iso).getTime() + 3600e3).toISOString(); return [x.slice(0, 10), x.slice(11, 16)] }
+const longWhen = (iso) => { const p = parts(iso); return `${DAYS[p.wd]} ${p.day} ${MONTHS[p.mon]}, ${p.h % 12 || 12}:${p.mi} ${p.h < 12 ? 'am' : 'pm'}` }
+function smart(iso) { if (!iso) return []; const lead = (new Date(iso).getTime() - Date.now()) / 60e3; const r = [1440, 60, 30].filter((m) => m <= lead - 2); if (!r.length && lead > 7) r.push(lead > 20 ? 10 : 5); return r }
+const words = (m) => { if (m % 1440 === 0) return m === 1440 ? '1 day' : `${m / 1440} days`; const h = Math.floor(m / 60), r = m % 60; return [h && `${h} hour${h === 1 ? '' : 's'}`, r && `${r} min`].filter(Boolean).join(' ') }
+const listWords = (r) => (r.length ? r.map(words).join(', ').replace(/, ([^,]*)$/, ' and $1') + ' before' : 'none')
+const fromNow = (iso) => { const m = Math.round((new Date(iso).getTime() - Date.now()) / 60e3); if (m <= 0) return m > -60 ? 'due now' : 'was due'; const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return 'in ' + (d ? `${d} day${d === 1 ? '' : 's'}${h ? ` ${h} h` : ''}` : h ? `${h} h ${m % 60} min` : `${m} min`) }
+const PRESETS = [5, 10, 15, 30, 60, 120, 180, 1440, 2880, 10080]
+// the reminders for one meeting: smart (follows the time) or your own
+function Reminders({ start, value, onChange }) {
+  const list = value || smart(start), [add, setAdd] = useState('')
+  return (<div className="mg-rem">
+    <p className="mg-lab">Reminders to your phone {value ? '' : <span className="mg-dim">(smart: they follow the meeting’s time)</span>}</p>
+    <div className="mg-chips">{list.length ? list.map((m) => <span key={m} className="mg-chip">{words(m)} before<button type="button" aria-label={`Remove the ${words(m)} reminder`} onClick={() => onChange(list.filter((x) => x !== m))}>×</button></span>) : <span className="mg-dim">No reminders. You’ll still get one when it starts.</span>}</div>
+    <div className="mg-addrem">
+      <select className="input" value={add} onChange={(e) => { const v = Number(e.target.value); setAdd(''); if (v && !list.includes(v)) onChange([...list, v].sort((a, b) => b - a)) }} aria-label="Add a reminder">
+        <option value="">Add a reminder…</option>{PRESETS.filter((m) => !list.includes(m)).map((m) => <option key={m} value={m}>{words(m)} before</option>)}
+      </select>
+      {value ? <button type="button" className="btn btn-line mg-quiet" onClick={() => onChange(null)}>Use smart reminders</button> : null}
+    </div>
+  </div>)
+}
+function When({ when, setWhen, date, setDate, time, setTime, minutes, setMinutes, rem, setRem, allowNone }) {
+  return (<div className="mg-sched">
+    <p className="mg-lab">When</p>
+    <div className="seg" role="group" aria-label="When">
+      <button type="button" aria-pressed={when === 'now'} onClick={() => setWhen('now')}>{allowNone ? 'No set time' : 'Start now'}</button>
+      <button type="button" aria-pressed={when === 'later'} onClick={() => setWhen('later')}>Schedule</button>
+    </div>
+    {when === 'later' ? <>
+      <div className="mg-dt">
+        <label><span className="mg-lab">Date</span><input className="input" type="date" value={date} min={lagosNow().slice(0, 10)} onChange={(e) => setDate(e.target.value)} /></label>
+        <label><span className="mg-lab">Time (Lagos)</span><input className="input" type="time" value={time} step={300} onChange={(e) => setTime(e.target.value)} /></label>
+        <label><span className="mg-lab">Length</span><select className="input" value={minutes} onChange={(e) => setMinutes(Number(e.target.value))}>{[15, 30, 45, 60, 90, 120, 180].map((m) => <option key={m} value={m}>{words(m).replace(' min', ' minutes')}</option>)}</select></label>
+      </div>
+      <Reminders start={toIso(date, time)} value={rem} onChange={setRem} />
+    </> : null}
+  </div>)
+}
+
+// dates in words and "in 2 days" depend on the minute and on how each system formats time: shown only in the browser,
+// so the server's page and the browser's never mismatch (React hydration)
+function InBrowser({ children }) { const [on, setOn] = useState(false); useEffect(() => setOn(true), []); return on ? children : null }
+
 const link = (code) => `${typeof window === 'undefined' ? 'https://olexweb.com' : window.location.origin}/meet/${code}`
 
 export default function AdminMeetings({ data }) {
   const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
+  const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
+  const [edit, setEdit] = useState(null)
   const refreshLocal = useCallback(() => notesAudio().then(setLocal).catch(() => {}), [])
   useEffect(() => {
     refreshLocal()
-    const m = /^#notes-([a-z-]{12})$/.exec(window.location.hash)                   // arrived from a meeting's "Make AI notes"
+    const m = /^#(?:notes|meet)-([a-z-]{12})$/.exec(window.location.hash)          // arrived from "Make AI notes" or a reminder
     if (m) { setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
   }, [refreshLocal])
   const closeView = useCallback(() => setView(null), [])
@@ -44,9 +97,24 @@ export default function AdminMeetings({ data }) {
   }
   async function create(e) {
     e.preventDefault()
-    const j = await act({ action: 'create', title, speakers }, 'Meeting created.')
-    if (j && j.code) { setFresh(j.code); setTitle('') }
+    const later = sched === 'later', startsAt = later ? toIso(date, time) : null
+    if (later && !startsAt) { toast('Choose a date and time.'); return }
+    const j = await act({ action: 'create', title, speakers, ...(later ? { startsAt, minutes, ...(rem ? { reminders: rem } : {}) } : {}) }, later ? 'Meeting scheduled.' : 'Meeting created.')
+    if (j && j.code) { setFresh(j.code); setTitle(''); setRem(null) }
   }
+  async function invite(m) {
+    const text = `You’re invited: ${m.title}\n${longWhen(m.startsAt)} (Lagos time)\nJoin here: ${link(m.code)}\nYou can add it to your calendar from that page.`
+    try { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it into WhatsApp or anywhere.') } catch { window.prompt('Copy the invite:', text) }
+  }
+  function openEdit(m) { const [d, t] = lagosParts(m.startsAt || nextSlot()); setEdit({ m, title: m.title, speakers: m.speakers, when: m.startsAt ? 'later' : 'now', date: d, time: t, minutes: m.minutes || 60, rem: m.startsAt && !m.remindersAuto ? m.reminders : null }) }
+  async function saveEdit() {
+    const e = edit, later = e.when === 'later', startsAt = later ? toIso(e.date, e.time) : null
+    if (later && !startsAt) { toast('Choose a date and time.'); return }
+    const moved = (startsAt || null) !== (e.m.startsAt ? new Date(e.m.startsAt).toISOString() : null)
+    const j = await act({ action: 'update', code: e.m.code, title: e.title, speakers: e.speakers, minutes: e.minutes, ...(moved ? { startsAt } : {}), reminders: e.rem ? e.rem : 'smart' }, 'Meeting updated.')
+    if (j) setEdit(null)
+  }
+  const closeEdit = useCallback(() => setEdit(null), [])
   async function copy(code) { try { await navigator.clipboard.writeText(link(code)); toast('Link copied.') } catch { window.prompt('Copy the meeting link:', link(code)) } }
   const open = data.meetings.filter((m) => !m.endedAt), ended = data.meetings.filter((m) => m.endedAt)
   const noteBits = (m) => { const parts = (local[m.code] || []).length, working = job && job.code === m.code
@@ -78,7 +146,8 @@ export default function AdminMeetings({ data }) {
         <button type="button" aria-pressed={speakers === 'invited'} onClick={() => setSpeakers('invited')}>Only people I let speak</button>
       </div>
       <p className="mg-dim">{speakers === 'everyone' ? 'Good for calls and small meetings. Cameras start off for guests to save data.' : 'Good for classes and big meetings. Guests listen, chat and raise a hand; you let them speak.'}</p>
-      <button className="btn btn-green" disabled={!!busy}>{busy === 'create' ? 'Creating…' : 'Create meeting'}</button>
+      <When when={sched} setWhen={setSched} date={date} setDate={setDate} time={time} setTime={setTime} minutes={minutes} setMinutes={setMinutes} rem={rem} setRem={setRem} />
+      <button className="btn btn-green" disabled={!!busy}>{busy === 'create' ? 'Saving…' : sched === 'later' ? 'Schedule meeting' : 'Create meeting'}</button>
     </form>
 
     <section className="mg-box">
@@ -86,14 +155,16 @@ export default function AdminMeetings({ data }) {
       {open.length ? <ul className="mg-list">{open.map((m) => <li key={m.code} id={'mg-' + m.code} className={fresh === m.code || focus === m.code ? 'mg-fresh' : ''}>
         <div className="mg-main">
           <b>{m.title}</b>
-          <span className="mg-dim">{m.startedAt ? `Started ${when(m.startedAt)}` : `Created ${when(m.createdAt)}, not started`}{m.speakers === 'invited' ? '. Only people you let speak' : ''}{m.joins ? `. ${m.joins} join${m.joins === 1 ? '' : 's'}` : ''}</span>
-          <span className="mg-url">{link(m.code).replace(/^https?:\/\//, '')}</span>
+          {m.startsAt && !m.startedAt ? <span className="mg-at"><b>{longWhen(m.startsAt)}</b> <span className="mg-dim"><InBrowser>{fromNow(m.startsAt) + '. '}</InBrowser>Reminders: {listWords(m.reminders)}{m.remindersAuto ? ' (smart)' : ''}</span></span> : null}
+          <span className="mg-dim">{m.startedAt ? `Started ${when(m.startedAt)}` : m.startsAt ? `${m.minutes} minutes` : `Created ${when(m.createdAt)}, not started`}{m.speakers === 'invited' ? '. Only people you let speak' : ''}{m.joins ? `. ${m.joins} join${m.joins === 1 ? '' : 's'}` : ''}</span>
+          <span className="mg-url"><InBrowser>{link(m.code).replace(/^https?:\/\//, '')}</InBrowser></span>
           {noteLine(m)}
         </div>
         <div className="mg-acts">
           {noteBits(m)}
           <a className="btn btn-green" href={'/meet/' + m.code} target="_blank" rel="noopener">{m.startedAt ? 'Join' : 'Start'}</a>
-          <button className="btn btn-line" onClick={() => copy(m.code)}>Copy link</button>
+          {m.startsAt && !m.startedAt ? <button className="btn btn-line" onClick={() => invite(m)}>Copy invite</button> : <button className="btn btn-line" onClick={() => copy(m.code)}>Copy link</button>}
+          {!m.startedAt ? <button className="btn btn-line" onClick={() => openEdit(m)}>Edit</button> : null}
           <button className="btn btn-bad" disabled={!!busy} onClick={() => { if (window.confirm(`End “${m.title}” for everyone? The link stops working.`)) act({ action: 'end', code: m.code }, 'Meeting ended.') }}>End</button>
         </div>
       </li>)}</ul> : <p className="mg-dim">No open meetings. Create one above and share its link.</p>}
@@ -106,6 +177,17 @@ export default function AdminMeetings({ data }) {
         <div className="mg-acts">{noteBits(m)}<button className="btn btn-line" disabled={!!busy} onClick={() => { if (window.confirm(`Delete “${m.title}”?`)) act({ action: 'delete', code: m.code }, 'Meeting deleted.') }}>Delete</button></div>
       </li>)}</ul>
     </section> : null}
+
+    {edit ? <Sheet title={'Edit: ' + edit.m.title} onClose={closeEdit} foot={<><button className="btn btn-green" disabled={!!busy} onClick={saveEdit}>{busy === 'update' + edit.m.code ? 'Saving…' : 'Save'}</button><button className="btn btn-line" onClick={closeEdit}>Cancel</button></>}>
+      <div className="mg-edit">
+        <label className="mg-lab" htmlFor="mg-etitle">Name</label>
+        <input id="mg-etitle" className="input" maxLength={80} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
+        <p className="mg-lab">Who can speak</p>
+        <div className="seg" role="group" aria-label="Who can speak"><button type="button" aria-pressed={edit.speakers === 'everyone'} onClick={() => setEdit({ ...edit, speakers: 'everyone' })}>Everyone</button><button type="button" aria-pressed={edit.speakers === 'invited'} onClick={() => setEdit({ ...edit, speakers: 'invited' })}>Only people I let speak</button></div>
+        <When allowNone when={edit.when} setWhen={(v) => setEdit({ ...edit, when: v })} date={edit.date} setDate={(v) => setEdit({ ...edit, date: v })} time={edit.time} setTime={(v) => setEdit({ ...edit, time: v })} minutes={edit.minutes} setMinutes={(v) => setEdit({ ...edit, minutes: v })} rem={edit.rem} setRem={(v) => setEdit({ ...edit, rem: v })} />
+        <p className="mg-dim">Moving the time resets the reminders, so each goes out once at its new time. Guests who added it to their calendar keep the old time: send them the new invite.</p>
+      </div>
+    </Sheet> : null}
 
     {view ? <Sheet title={'Notes: ' + view.title} onClose={closeView} foot={<>
       <button className="btn btn-green" onClick={async () => { try { await navigator.clipboard.writeText(notesText(view.title, view.notes, view.at)); toast('Notes copied.') } catch { toast('Copy didn’t work here. Use Download.') } }}>Copy notes</button>
@@ -137,6 +219,15 @@ export default function AdminMeetings({ data }) {
 .mg-url{font-size:13.5px;color:var(--green);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .mg-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mg-acts .btn{padding:9px 15px;font-size:14px}
 .mg-quiet{border-color:transparent;color:var(--dim)}
+.mg-sched{display:grid;gap:8px;margin:6px 0 14px;justify-items:start;width:100%}
+.mg-dt{display:grid;grid-template-columns:repeat(3,minmax(0,170px));gap:10px;width:100%}.mg-dt label{display:grid;gap:6px}.mg-dt .mg-lab{margin:0}
+.mg-rem{display:grid;gap:8px;width:100%}.mg-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mg-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border-radius:999px;background:rgba(143,227,106,.12);font-size:13.5px;font-weight:600}
+.mg-chip button{appearance:none;border:0;background:none;color:var(--dim);font-size:17px;line-height:1;width:24px;height:24px;border-radius:50%;cursor:pointer}.mg-chip button:hover{background:rgba(242,239,233,.08);color:var(--paper)}
+.mg-addrem{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mg-addrem select.input{width:auto;max-width:240px}
+.mg-at{display:grid;gap:2px}.mg-at b{font-size:14.5px}
+.mg-edit{display:grid;gap:8px;max-width:560px;justify-items:start}.mg-edit .input{max-width:460px}
+@media (max-width:640px){.mg-dt{grid-template-columns:1fr 1fr}.mg-dt label:last-child{grid-column:1/-1}}
 .mg-job{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;color:var(--paper);padding:6px 4px}
 .mg-job i{width:14px;height:14px;border-radius:50%;border:2px solid rgba(143,227,106,.25);border-top-color:var(--green);animation:mg-spin .8s linear infinite}
 @keyframes mg-spin{to{transform:rotate(360deg)}}
