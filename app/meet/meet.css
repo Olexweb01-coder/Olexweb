@@ -118,8 +118,7 @@
 .mt-acts{display:flex;gap:6px;width:100%;padding-left:44px}
 
 /* ---------- the control bar ---------- */
-.mt-bar{display:flex;justify-content:center;gap:6px;padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 12px);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-.mt-bar::-webkit-scrollbar{display:none}
+.mt-bar{position:relative;z-index:10;display:flex;justify-content:center;gap:6px;padding:12px 12px calc(env(safe-area-inset-bottom,0px) + 12px);flex-wrap:nowrap}   /* no scrolling: trays and menus open above it */
 .mt-c{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:74px;padding:10px 10px 8px;border-radius:18px;border:0;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--dim);transition:background .15s,color .15s}
 .mt-c svg{width:24px;height:24px;color:var(--paper)}
 .mt-c:hover{background:rgba(242,239,233,.06);color:var(--paper)}
@@ -153,3 +152,53 @@
   .mt-leave{width:58px;border-radius:999px}
 }
 @media (prefers-reduced-motion:reduce){.mt *{animation:none!important;transition:none!important}}
+
+/* ---------- install 2: recording, reactions, emoji ---------- */
+.mt svg .mt-fill{fill:currentColor;stroke:none}
+.mt-recbadge{display:inline-flex;align-items:center;gap:7px;padding:3px 10px 3px 8px;border-radius:999px;background:rgba(239,122,106,.14);color:var(--paper);font-size:12.5px;font-weight:700;white-space:nowrap}
+.mt-recbadge i{width:8px;height:8px;border-radius:50%;background:var(--bad);animation:mt-blink 1.6s ease-in-out infinite}
+@keyframes mt-blink{50%{opacity:.35}}
+.mt-c.mt-recording{background:rgba(239,122,106,.16);color:var(--paper)}.mt-c.mt-recording svg{color:var(--bad)}
+.mt-c.mt-recording span{font-variant-numeric:tabular-nums}
+.mt-rec-go{background:var(--bad);border-color:var(--bad);color:#1d0b08}.mt-rec-go:hover{background:#f38e80}.mt-rec-go svg{color:#1d0b08}
+.mt-seg{display:flex;padding:4px;gap:2px;border-radius:999px;background:var(--night);border:1px solid var(--line);margin-bottom:8px}
+.mt-seg button{flex:1;appearance:none;border:0;background:none;padding:9px 10px;border-radius:999px;font-weight:600;font-size:14px;color:var(--dim);cursor:pointer}
+.mt-seg button[aria-pressed=true]{background:var(--tile2);color:var(--paper)}
+.mt-dialog .mt-hint{margin:0 0 18px}
+.mt-pending{display:grid;gap:8px;padding:12px 14px;margin-bottom:22px;border-radius:16px;background:rgba(240,179,94,.1);font-size:14px}
+.mt-pending-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mt-pending-row span{flex:1 1 200px;color:var(--dim);overflow-wrap:anywhere}
+
+/* reactions: a small tray above the bar, and emoji that rise over the stage */
+.mt-popwrap{position:relative;display:flex}
+.mt-pop{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:25;background:var(--tile2);border:1px solid rgba(242,239,233,.14);box-shadow:0 14px 34px rgba(0,0,0,.45);animation:mt-up .15s ease-out}
+.mt-reacts{display:flex;gap:2px;padding:6px;border-radius:999px}
+.mt-reacts button{appearance:none;border:0;background:none;width:46px;height:46px;border-radius:50%;font-size:26px;line-height:1;cursor:pointer;transition:transform .12s,background .12s}
+.mt-reacts button:hover{background:rgba(242,239,233,.08);transform:translateY(-3px) scale(1.12)}
+.mt-reacts button:active{transform:scale(.92)}
+.mt-menu{display:grid;min-width:200px;padding:6px;border-radius:16px;left:auto;right:0;transform:none}
+.mt-menu button{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;border:0;background:none;font-weight:600;font-size:14.5px;text-align:left;cursor:pointer}
+.mt-menu button:hover{background:rgba(242,239,233,.06)}
+.mt-stage{position:relative}
+.mt-floats{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.mt-float{position:absolute;bottom:0;display:grid;justify-items:center;gap:2px;animation:mt-rise 3.2s cubic-bezier(.2,.7,.3,1) forwards}
+.mt-float b{font-size:40px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4))}
+.mt-float small{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(10,11,10,.7);white-space:nowrap}
+@keyframes mt-rise{0%{transform:translateY(10px) scale(.6);opacity:0}12%{transform:translateY(-30px) scale(1.1);opacity:1}70%{opacity:1}100%{transform:translateY(-62vh) translateX(18px);opacity:0}}
+
+/* the emoji picker in the chat */
+.mt-emoji{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px 10px;border-top:1px solid var(--line);max-height:168px;overflow-y:auto}
+.mt-emoji button{appearance:none;border:0;background:none;aspect-ratio:1;border-radius:10px;font-size:22px;line-height:1;cursor:pointer}
+.mt-emoji button:hover{background:rgba(242,239,233,.08)}
+.mt-picked{color:var(--green)}
+.mt-msg.mt-big p{background:none;padding:2px 0;font-size:36px;line-height:1.15}
+.mt-narrow{display:none}
+@media (max-width:760px){
+  .mt-wide{display:none}.mt-narrow{display:flex}
+  .mt-recbadge{padding:3px 8px}
+  .mt-reacts button{width:42px;height:42px;font-size:24px}
+  .mt-reacts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px)}
+  .mt-c.mt-recording{width:auto;padding:0 12px;border-radius:999px}
+  .mt-c.mt-recording span{position:static;width:auto;height:auto;clip:auto;font-size:12px;margin-left:6px}
+  .mt-c.mt-recording{flex-direction:row}
+}
+@media (prefers-reduced-motion:reduce){.mt-float{animation:none!important;bottom:40%;opacity:1}}

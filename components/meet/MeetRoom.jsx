@@ -5,6 +5,7 @@
 // layers on its own, only the people on screen get video, and Data saver turns other people's cameras off entirely.
 // LiveKit's library loads after the page appears, so the first load stays light.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { MeetRecorder, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
 
 const SAVED_NAME = 'olexweb-meet-name'
 const MAX_TILES = 9
@@ -23,7 +24,16 @@ const I = {
   close: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>,
   weak: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18v-1M9 18v-4M14 18v-7M19 18V7" /></svg>,
   send: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4l-5.5 16-3-6.5z" /><path d="M11.5 13.5 20 4" /></svg>,
+  rec: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4" className="mt-fill" /></svg>,
+  stop: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2" className="mt-fill" /></svg>,
+  smile: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14.2a4.2 4.2 0 0 0 7 0" /><path d="M9.3 9.6h.01M14.7 9.6h.01" strokeWidth="2.6" /></svg>,
+  dots: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" strokeWidth="3" /></svg>,
 }
+// quick reactions float up on everyone's screen; the picker's set covers everyday chat
+export const REACTIONS = ['👍', '👏', '😂', '❤️', '🎉', '😮']
+const EMOJI = ['😀', '😂', '🤣', '😊', '😍', '🥰', '😎', '🤩', '😉', '🙂', '🤔', '😮', '😅', '😢', '😭', '😡', '🥳', '😴', '🙏', '👍', '👎', '👏', '🙌', '👋',
+  '💪', '🤝', '✌️', '👌', '❤️', '🔥', '✨', '🎉', '💯', '✅', '❌', '⭐', '💡', '📌', '⏰', '📎', '☕', '🍕', '🎂', '🌍', '🚀', '📈', '💰', '🇳🇬']
+const ONLY_EMOJI = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\u200d|\ufe0f|\s)+$/u
 const initials = (n) => { const w = String(n || '?').trim().split(/\s+/).filter(Boolean); return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() }
 const TONES = ['#2b3a2a', '#33302a', '#26333a', '#3a2a33', '#2f2a3a', '#2a3a36']
 const tone = (id) => TONES[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length]
@@ -53,6 +63,9 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
   const [panel, setPanel] = useState(null), [messages, setMessages] = useState([]), [unread, setUnread] = useState(0)
   const [conn, setConn] = useState({ reconnecting: false, weak: false, audioBlocked: false }), [startedAt, setStartedAt] = useState(0), [leaving, setLeaving] = useState(false)
   const roomRef = useRef(null), lkRef = useRef(null), previewRef = useRef(null), previewTrack = useRef(null), joinInfo = useRef(null)
+  const [rec, setRec] = useState(null), [askRec, setAskRec] = useState(false), [recAudio, setRecAudio] = useState(false), [pending, setPending] = useState([])
+  const [floats, setFloats] = useState([]), [pop, setPop] = useState(null)
+  const recRef = useRef(null), stageRef = useRef(null), lastReact = useRef(0), closing = useRef(false)
   const saverRef = useRef(false), endedRef = useRef(false), panelRef = useRef(null), spoke = useRef(new Map()), levelEls = useRef(new Map())
 
   useEffect(() => { saverRef.current = saver }, [saver])
@@ -64,7 +77,10 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       if (j && j.host) { setHost(true); setName((n) => n || j.hostName || '') }
     }).catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (canRecord()) pendingRecordings().then(setPending) }, [])
+  useEffect(() => { if (!pop) return; const k = (e) => { if (e.key === 'Escape') setPop(null) }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [pop])
   useEffect(() => { import('livekit-client').then((m) => { lkRef.current = m }).catch(() => {}) }, [])   // ready by the time Join is pressed
+  const float = useCallback((e, who) => { const id = Math.random(); setFloats((f) => [...f.slice(-11), { id, e, who, x: 8 + Math.random() * 30 }]); setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 3200) }, [])
   const toast = useCallback((text) => { const id = Math.random(); setToasts((t) => [...t.slice(-1), { id, text }]); setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 5000) }, [])
 
   // ---------- lobby camera preview ----------
@@ -126,6 +142,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
         if (info.host && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(`${p.name || 'Someone'} raised a hand.`)
+        if (!info.host && isHostId(p.identity) && 'rec' in changed) toast(changed.rec ? 'The host started recording this meeting.' : 'The host stopped recording.')
         bump()
       })
       .on(E.ParticipantPermissionsChanged, (prev, p) => {
@@ -140,8 +157,9 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       .on(E.Reconnecting, () => setConn((c) => ({ ...c, reconnecting: true }))).on(E.Reconnected, () => setConn((c) => ({ ...c, reconnecting: false })))
       .on(E.AudioPlaybackStatusChanged, () => setConn((c) => ({ ...c, audioBlocked: !room.canPlaybackAudio })))
       .on(E.DataReceived, (payload, p, kind, topic) => {
-        if (topic !== 'chat' || !p) return
+        if (!p || (topic !== 'chat' && topic !== 'react')) return
         let m; try { m = JSON.parse(new TextDecoder().decode(payload)) } catch { return }
+        if (topic === 'react') { if (m && REACTIONS.includes(m.e)) float(m.e, p.name || 'Someone'); return }
         const text = String((m && m.text) || '').slice(0, 1000).trim(); if (!text) return
         setMessages((l) => [...l.slice(-299), { id: String(m.id || Math.random()), who: p.identity, name: p.name || 'Someone', text, at: Date.now() }])
         if (panelRef.current !== 'chat') setUnread((u) => u + 1)
@@ -149,6 +167,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       .on(E.Disconnected, (reason) => {
         const R = lk.DisconnectReason
         roomRef.current = null; levelEls.current.clear()
+        if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => f && toast('Recording saved: ' + f.name)).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
         setPhase(endedRef.current || reason === R.ROOM_DELETED ? 'ended' : reason === R.PARTICIPANT_REMOVED ? 'removed' : 'left')
       })
     await room.connect(info.url, info.token)
@@ -160,9 +179,12 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       if (camOn && !saverRef.current) await room.localParticipant.setCameraEnabled(true).catch((e) => { setCamOn(false); toast(deviceError(e, 'camera')) })
     }
     room.startAudio().catch(() => {}); bump()
+    if (info.host && canRecord() && !recRef.current) setAskRec(true)
+    if (!info.host && [...room.remoteParticipants.values()].some((p) => isHostId(p.identity) && p.attributes && p.attributes.rec)) toast('This meeting is being recorded.')
   }
   useEffect(() => {
-    const off = () => { if (roomRef.current) roomRef.current.disconnect() }
+    // the tab is closing: leave any recording's saved pieces where they are; the lobby offers them next time
+    const off = () => { closing.current = true; if (roomRef.current) roomRef.current.disconnect() }
     window.addEventListener('pagehide', off)
     return () => { window.removeEventListener('pagehide', off); off() }
   }, [])
@@ -229,9 +251,34 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
     try { await post('/admin/api/meetings', { action, code, identity: p.identity }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : `${p.name} was removed.`) }
     catch (e) { toast(e.message) }
   }
-  function leave() { setLeaving(false); if (roomRef.current) roomRef.current.disconnect() }
+  async function startRec(audioOnly) {
+    setAskRec(false)
+    if (!room || recRef.current) return
+    try {
+      const r = new MeetRecorder({ room, title, audioOnly, stage: stageRef.current })
+      await r.start(); recRef.current = r; setRec({ at: Date.now(), audioOnly })
+      await me.setAttributes({ rec: '1' }).catch(() => {})
+      toast(audioOnly ? 'Recording audio. Everyone can see it’s on.' : 'Recording. Everyone can see it’s on.')
+    } catch (e) { toast(e.message || 'Recording couldn’t start. Try again.') }
+  }
+  async function stopRec() {
+    const r = recRef.current; if (!r) return
+    recRef.current = null; setRec(null)
+    if (roomRef.current) roomRef.current.localParticipant.setAttributes({ rec: '' }).catch(() => {})
+    try { const f = await r.stop(); toast(f ? 'Recording saved to this device: ' + f.name : 'Nothing was recorded.') }
+    catch { toast('The recording couldn’t be saved. Reopen this page to try again.') }
+  }
+  async function react(e) {
+    const now = Date.now(); if (!room || now - lastReact.current < 350) return
+    lastReact.current = now; float(e, 'You')
+    me.publishData(new TextEncoder().encode(JSON.stringify({ e })), { reliable: true, topic: 'react' }).catch(() => {})
+  }
+  async function savePending(x) { try { const f = await saveRecording(x.id); if (f) toast('Saved: ' + f.name) } catch { toast('That recording couldn’t be saved.') } setPending(await pendingRecordings()) }
+  async function dropPending(x) { if (!window.confirm('Delete this unsaved recording? It can’t be recovered.')) return; await discardRecording(x.id).catch(() => {}); setPending(await pendingRecordings()) }
+  async function leave() { setLeaving(false); if (recRef.current) await stopRec(); if (roomRef.current) roomRef.current.disconnect() }
   async function endForAll() {
     setLeaving(false)
+    if (recRef.current) await stopRec()
     try { await post('/admin/api/meetings', { action: 'end', code }) } catch (e) { toast(e.message); return }
     endedRef.current = true; setPhase('ended'); if (roomRef.current) roomRef.current.disconnect()
   }
@@ -251,6 +298,12 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
         : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1><p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
+          {pending.length ? <div className="mt-pending" role="status">
+            <b>{pending.length === 1 ? 'A recording wasn’t saved' : `${pending.length} recordings weren’t saved`}</b>
+            {pending.map((x) => <div key={x.id} className="mt-pending-row"><span>{fileName(x)}</span>
+              <button type="button" className="mt-btn mt-xs mt-go" onClick={() => savePending(x)}>Save</button>
+              <button type="button" className="mt-btn mt-xs mt-ghost" onClick={() => dropPending(x)}>Delete</button></div>)}
+          </div> : null}
           <h1 className="mt-h">{title}</h1>
           <p className="mt-p">{host ? 'You’re the host. Joining starts the meeting for everyone with the link.' : speakers === 'invited' ? 'You’ll join as a listener. Raise your hand to ask to speak, and use the chat anytime.' : 'Check your name, mic and camera, then join.'}</p>
           <div className={'mt-preview' + (camOn ? ' on' : '')}>
@@ -285,10 +338,12 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
   const hands = all.filter((p) => p.attributes && p.attributes.hand).sort((a, b) => Number(a.attributes.hand) - Number(b.attributes.hand))
   const audioPubs = [...room.remoteParticipants.values()].flatMap((p) => [...p.audioTrackPublications.values()].filter((x) => x.track))
   const canShare = canSpeak && typeof navigator !== 'undefined' && navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices
+  const recording = !!rec || all.some((p) => isHostId(p.identity) && p.attributes && p.attributes.rec)
+  const hand = !!(me.attributes && me.attributes.hand)
 
-  return (<div className={'mt mt-in-room' + (panel ? ' mt-panel-on' : '')}>
+  return (<div className={'mt mt-in-room' + (panel ? ' mt-panel-on' : '')} onPointerDown={(e) => { if (pop && !e.target.closest('.mt-popwrap')) setPop(null) }}>
     <header className="mt-top">
-      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} /></div>
+      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className="mt-recbadge" role="status"><i aria-hidden="true" />Recording</span> : null}</div>
       <div className="mt-top-end">
         <span className="mt-count" title="People in the meeting">{I.people}{all.length}</span>
         <button className="mt-btn mt-sm" onClick={copyLink}>{I.link}<span>Copy link</span></button>
@@ -300,7 +355,8 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
     <div className="mt-body">
-      <main className={'mt-stage' + (share ? ' mt-sharing' : '')} aria-label="People in the meeting">
+      <main ref={stageRef} className={'mt-stage' + (share ? ' mt-sharing' : '')} aria-label="People in the meeting">
+        <div className="mt-floats" aria-hidden="true">{floats.map((f) => <span key={f.id} className="mt-float" style={{ left: f.x + '%' }}><b>{f.e}</b><small>{f.who}</small></span>)}</div>
         {share ? <Shared pub={share.pub} who={share.p} local={share.p === me} /> : null}
         <div className="mt-grid" data-n={Math.min(tiles.length + (hidden > 0 || listeners.length ? 1 : 0), limit)}>
           {tiles.map((p) => <Tile key={p.identity} p={p} me={p === me} lk={lk} saver={saver} levelEls={levelEls} />)}
@@ -319,19 +375,47 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       {canSpeak ? <>
         <button className={'mt-c' + (me.isMicrophoneEnabled ? '' : ' mt-off')} aria-pressed={me.isMicrophoneEnabled} onClick={toggleMic}>{me.isMicrophoneEnabled ? I.mic : I.micOff}<span>{me.isMicrophoneEnabled ? 'Mute' : 'Unmute'}</span></button>
         <button className={'mt-c' + (me.isCameraEnabled ? '' : ' mt-off')} aria-pressed={me.isCameraEnabled} onClick={toggleCam}>{me.isCameraEnabled ? I.cam : I.camOff}<span>{me.isCameraEnabled ? 'Stop video' : 'Start video'}</span></button>
-        {canShare ? <button className={'mt-c' + (me.isScreenShareEnabled ? ' mt-on' : '')} aria-pressed={me.isScreenShareEnabled} onClick={toggleShare}>{I.share}<span>{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</span></button> : null}
+        {canShare ? <button className={'mt-c mt-wide' + (me.isScreenShareEnabled ? ' mt-on' : '')} aria-pressed={me.isScreenShareEnabled} onClick={toggleShare}>{I.share}<span>{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</span></button> : null}
       </> : null}
-      {!host ? <button className={'mt-c' + (me.attributes && me.attributes.hand ? ' mt-on' : '')} aria-pressed={!!(me.attributes && me.attributes.hand)} onClick={toggleHand}>{I.hand}<span>{me.attributes && me.attributes.hand ? 'Lower hand' : 'Raise hand'}</span></button> : null}
+      {!host ? <button className={'mt-c' + (hand ? ' mt-on' : '')} aria-pressed={hand} onClick={toggleHand}>{I.hand}<span>{hand ? 'Lower hand' : 'Raise hand'}</span></button> : null}
+      <span className="mt-popwrap">
+        <button className={'mt-c' + (pop === 'react' ? ' mt-on' : '')} aria-expanded={pop === 'react'} onClick={() => setPop((x) => (x === 'react' ? null : 'react'))}>{I.smile}<span>React</span></button>
+        {pop === 'react' ? <span className="mt-pop mt-reacts" role="group" aria-label="Send a reaction">{REACTIONS.map((e) => <button key={e} onClick={() => react(e)} aria-label={'Send ' + e}>{e}</button>)}</span> : null}
+      </span>
+      {host && canRecord() ? <button className={'mt-c' + (rec ? ' mt-recording' : '')} aria-pressed={!!rec} onClick={() => (rec ? stopRec() : setAskRec(true))}>{rec ? I.stop : I.rec}<span>{rec ? <RecTime from={rec.at} /> : 'Record'}</span></button> : null}
       <button className={'mt-c' + (panel === 'chat' ? ' mt-on' : '')} aria-pressed={panel === 'chat'} onClick={() => setPanel((x) => (x === 'chat' ? null : 'chat'))}>{I.chat}<span>Chat</span>{unread ? <i className="mt-badge" aria-label={unread + ' new'}>{unread > 9 ? '9+' : unread}</i> : null}</button>
       <button className={'mt-c' + (panel === 'people' ? ' mt-on' : '')} aria-pressed={panel === 'people'} onClick={() => setPanel((x) => (x === 'people' ? null : 'people'))}>{I.people}<span>People</span>{host && hands.length ? <i className="mt-badge">{hands.length}</i> : null}</button>
-      <button className={'mt-c' + (saver ? ' mt-on' : '')} aria-pressed={saver} onClick={toggleSaver}>{I.leaf}<span>Data saver</span></button>
+      <button className={'mt-c mt-wide' + (saver ? ' mt-on' : '')} aria-pressed={saver} onClick={toggleSaver}>{I.leaf}<span>Data saver</span></button>
+      <span className="mt-popwrap mt-narrow">
+        <button className={'mt-c' + (pop === 'more' ? ' mt-on' : '')} aria-expanded={pop === 'more'} onClick={() => setPop((x) => (x === 'more' ? null : 'more'))}>{I.dots}<span>More</span></button>
+        {pop === 'more' ? <span className="mt-pop mt-menu" role="menu">
+          {canShare ? <button role="menuitem" onClick={() => { setPop(null); toggleShare() }}>{I.share}{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</button> : null}
+          <button role="menuitemcheckbox" aria-checked={saver} onClick={() => { setPop(null); toggleSaver() }}>{I.leaf}Data saver{saver ? ': on' : ''}</button>
+        </span> : null}
+      </span>
       <button className="mt-c mt-leave" onClick={() => (host ? setLeaving(true) : leave())}>{I.leave}<span>Leave</span></button>
     </nav>
+
+    {askRec ? <div className="mt-modal" role="dialog" aria-modal="true" aria-labelledby="mt-rec-h" onClick={(e) => { if (e.target === e.currentTarget) setAskRec(false) }}>
+      <div className="mt-card mt-dialog">
+        <h2 className="mt-h2" id="mt-rec-h">Record this meeting?</h2>
+        <p className="mt-p">Everyone sees that it’s being recorded. When you stop, the file saves to this device. Keep this tab open while recording.</p>
+        <div className="mt-seg" role="group" aria-label="What to record">
+          <button type="button" aria-pressed={!recAudio} onClick={() => setRecAudio(false)}>Video and audio</button>
+          <button type="button" aria-pressed={recAudio} onClick={() => setRecAudio(true)}>Audio only</button>
+        </div>
+        <p className="mt-hint">{recAudio ? 'Small file, about 30 MB an hour. Best for notes later.' : 'What you see on screen, up to about 400 MB an hour.'}</p>
+        <div className="mt-col">
+          <button className="mt-btn mt-rec-go" onClick={() => startRec(recAudio)} autoFocus>{I.rec}Record</button>
+          <button className="mt-btn mt-ghost" onClick={() => setAskRec(false)}>Not now</button>
+        </div>
+      </div>
+    </div> : null}
 
     {leaving ? <div className="mt-modal" role="dialog" aria-modal="true" aria-label="Leave the meeting" onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false) }}>
       <div className="mt-card mt-dialog">
         <h2 className="mt-h2">Leave or end the meeting?</h2>
-        <p className="mt-p">Ending it removes everyone and closes the link.</p>
+        <p className="mt-p">Ending it removes everyone and closes the link.{rec ? ' Your recording is saved first.' : ''}</p>
         <div className="mt-col">
           <button className="mt-btn mt-danger" onClick={endForAll}>End for everyone</button>
           <button className="mt-btn" onClick={leave}>Leave, keep it running</button>
@@ -350,6 +434,11 @@ function Elapsed({ from }) {
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
   return <span className="mt-time">{from ? clock(now - from) : ''}</span>
 }
+function RecTime({ from }) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
+  return <>{clock(now - from)}</>
+}
 function AudioOut({ track }) {
   const ref = useRef(null)
   useEffect(() => { const el = ref.current; if (!el || !track) return; track.attach(el); return () => { track.detach(el) } }, [track])
@@ -362,7 +451,8 @@ function Tile({ p, me, lk, saver, levelEls }) {
   useEffect(() => { const el = vref.current; if (!el || !track) return; track.attach(el); return () => { track.detach(el) } }, [track])
   useEffect(() => { const el = ring.current, m = levelEls.current; if (el) m.set(p.identity, el); return () => { if (m.get(p.identity) === el) m.delete(p.identity) } }, [p.identity, levelEls])
   const muted = !mic || mic.isMuted, weak = p.connectionQuality === lk.ConnectionQuality.Poor
-  return (<div className={'mt-tile' + (p.isSpeaking ? ' mt-speaking' : '') + (track ? ' mt-has-video' : '')} ref={ring}>
+  return (<div className={'mt-tile' + (p.isSpeaking ? ' mt-speaking' : '') + (track ? ' mt-has-video' : '')} ref={ring}
+    data-name={p.name || 'Guest'} data-initials={initials(p.name)} data-tone={tone(p.identity)} data-host={isHostId(p.identity) ? '1' : undefined}>
     {track ? <video ref={vref} muted playsInline autoPlay className={me && cam.source === S.Camera ? 'mt-mirror' : ''} />
       : <span className="mt-av" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>}
     {!track && cam && !cam.isMuted && saver && !me ? <span className="mt-saved">Video paused (Data saver)</span> : null}
@@ -377,18 +467,26 @@ function Shared({ pub, who, local }) {
   return (<div className="mt-share"><video ref={ref} muted playsInline autoPlay /><span className="mt-name">{local ? 'You are sharing your screen' : `${who.name || 'Someone'} is sharing`}</span></div>)
 }
 function Chat({ messages, send, myId }) {
-  const [text, setText] = useState(''), list = useRef(null)
+  const [text, setText] = useState(''), [picker, setPicker] = useState(false), list = useRef(null), box = useRef(null)
   useEffect(() => { const el = list.current; if (el) el.scrollTop = el.scrollHeight }, [messages.length])
-  async function go(e) { e.preventDefault(); if (await send(text)) setText('') }
+  async function go(e) { e.preventDefault(); if (await send(text)) { setText(''); setPicker(false) } }
+  function add(e) {                                                        // into the message where the cursor is
+    const el = box.current, a = el ? el.selectionStart : text.length, b = el ? el.selectionEnd : text.length
+    const next = (text.slice(0, a) + e + text.slice(b)).slice(0, 1000); setText(next)
+    requestAnimationFrame(() => { if (el) { el.focus(); el.setSelectionRange(a + e.length, a + e.length) } })
+  }
   return (<div className="mt-chat">
     <div className="mt-msgs" ref={list}>
       {messages.length ? messages.map((m, i) => { const same = i > 0 && messages[i - 1].who === m.who
-        return <div key={m.id} className={'mt-msg' + (m.who === myId ? ' mt-mine' : '') + (same ? ' mt-same' : '')}>{!same ? <b>{m.who === myId ? 'You' : m.name}</b> : null}<p>{m.text}</p></div> })
+        const big = m.text.length <= 12 && ONLY_EMOJI.test(m.text)
+        return <div key={m.id} className={'mt-msg' + (m.who === myId ? ' mt-mine' : '') + (same ? ' mt-same' : '') + (big ? ' mt-big' : '')}>{!same ? <b>{m.who === myId ? 'You' : m.name}</b> : null}<p>{m.text}</p></div> })
         : <p className="mt-empty">Messages here go to everyone in the meeting. They disappear when it ends.</p>}
     </div>
+    {picker ? <div className="mt-emoji" role="group" aria-label="Emoji">{EMOJI.map((e) => <button type="button" key={e} onClick={() => add(e)} aria-label={e}>{e}</button>)}</div> : null}
     <form className="mt-send" onSubmit={go}>
-      <textarea className="mt-in" rows={1} maxLength={1000} value={text} placeholder="Message everyone" aria-label="Message everyone" onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(e) } }} />
+      <button type="button" className={'mt-btn mt-icon mt-ghost' + (picker ? ' mt-picked' : '')} aria-label="Emoji" aria-expanded={picker} onClick={() => setPicker((x) => !x)}>{I.smile}</button>
+      <textarea ref={box} className="mt-in" rows={1} maxLength={1000} value={text} placeholder="Message everyone" aria-label="Message everyone" onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(e) } else if (e.key === 'Escape') setPicker(false) }} />
       <button className="mt-btn mt-go mt-icon" aria-label="Send" disabled={!text.trim()}>{I.send}</button>
     </form>
   </div>)

@@ -289,6 +289,21 @@ content. Add it after the audit is approved, since the audit describes one chann
   9 tiles get video, Data saver unsubscribes cameras. livekit-client loads after the page appears (first load 96 kB).
 - Tests: `tests/meet/run.sh` (local `livekit-server --dev`, next start, Postgres; 64 checks with two real Chrome browsers,
   host laptop + guest phone). The binary: github.com/livekit/livekit releases (linux_amd64).
-- Next: install 2 = recording (prompt "Record this meeting?" at start, record button always on the bar, red Recording badge
-  for everyone, file saved on the host's device); install 3 = AI notes (reuse lib/assistant/voice.js transcription pool in
-  <4 MB pieces + the free AI pool); then Automation install 2 (Library tab, per-channel ticks, Add your own idea).
+
+## Meetings, install 2 (3 Nov 2026): recording, reactions, emoji
+- Recording (host only, `components/meet/recorder.js`): "Record this meeting?" on starting (Video and audio / Audio only),
+  Record button always on the bar (shows the running time), red Recording badge for everyone (host participant attribute
+  `rec`; only an `h_` identity counts), guests told when it starts/stops and on joining late. Nothing goes to the server.
+  Video = the stage drawn into 1280×720 at 15 fps from the host's DOM (tiles carry data-name/initials/tone/host), audio =
+  every voice + host mic mixed with WebAudio; a Worker timer keeps drawing in background tabs.
+  Crash-safe: a piece every 2 s goes to IndexedDB (`olexweb-meet-rec`); closing/reloading mid-recording leaves the pieces
+  (pagehide sets `closing`, the Disconnected handler then doesn't save) and the lobby offers "A recording wasn't saved:
+  Save / Delete". Leave / End for everyone save first. Format: WebM where supported (Chrome's MP4 recording gives no pieces
+  until stop, so it isn't crash-safe), MP4 fallback (Safari). `withDuration()` writes the length into the WebM header so
+  players can seek. File: "<meeting> YYYY-MM-DD HH.MM.webm" (audio: "… (audio).webm").
+- Reactions: React tray 👍 👏 😂 ❤️ 🎉 😮 (data topic 'react', only those six accepted), floating over the stage with the
+  sender's name. Chat: emoji picker (inserts at the cursor), emoji-only messages show big. Chat still never stored.
+- Phones: Share screen and Data saver move into More (the bar never scrolls, so trays/menus open above it).
+- Tests: tests/meet/run.sh = 98 checks (recordings verified with ffprobe: tracks, 1280×720, duration, a real picture).
+- Next: install 3 = AI notes (from an audio recording: reuse lib/assistant/voice.js transcription pool in <4 MB pieces + the
+  free AI pool); then Automation install 2 (Library tab, per-channel ticks, Add your own idea).
