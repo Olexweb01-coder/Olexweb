@@ -483,3 +483,6 @@ alter table meetings add column if not exists notes jsonb;
 alter table meetings add column if not exists transcript text;
 alter table meetings add column if not exists notes_at timestamptz;
 alter table meetings add column if not exists notes_by text;
+-- Automation install 2 (Nov 2026): the Library. Which channels each idea's Short goes to (ticks), and "Make it next".
+alter table yt_ideas add column if not exists channels jsonb not null default '{"youtube": true, "facebook": true}'::jsonb;
+alter table yt_ideas add column if not exists first boolean not null default false;   -- Make it next: ahead in scripts, factory and both queues

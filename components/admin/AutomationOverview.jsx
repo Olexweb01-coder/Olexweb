@@ -56,6 +56,6 @@ export default function AutomationOverview({ data }) {
       <h2>Needs you</h2>
       {data.needs.length ? <ul className="au-list">{data.needs.map((n, i) => <li key={i}><span>{n.text}</span><a href={n.href}>Open →</a></li>)}</ul> : <p className="au-note">Nothing right now. Everything is running on its own.</p>}
     </section>
-    <style>{CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: CSS }} />
   </div>)
 }

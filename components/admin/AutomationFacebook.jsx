@@ -28,14 +28,14 @@ export default function AutomationFacebook({ data }) {
   const join = (t) => t.length === 1 ? <b>{t[0]}</b> : t.map((x, i) => <span key={x}>{i ? (i === t.length - 1 ? ' and ' : ', ') : ''}<b>{x}</b></span>)
   const Q = F.queue || { items: [], more: 0, waiting: 0 }
 
-  if (!F.ready) return (<div className="au"><section className="au-box" aria-label="Facebook Reels"><h2>Facebook Reels</h2><p className="au-note">Add META_APP_ID, META_APP_SECRET and META_CONFIG_ID in Vercel, then redeploy, to connect your Page.</p></section><style>{BASE + CSS}</style></div>)
+  if (!F.ready) return (<div className="au"><section className="au-box" aria-label="Facebook Reels"><h2>Facebook Reels</h2><p className="au-note">Add META_APP_ID, META_APP_SECRET and META_CONFIG_ID in Vercel, then redeploy, to connect your Page.</p></section><style dangerouslySetInnerHTML={{ __html: BASE + CSS }} /></div>)
   if (!F.pages.length) return (<div className="au"><section className="au-box" aria-label="Facebook Reels"><h2>Facebook Reels</h2>
     {note ? <p className="af-note">{note}</p> : null}
     <p className="au-note" style={{ marginBottom: 14 }}>Post your Shorts as Reels on your Page, on their own times, without waiting for YouTube. Each Reel carries its free guide link.</p>
-    <a className="btn btn-green" href="/admin/api/meta/connect">Connect your Facebook Page</a></section><style>{BASE + CSS}</style></div>)
+    <a className="btn btn-green" href="/admin/api/meta/connect">Connect your Facebook Page</a></section><style dangerouslySetInnerHTML={{ __html: BASE + CSS }} /></div>)
   if (!F.page) return (<div className="au"><section className="au-box" aria-label="Facebook Reels"><h2>Which Page should Reels go to?</h2>
     {err ? <p className="af-err" role="alert">{err}</p> : null}
-    <div className="af-row">{F.pages.map((p) => <button key={p.page_id} className="btn btn-line" disabled={!!busy} onClick={() => meta({ action: 'select', page: p.page_id }, 'Page chosen.')}>{p.name}</button>)}</div></section><style>{BASE + CSS}</style></div>)
+    <div className="af-row">{F.pages.map((p) => <button key={p.page_id} className="btn btn-line" disabled={!!busy} onClick={() => meta({ action: 'select', page: p.page_id }, 'Page chosen.')}>{p.name}</button>)}</div></section><style dangerouslySetInnerHTML={{ __html: BASE + CSS }} /></div>)
 
   return (<div className="au" aria-label="Facebook Reels">
     {note ? <p className="af-note">{note}</p> : null}
@@ -78,7 +78,7 @@ export default function AutomationFacebook({ data }) {
         <div><dt>Safety</dt><dd>Pauses itself if Meta reports a block · 1–3 a day max</dd></div>
       </dl>
     </section>
-    <style>{BASE + CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: BASE + CSS }} />
   </div>)
 }
 

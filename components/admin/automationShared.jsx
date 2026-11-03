@@ -1,4 +1,6 @@
 // Shared by the Automation screens (server and client): channel icons and the base styles.
+// Styles go in with <style dangerouslySetInnerHTML>: as a text child, React escapes the quotes on the server, which broke
+// rules like content:"" and made every Automation page re-render in the browser (hydration errors). Fixed CSS only, never user input.
 export const ChIcon = {
   youtube: <svg viewBox="0 0 24 24" className="au-ci" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4" /><path d="M10 9.2v5.6l4.8-2.8z" /></svg>,
   facebook: <svg viewBox="0 0 24 24" className="au-ci" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M13.5 20v-6.5H16l.4-3h-2.9V9c0-.9.3-1.4 1.5-1.4h1.5V5.1c-.3 0-1.2-.1-2.2-.1-2.2 0-3.6 1.3-3.6 3.7v1.8H8v3h2.7V20" /></svg>,

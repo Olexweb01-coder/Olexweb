@@ -318,4 +318,23 @@ content. Add it after the audit is approved, since the audit describes one chann
   combined. Saved in meetings.notes / transcript / notes_at / notes_by; the device audio is deleted after. `get-notes`
   reopens them. Notes sheet: Copy notes, Download (.md), Transcript (.txt). Owner only.
 - Tests: tests/meet/mock-ai.mjs stands in for Gemini (ASSISTANT_GEMINI_BASE=http://localhost:4566); 123 checks.
-- Next: Automation install 2 (Library tab, per-channel ticks, Add your own idea); later public sign-up for hosts.
+- Next: later public sign-up for hosts.
+
+## Automation, install 2 (3 Nov 2026): the Library
+- Automation → Library (/admin/automation/library, AutomationLibrary.jsx, lib/site/library.js): every idea and its Short in
+  one list (stages idea / being made / ready / posted / set aside), search, filters, and a tick per channel.
+- Ticks live on the idea: yt_ideas.channels {youtube, facebook} (default both; Instagram greyed until it's on). Read by:
+  publish.js (queueList, autoQueue, uploadNext skip YouTube-unticked; queueAdd / postNow refuse), meta.js (WAITING and
+  fbWants skip Facebook-unticked; releaseIfDone frees a YouTube-unticked Short once Facebook posts it and marks its idea
+  made), automation.js (Overview's "ready" count respects ticks). setChannel(): only before that channel posts (and not while
+  YouTube uploads); at least one stays ticked; unticking Facebook after YouTube frees the copy kept for Facebook.
+- Your own idea (ideas.js addOwnIdea, action own-idea): judged exactly like a found one (verify live → the same judge with
+  the site's real name → trust ≥ 6 and value ≥ 5 → YouTube coverage → score). Turned down = saved 'passed' (source 'You')
+  with the reason. Make it next = picked + yt_ideas.first: first in writeNextScript, sendNext, YouTube's queue (front) and
+  Facebook's queue. Actions on /admin/api/youtube: library-channel, own-idea.
+- Fixed: the Automation screens' <style> text children (quotes escaped by React on the server → broken rules such as the tab
+  underline, and hydration errors that re-rendered every Automation page). Now <style dangerouslySetInnerHTML> (fixed CSS).
+- Tests: tests/youtube/fLIB.mjs (47), chain phaseLIB.sh = phaseAU + fLIB, with fD.mjs skipped: fD.mjs still calls the
+  `upload` action removed when uploads moved to the queue (commit 3072f46), so phaseAU stops there on current code. Without
+  it the chain gives 96 passed + 1 failure in fD2.mjs (it depends on fD's setup), identical before and after the Library.
+  The factory repo's tests need out/video.mp4 in olexweb-factory (any vertical MP4, e.g. made with ffmpeg testsrc2).

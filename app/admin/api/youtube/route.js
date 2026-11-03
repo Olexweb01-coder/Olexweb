@@ -4,7 +4,8 @@ import { currentUser, sameOrigin, ownerOnly, clientIp } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
 import { syncYouTube, disconnect, YtError, researchPostingTimes, timeResearch, checkUploads } from '@/lib/site/youtube'
-import { findIdeas, decideIdea } from '@/lib/site/ideas'
+import { findIdeas, decideIdea, addOwnIdea } from '@/lib/site/ideas'
+import { setChannel } from '@/lib/site/library'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
 import { progressOf } from '@/lib/site/progress'
 import { sendToFactory } from '@/lib/site/factory'
@@ -37,6 +38,11 @@ export async function POST(request) {
         return await postNow(body.id)
       } catch (e) { throw new Refused(e.message) }
     }
+    if (body.action === 'library-channel') {
+      if (!Number.isInteger(body.id)) throw new Refused('Request refused.')
+      try { return await setChannel(body.id, body.channel, body.on === true) } catch (e) { throw new Refused(e.message) }
+    }
+    if (body.action === 'own-idea') { try { return await addOwnIdea({ url: body.url, name: body.name, note: body.note, channels: body.channels, next: body.next === true }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'yt-mode') { const m = body.mode === 'autopilot' ? 'autopilot' : 'approval'; await q('update yt_settings set yt_mode = $1 where id = 1', [m])
       // Autopilot also releases what was already waiting for you (scripts that passed every check); ones that failed a check still need your eye
