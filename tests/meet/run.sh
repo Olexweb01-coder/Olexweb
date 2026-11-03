@@ -14,5 +14,6 @@ setsid nohup npx next start -p 3000 > /tmp/next.log 2>&1 &
 for i in $(seq 1 40); do curl -s -o /dev/null http://localhost:3000/meet/x && curl -s -o /dev/null http://localhost:7880 && break; sleep 0.5; done
 python3 tests/meet/e2e.py; R=$?
 python3 tests/meet/schedule.py || R=1
+python3 tests/meet/olex.py || R=1
 pkill -f livekit-server; pkill -f "next start"; pkill -f next-server; pkill -f mock-ai.mjs
 exit $R

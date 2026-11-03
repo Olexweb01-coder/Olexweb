@@ -239,6 +239,7 @@ a.btn{text-decoration:none}
 .md-hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 .md a{color:var(--green)}
 .actcard{margin-top:12px;padding:14px;border-radius:14px;border:1px solid rgba(143,227,106,.4);background:rgba(143,227,106,.06);display:flex;flex-direction:column;gap:10px}
+.actcard.danger{border-color:rgba(255,138,138,.55);background:rgba(255,138,138,.07)}   /* deleting or ending: red, and its label says what's lost */
 .actcard.done{border-color:rgba(143,227,106,.25)}.actcard.cancelled,.actcard.failed{border-color:var(--line);background:transparent;opacity:.75}
 .actlabel{margin:0;font-weight:600;line-height:1.45}.actstate{margin:0;font-size:13.5px;font-weight:700;color:var(--green)}
 .actcard.cancelled .actstate,.actcard.failed .actstate{color:var(--dim)}

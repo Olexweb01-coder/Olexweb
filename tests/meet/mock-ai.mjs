@@ -1,16 +1,24 @@
-// A stand-in for Gemini during the meetings tests (ASSISTANT_GEMINI_BASE=http://localhost:4566): it transcribes audio
+// A stand-in for Gemini during the meetings tests (and Olex AI's chat: POST /control {chatReply}) (ASSISTANT_GEMINI_BASE=http://localhost:4566): it transcribes audio
 // pieces ("Part N: …"), writes notes as JSON, can fail chosen audio requests (POST /control {failNth:[2,3]}), saves every
 // audio piece it gets to /tmp/mock-ai/ (so the test can check each is a complete file) and keeps a log (GET /log).
 import http from 'node:http'
 import fs from 'node:fs'
 fs.mkdirSync('/tmp/mock-ai', { recursive: true })
-let log = [], audioN = 0, part = 0, failNth = []
+let log = [], audioN = 0, part = 0, failNth = [], chatReply = 'Hello.'
 const send = (res, code, body) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)) }
 http.createServer((req, res) => {
   let body = ''; req.on('data', (c) => (body += c)); req.on('end', () => {
     const u = new URL(req.url, 'http://x')
     if (u.pathname === '/log') return send(res, 200, log)
-    if (u.pathname === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; audioN = 0; part = 0 } failNth = j.failNth || []; return send(res, 200, { ok: true }) }
+    if (u.pathname === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; audioN = 0; part = 0 } failNth = j.failNth || []; if ('chatReply' in j) chatReply = j.chatReply; return send(res, 200, { ok: true }) }
+    if (/:streamGenerateContent$/.test(u.pathname)) {                 // Olex AI's chat: answers with what the test chose, in Gemini's streaming format
+      const j = JSON.parse(body), sys = (j.systemInstruction && j.systemInstruction.parts.map((x) => x.text).join('')) || '', prompt = j.contents[0].parts.map((x) => x.text || '').join('')
+      log.push({ kind: 'chat', system: sys, prompt })
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      const half = Math.ceil(chatReply.length / 2)
+      for (const t of [chatReply.slice(0, half), chatReply.slice(half)]) res.write('data: ' + JSON.stringify({ candidates: [{ content: { parts: [{ text: t }] } }] }) + '\r\n\r\n')
+      return res.end()
+    }
     if (u.pathname === '/v1beta/models') return send(res, 200, { models: [{ name: 'models/gemini-9-flash', supportedGenerationMethods: ['generateContent'] }] })
     if (!/:generateContent$/.test(u.pathname)) return send(res, 404, { error: 'unknown' })
     const j = JSON.parse(body), parts = j.contents[0].parts, audio = parts.find((p) => p.inline_data)

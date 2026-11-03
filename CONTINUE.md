@@ -355,3 +355,18 @@ content. Add it after the audit is approved, since the audit describes one chann
   Playwright's wait_for_function (string eval): use element waits on admin pages.
 - Notifications.jsx's own list still lacks switches for 'facebook', 'ideas' and 'window' (the server has them, on by default).
 - Next: install B = Olex AI actions (meetings, schedule, automation, courses) through tools.js (sectionData → proposeMore → runMore).
+
+## Olex AI, install B (3 Nov 2026): meetings, schedule, automation, courses
+- lib/assistant/ops.js, plugged into tools.js's three steps: opsData() (appended to sectionData; sections MEETINGS (by
+  code, with recent AI notes), SCHEDULE (next 8 days: meetings, scheduled changes, auto-publishing articles, YouTube and
+  Facebook queues; NOW in Lagos), AUTOMATION + LIBRARY (idea #id, ticks, locks), COURSES (AOC; listener #id, first names
+  only, feedback scrubbed and marked data). chat.js attaches site data for OPS_SITE_WORDS too.
+- OPS_ACTIONS (each validated in proposeOps against real records, label in plain English, run by runOps after Do it):
+  schedule_meeting, update_meeting, end_meeting*, delete_meeting* (ended only), set_channel, add_idea (judged like found),
+  make_next, decide_idea, youtube_mode, facebook_posting, course_accepting, course_goal, remove_listener*.
+  * = danger: red card (ChatHome .actcard.danger, red Do it) whose label says what's lost. The old "never delete" rule now
+  reads: delete or end only through those actions. Asking for what's already so gives no card.
+- setYoutubeMode() moved to lib/site/automation.js; the YouTube route and Olex AI both call it (same behaviour).
+- A new course: add its data to COURSES in opsData and its actions next to course_accepting / course_goal.
+- Tests: tests/meet/olex.py (44; the AI's reply is set by the test through tests/meet/mock-ai.mjs /control chatReply, so it
+  checks our side: data, cards, validation, danger, once-only, cancel). Whether the real model proposes well: try it live.

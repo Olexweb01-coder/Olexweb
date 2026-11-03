@@ -37,6 +37,7 @@
 .olex :is(.stat,.review,.trend,.share,.seo,.look,.radio label,.switch,.banner,.drop){border-radius:var(--r)}
 .olex .stat.act{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.42)}
 .olex .actcard{box-shadow:var(--ss),inset 0 0 0 1px rgba(143,227,106,.38)}
+.olex .actcard.danger{box-shadow:var(--ss),inset 0 0 0 1px rgba(255,138,138,.5)}
 .olex .radio label:has(input:checked){box-shadow:var(--ss),inset 0 0 0 1.5px rgba(143,227,106,.6)}
 .olex :is(.input,textarea.input,select.input,.seg,.chatpick){background:var(--pf);border:var(--pb);box-shadow:var(--ps)}
 .olex .seg button[aria-pressed=true],.olex .seg a.segl[aria-pressed=true]{background:var(--sf2);box-shadow:var(--on-sh)}

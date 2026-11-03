@@ -158,9 +158,9 @@ export default function ChatHome({ chatId: openId, messages, first, greet, ready
       {msgs.map((m) => m.role === 'you' ? <div key={m.id} className="turn me">{m.docs && m.docs.length ? <div className="doc-chips mine">{m.docs.map((d) => chip(d))}</div> : null}<div className={'bubble' + (/```/.test(m.text) ? ' has-code' : '')}>{/```/.test(m.text) ? <Markdown text={m.text} /> : m.text}</div></div>
         : <div key={m.id} className="turn ai"><img className="ai-mark" src="/studio/mark.png" alt="" width="20" height="24" />
           <div className="ai-body">{m.text ? <Markdown text={m.text} streaming={m.id === 'live'} /> : null}
-            {m.action ? <div className={'actcard ' + (m.action_state || '')}>
+            {m.action ? <div className={'actcard ' + (m.action_state || '') + (m.action.danger ? ' danger' : '')}>
               <p className="actlabel">{m.action.label}</p>
-              {m.action_state === 'proposed' ? <div className="acts"><button type="button" className="btn btn-green" disabled={!!busy} onClick={() => decide(m, true)}>Do it</button><button type="button" className="btn btn-line" disabled={!!busy} onClick={() => decide(m, false)}>Cancel</button></div>
+              {m.action_state === 'proposed' ? <div className="acts"><button type="button" className={m.action.danger ? 'btn btn-bad' : 'btn btn-green'} disabled={!!busy} onClick={() => decide(m, true)}>Do it</button><button type="button" className="btn btn-line" disabled={!!busy} onClick={() => decide(m, false)}>Cancel</button></div>
                 : <p className="actstate">{{ running: 'Working on it\u2026', done: 'Done', cancelled: 'Cancelled', failed: 'Didn\u2019t work' }[m.action_state] || ''}</p>}
             </div> : null}
             {m.post_id ? <a className="draftcard" href={'/admin/blog?open=' + m.post_id}><b>Open the draft</b><span>Read it, check the flagged claims, then publish or ask for changes.</span></a> : null}
