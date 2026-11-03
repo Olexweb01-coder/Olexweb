@@ -74,15 +74,24 @@ async function meetDatabase(mainDb) {
     if (host === new URL(process.env.DATABASE_URL).hostname && new URL(url).pathname === new URL(process.env.DATABASE_URL).pathname) { await mdb.query(schema); ok('MEET_DATABASE_URL is the main database: tables are ready'); return }
     await mdb.query(schema)
     ok('Connected to Meet\u2019s database ' + host + ' and its tables are ready')
-    const have = (await mdb.query('select count(*)::int n from meetings')).rows[0].n
-    // each row travels as JSON text, so every value (timestamps to the microsecond, notes, reminders) arrives exactly as it was
-    const old = (await mainDb.query("select to_regclass('public.meetings') as t")).rows[0].t ? (await mainDb.query('select row_to_json(m)::text as j from meetings m order by id')).rows : []
-    if (have || !old.length) { ok(have ? `${have} meeting${have === 1 ? '' : 's'} already there (not copied again)` : 'No earlier meetings to copy'); return }
+    // Everything Meet keeps, in the order each depends on the last: accounts, their sign-in methods, signed-in browsers
+    // (nobody is signed out), meetings, attendance lists, reports. One all-or-nothing step: if anything fails, nothing
+    // is copied and the main database is untouched. Each row travels as JSON text, so every value arrives exactly as it was.
+    const TABLES = [['meet_users', true], ['meet_identities', false], ['meet_sessions', false], ['meetings', true], ['meet_attendees', true], ['meet_reports', true]]
+    const have = (await mdb.query('select (select count(*) from meetings) + (select count(*) from meet_users) as n')).rows[0].n
+    if (Number(have)) { ok('Meet\u2019s data is already there (not copied again)'); return }
+    const rows = {}
+    for (const [t] of TABLES) rows[t] = (await mainDb.query('select to_regclass($1) as t', ['public.' + t])).rows[0].t ? (await mainDb.query(`select row_to_json(x)::text as j from ${t} x`)).rows : []
+    if (!TABLES.some(([t]) => rows[t].length)) { ok('No earlier meetings or accounts to copy'); return }
     await mdb.query('begin')
-    for (const r of old) await mdb.query('insert into meetings select * from json_populate_record(null::meetings, $1::json) on conflict (code) do nothing', [r.j])
-    await mdb.query("select setval(pg_get_serial_sequence('meetings', 'id'), greatest((select max(id) from meetings), 1))")
+    for (const [t, serial] of TABLES) {
+      for (const r of rows[t]) await mdb.query(`insert into ${t} select * from json_populate_record(null::${t}, $1::json) on conflict do nothing`, [r.j])
+      if (serial && rows[t].length) await mdb.query(`select setval(pg_get_serial_sequence('${t}', 'id'), greatest((select max(id) from ${t}), 1))`)
+    }
     await mdb.query('commit')
-    ok(`Copied ${old.length} earlier meeting${old.length === 1 ? '' : 's'} to Meet\u2019s database`)
+    const n = (t) => rows[t].length
+    ok(`Copied to Meet\u2019s database: ${n('meetings')} meeting${n('meetings') === 1 ? '' : 's'}, ${n('meet_users')} account${n('meet_users') === 1 ? '' : 's'}${n('meet_attendees') ? `, ${n('meet_attendees')} attendance record${n('meet_attendees') === 1 ? '' : 's'}` : ''}${n('meet_reports') ? `, ${n('meet_reports')} report${n('meet_reports') === 1 ? '' : 's'}` : ''}`)
+    ok('Your main database was only read, not changed')
   } catch (e) { await mdb.query('rollback').catch(() => {}); no('Meet\u2019s database: ' + e.message) } finally { await mdb.end().catch(() => {}) }
 }
 

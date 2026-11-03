@@ -412,3 +412,7 @@ content. Add it after the audit is approved, since the audit describes one chann
   open meetings, marks their reports acted on; the owner can't be banned.
 - Tests: tests/meet/guests.py (51); LiveKit runs with tests/meet/livekit.yaml (webhooks to the site).
 - Still to do: install 3 (usage meter and capacity protections), install 4 (pricing, built but switched off).
+
+- Fix (3 Nov 2026): admin-setup's first copy into Meet's own database now carries every Meet table in dependency order
+  (meet_users → meet_identities → meet_sessions → meetings → meet_attendees → meet_reports), all-or-nothing. The first
+  version copied only meetings and failed (meetings_host_user_fkey) when a meeting belonged to a Meet account.
