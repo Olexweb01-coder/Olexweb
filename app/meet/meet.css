@@ -202,3 +202,6 @@
   .mt-c.mt-recording{flex-direction:row}
 }
 @media (prefers-reduced-motion:reduce){.mt-float{animation:none!important;bottom:40%;opacity:1}}
+
+/* install 3: the AI notes banner */
+.mt-banner .mt-x-sm{width:30px;height:30px;margin-left:auto}.mt-banner .mt-x-sm svg{width:16px;height:16px}

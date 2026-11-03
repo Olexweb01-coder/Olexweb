@@ -478,3 +478,8 @@ alter table meta_posts add column if not exists slot text;                      
 create table if not exists meetings (id serial primary key, code text not null unique, title text not null, speakers text not null default 'everyone' check (speakers in ('everyone', 'invited')),
   host_id text, created_at timestamptz not null default now(), started_at timestamptz, ended_at timestamptz, last_join_at timestamptz, joins int not null default 0);
 create index if not exists meetings_open on meetings (created_at desc) where ended_at is null;
+-- Meetings install 3 (Nov 2026): AI notes from the host's recording (summary, decisions, action items) and the transcript
+alter table meetings add column if not exists notes jsonb;
+alter table meetings add column if not exists transcript text;
+alter table meetings add column if not exists notes_at timestamptz;
+alter table meetings add column if not exists notes_by text;

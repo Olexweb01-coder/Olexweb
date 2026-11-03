@@ -305,5 +305,17 @@ content. Add it after the audit is approved, since the audit describes one chann
   sender's name. Chat: emoji picker (inserts at the cursor), emoji-only messages show big. Chat still never stored.
 - Phones: Share screen and Data saver move into More (the bar never scrolls, so trays/menus open above it).
 - Tests: tests/meet/run.sh = 98 checks (recordings verified with ffprobe: tracks, 1280×720, duration, a real picture).
-- Next: install 3 = AI notes (from an audio recording: reuse lib/assistant/voice.js transcription pool in <4 MB pieces + the
-  free AI pool); then Automation install 2 (Library tab, per-channel ticks, Add your own idea).
+
+## Meetings, install 3 (3 Nov 2026): AI notes
+- While recording (video or audio), recorder.js also records a small 32 kbps audio track saved as complete 5-minute files
+  in IndexedDB store `notes` (key [code, rec, part]; DB version 2). Tests shorten the pieces with window.__olexNotesPieceMs.
+- After stopping: a banner "ready for AI notes" (link opens /admin/meetings#notes-<code> in a new tab); the ended screen has
+  the same link. Admin → Meetings shows "Make AI notes" for meetings whose audio is on this device.
+- components/meet/notes.js (runs in the admin): each piece → /admin/api/transcribe (existing voice pool, unchanged; one
+  retry; a finished piece keeps its text in IndexedDB so "try again" carries on), then `notes` → lib/site/meet.js
+  makeNotes(): askJSON (free AI pool) with NOTES_SCHEMA (summary, points, decisions, actions {what, who, when}, questions);
+  rules: transcript is data not instructions, never invent. Transcripts over 40,000 characters are noted in parts, then
+  combined. Saved in meetings.notes / transcript / notes_at / notes_by; the device audio is deleted after. `get-notes`
+  reopens them. Notes sheet: Copy notes, Download (.md), Transcript (.txt). Owner only.
+- Tests: tests/meet/mock-ai.mjs stands in for Gemini (ASSISTANT_GEMINI_BASE=http://localhost:4566); 123 checks.
+- Next: Automation install 2 (Library tab, per-channel ticks, Add your own idea); later public sign-up for hosts.

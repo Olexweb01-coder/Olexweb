@@ -64,7 +64,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
   const [conn, setConn] = useState({ reconnecting: false, weak: false, audioBlocked: false }), [startedAt, setStartedAt] = useState(0), [leaving, setLeaving] = useState(false)
   const roomRef = useRef(null), lkRef = useRef(null), previewRef = useRef(null), previewTrack = useRef(null), joinInfo = useRef(null)
   const [rec, setRec] = useState(null), [askRec, setAskRec] = useState(false), [recAudio, setRecAudio] = useState(false), [pending, setPending] = useState([])
-  const [floats, setFloats] = useState([]), [pop, setPop] = useState(null)
+  const [floats, setFloats] = useState([]), [pop, setPop] = useState(null), [notesReady, setNotesReady] = useState(false)
   const recRef = useRef(null), stageRef = useRef(null), lastReact = useRef(0), closing = useRef(false)
   const saverRef = useRef(false), endedRef = useRef(false), panelRef = useRef(null), spoke = useRef(new Map()), levelEls = useRef(new Map())
 
@@ -167,7 +167,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
       .on(E.Disconnected, (reason) => {
         const R = lk.DisconnectReason
         roomRef.current = null; levelEls.current.clear()
-        if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => f && toast('Recording saved: ' + f.name)).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
+        if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => { if (f) { toast('Recording saved: ' + f.name); if (f.notes) setNotesReady(true) } }).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
         setPhase(endedRef.current || reason === R.ROOM_DELETED ? 'ended' : reason === R.PARTICIPANT_REMOVED ? 'removed' : 'left')
       })
     await room.connect(info.url, info.token)
@@ -255,7 +255,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
     setAskRec(false)
     if (!room || recRef.current) return
     try {
-      const r = new MeetRecorder({ room, title, audioOnly, stage: stageRef.current })
+      const r = new MeetRecorder({ room, title, audioOnly, stage: stageRef.current, code })
       await r.start(); recRef.current = r; setRec({ at: Date.now(), audioOnly })
       await me.setAttributes({ rec: '1' }).catch(() => {})
       toast(audioOnly ? 'Recording audio. Everyone can see it’s on.' : 'Recording. Everyone can see it’s on.')
@@ -265,7 +265,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
     const r = recRef.current; if (!r) return
     recRef.current = null; setRec(null)
     if (roomRef.current) roomRef.current.localParticipant.setAttributes({ rec: '' }).catch(() => {})
-    try { const f = await r.stop(); toast(f ? 'Recording saved to this device: ' + f.name : 'Nothing was recorded.') }
+    try { const f = await r.stop(); toast(f ? 'Recording saved to this device: ' + f.name : 'Nothing was recorded.'); if (f && f.notes) setNotesReady(true) }
     catch { toast('The recording couldn’t be saved. Reopen this page to try again.') }
   }
   async function react(e) {
@@ -291,7 +291,8 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
   if (phase !== 'in') return (<div className="mt mt-solo">
     <header className="mt-brand"><img src="/studio/mark.png" alt="" width="22" height="26" /><span>Olexweb</span></header>
     <main className="mt-card">
-      {phase === 'ended' ? <><h1 className="mt-h">This meeting has ended</h1><p className="mt-p">Thanks for being here. You can close this page.</p></>
+      {phase === 'ended' ? <><h1 className="mt-h">This meeting has ended</h1><p className="mt-p">{host && notesReady ? 'Your recording is saved. Olex AI can turn it into notes: a summary, decisions and action items.' : 'Thanks for being here. You can close this page.'}</p>
+          {host && notesReady ? <div className="mt-row"><a className="mt-btn mt-go" href={'/admin/meetings#notes-' + code}>Make AI notes</a></div> : null}</>
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
         : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
@@ -352,6 +353,7 @@ export default function MeetRoom({ code, title, speakers, initialState, host: ho
 
     {conn.reconnecting ? <p className="mt-banner" role="status">Reconnecting… Your audio comes back on its own.</p>
       : conn.weak ? <p className="mt-banner mt-warn" role="status">{I.weak}Your connection is weak.{!saver ? <> <button className="mt-link" onClick={toggleSaver}>Turn on Data saver</button> to keep voices clear.</> : ' Voices come first.'}</p> : null}
+    {host && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <a className="mt-link" href={'/admin/meetings#notes-' + code} target="_blank" rel="noopener">Make AI notes</a> (opens in a new tab)<button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
     <div className="mt-body">

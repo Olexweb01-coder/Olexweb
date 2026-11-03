@@ -6,16 +6,24 @@
 // Format: WebM where the browser can record it (Chrome, Edge, Firefox): it hands over a piece every 2 seconds, which is
 // what makes it crash-safe (Chrome's MP4 recording holds everything until the end). MP4 is the fallback (Safari).
 // Browsers don't write a WebM's length into the file, so players couldn't seek; saveRecording() writes it in.
+// For AI notes, a second small audio-only recording (32 kbps) runs alongside and is saved as complete 5-minute files
+// (store 'notes', by meeting code), each small enough to transcribe on its own; Admin → Meetings turns them into notes.
 
 const DB = 'olexweb-meet-rec'
 function open() {
   return new Promise((ok, no) => {
-    const r = indexedDB.open(DB, 1)
-    r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('recs', { keyPath: 'id' }); d.createObjectStore('chunks', { keyPath: ['rec', 'seq'] }) }
+    const r = indexedDB.open(DB, 2)
+    r.onupgradeneeded = () => {
+      const d = r.result, has = (n) => d.objectStoreNames.contains(n)
+      if (!has('recs')) d.createObjectStore('recs', { keyPath: 'id' })
+      if (!has('chunks')) d.createObjectStore('chunks', { keyPath: ['rec', 'seq'] })
+      if (!has('notes')) d.createObjectStore('notes', { keyPath: ['code', 'rec', 'part'] })   // added for AI notes
+    }
     r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error)
   })
 }
 const done = (t) => new Promise((ok, no) => { t.oncomplete = () => ok(); t.onerror = t.onabort = () => no(t.error) })
+const all = async (store) => { const d = await open(), t = d.transaction(store), r = t.objectStore(store).getAll(); await done(t); d.close(); return r.result }
 async function put(store, value) { const d = await open(); const t = d.transaction(store, 'readwrite'); t.objectStore(store).put(value); await done(t); d.close() }
 
 export async function pendingRecordings() {
@@ -117,9 +125,25 @@ function ticker(ms, fn) {
   return () => { w.postMessage(0); w.terminate() }
 }
 
+// ---------- the audio kept for AI notes ----------
+export async function notesAudio() {                                 // { code: [parts in order] }
+  try {
+    const by = {}
+    for (const x of await all('notes')) (by[x.code] = by[x.code] || []).push(x)
+    for (const k in by) by[k].sort((a, b) => a.startedAt - b.startedAt || a.part - b.part)
+    return by
+  } catch { return {} }
+}
+export const keepNotesText = (part) => put('notes', part)               // a transcribed part keeps its text, so a retry skips it
+export async function dropNotesAudio(code) {
+  const d = await open(), t = d.transaction('notes', 'readwrite')
+  t.objectStore('notes').delete(IDBKeyRange.bound([code, '', 0], [code, '\uffff', Infinity])); await done(t); d.close()
+}
+const NOTES_MS = () => (typeof window !== 'undefined' && window.__olexNotesPieceMs) || 5 * 60_000   // tests use a few seconds
+
 const W = 1280, H = 720, PAD = 16, GAP = 12, FOOT = 34
 export class MeetRecorder {
-  constructor({ room, title, audioOnly, stage }) { Object.assign(this, { room, title, audioOnly, stage }); this.sources = new Map(); this.writes = []; this.seq = 0 }
+  constructor({ room, title, audioOnly, stage, code }) { Object.assign(this, { room, title, audioOnly, stage, code }); this.sources = new Map(); this.writes = []; this.seq = 0; this.part = 0 }
 
   async start() {
     const mime = pickMime(this.audioOnly)
@@ -143,20 +167,38 @@ export class MeetRecorder {
     this.mr.ondataavailable = (e) => { if (e.data && e.data.size) this.writes.push(put('chunks', { rec: this.id, seq: this.seq++, blob: e.data, at: Date.now() }).catch(() => {})) }
     this.stopped = new Promise((ok) => { this.mr.onstop = ok })
     this.mr.start(2000)
+    this.notesMime = this.code ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) : ''
+    if (this.notesMime) this.notesPiece()
     let n = 0
-    this.stopTick = ticker(this.audioOnly ? 500 : 1000 / 15, () => { if (!this.audioOnly) this.draw(); if (++n % (this.audioOnly ? 1 : 8) === 0) this.syncAudio() })
+    this.stopTick = ticker(this.audioOnly ? 500 : 1000 / 15, () => {
+      if (!this.audioOnly) this.draw()
+      if (++n % (this.audioOnly ? 1 : 8) === 0) { this.syncAudio(); if (this.nr && Date.now() - this.nrAt >= NOTES_MS()) this.notesPiece() }
+    })
     return this.meta
   }
 
-  // stops, writes the last piece, and downloads the file. Returns { name, bytes }.
+  // one complete audio file per 5 minutes for the notes: the current one is closed (and saved) as the next starts
+  notesPiece() {
+    const old = this.nr
+    if (old && old.state !== 'inactive') old.stop()
+    const nr = new MediaRecorder(new MediaStream(this.dest.stream.getAudioTracks()), { mimeType: this.notesMime, audioBitsPerSecond: 32_000 })
+    const part = this.part++, startedAt = Date.now()
+    nr.ondataavailable = (e) => { if (e.data && e.data.size) this.writes.push(put('notes', { code: this.code, rec: this.id, part, blob: e.data, mime: this.notesMime, title: this.title, startedAt, at: Date.now() }).catch(() => {})) }
+    nr.stopped = new Promise((ok) => { nr.onstop = ok })
+    nr.start(); this.nr = nr; this.nrAt = startedAt
+  }
+
+  // stops, writes the last piece, and downloads the file. Returns { name, bytes, notes } (notes: pieces kept for AI notes).
   async stop() {
     if (!this.mr) return null
     if (this.stopTick) this.stopTick()
     if (this.mr.state !== 'inactive') { this.mr.stop(); await this.stopped }
+    if (this.nr && this.nr.state !== 'inactive') { this.nr.stop(); await this.nr.stopped }
     await Promise.all(this.writes)
     for (const s of this.sources.values()) s.disconnect()
-    this.sources.clear(); this.ac.close().catch(() => {}); this.mr = null
-    return saveRecording(this.id)
+    this.sources.clear(); this.ac.close().catch(() => {}); this.mr = null; this.nr = null
+    const f = await saveRecording(this.id)
+    return f && { ...f, notes: this.notesMime ? this.part : 0 }
   }
 
   // everyone's voice (and the host's own mic) into the mix; people who join or leave are added or dropped

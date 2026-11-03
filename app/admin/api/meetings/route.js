@@ -4,6 +4,7 @@ import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
 import * as M from '@/lib/site/meet'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300   // notes for a long meeting ask the AI more than once
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const u = await currentUser(); if (!u) return refuse('Sign in again.', 401)
@@ -14,6 +15,8 @@ export async function POST(request) {
     if (b.action === 'end') return M.endMeeting(b.code)
     if (b.action === 'delete') return M.deleteMeeting(b.code)
     if (['allow-speak', 'stop-speak', 'remove'].includes(b.action)) return M.hostAction(b.code, b.action, b.identity)
+    if (b.action === 'notes') return M.makeNotes(b.code, b.transcript)
+    if (b.action === 'get-notes') return M.getNotes(b.code)
     throw new Refused('Unknown action.')
   })
 }
