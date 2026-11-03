@@ -18,5 +18,5 @@ export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   const u = await currentUser().catch(() => null), mu = await currentMeetUser()
-  return respond(() => joinMeeting(b.code, b.name, u, mu))
+  return respond(() => joinMeeting(b.code, b.name, u, mu, b.details && typeof b.details === 'object' ? b.details : null))
 }

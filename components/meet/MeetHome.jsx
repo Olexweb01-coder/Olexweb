@@ -3,6 +3,7 @@
 // Join with a code or link (never needs one), then your meetings. Times show in the visitor's own time zone and are
 // rendered only in the browser (servers format dates slightly differently). Installs as an app on the Meet address.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { FormSettings, Attendance, formFrom } from './Guests'
 
 const CODE_RE = /[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}/
 const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
@@ -45,7 +46,7 @@ function calLinks(m) {
 export default function MeetHome({ user, providers, meetings: initial, notice }) {
   const [ready, setReady] = useState(false), [list, setList] = useState(initial || []), [code, setCode] = useState(''), [menu, setMenu] = useState(false)
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [toast, setToast] = useState(notice || ''), [install, setInstall] = useState(null), [ios, setIos] = useState(false)
-  const menuRef = useRef(null)
+  const menuRef = useRef(null), [att, setAtt] = useState(null)
   useEffect(() => {
     setReady(true)
     if (onMeetApp() && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
@@ -72,14 +73,14 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
   function openSchedule(m = null) {
     setMenu(false); if (!user) return needAccount('/?then=schedule')
     const [d, t] = m && m.startsAt ? (() => { const x = new Date(m.startsAt); return [`${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`, `${pad(x.getHours())}:${pad(x.getMinutes())}`] })() : nextSlot()
-    setSheet({ kind: 'schedule', edit: m, title: m ? m.title : '', date: d, time: t, minutes: m ? m.minutes || 60 : 60, speakers: m ? m.speakers : 'everyone', done: null })
+    setSheet({ kind: 'schedule', edit: m, title: m ? m.title : '', date: d, time: t, minutes: m ? m.minutes || 60 : 60, speakers: m ? m.speakers : 'everyone', form: formFrom(m && m.form), done: null })
   }
   async function saveSchedule(e) {
     e.preventDefault(); const s = sheet, startsAt = new Date(`${s.date}T${s.time}:00`)                // the visitor's own time zone
     if (!Number.isFinite(startsAt.getTime())) { setToast('Choose a date and time.'); return }
     setBusy('schedule')
     try {
-      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers }
+      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, form: s.form && s.form.on ? s.form : { on: false } }
       const r = s.edit ? await call({ action: 'update', code: s.edit.code, ...body }) : await call({ action: 'create', ...body })
       const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes }
       setSheet({ ...s, done: m }); refresh()
@@ -134,7 +135,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
       {user ? <section className="mh-mine" aria-label="Your meetings">
         <h2>Your meetings</h2>
         {upcoming.length ? <ul className="mh-list">{upcoming.map((m) => <li key={m.code}>
-          <div className="mh-li-main"><b>{m.title}</b><span>{ready ? (m.startedAt ? 'Happening now' : m.startsAt ? fmt(m.startsAt) : 'Ready when you are') : '\u00a0'}<em>{m.code}</em></span></div>
+          <div className="mh-li-main"><b>{m.title}</b><span>{ready ? (m.startedAt ? 'Happening now' : m.startsAt ? fmt(m.startsAt) : 'Ready when you are') : '\u00a0'}{m.form ? <em>Asks for details</em> : null}<em>{m.code}</em></span></div>
           <div className="mh-li-acts">
             <a className="mh-btn mh-go mh-sm" href={pathFor(m.code)}>{m.startedAt ? 'Join' : 'Start'}</a>
             <button className="mh-btn mh-sm" onClick={() => copy(m)}>{m.startsAt ? 'Copy invite' : 'Copy link'}</button>
@@ -143,7 +144,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
           </div></li>)}</ul>
           : <p className="mh-empty">No meetings yet. Start one now, or schedule one and share the invite.</p>}
         {past.length ? <><h3>Ended</h3><ul className="mh-list mh-past">{past.map((m) => <li key={m.code}><div className="mh-li-main"><b>{m.title}</b><span>{ready ? 'Ended ' + fmt(m.endedAt) : '\u00a0'}{m.joins ? `, ${m.joins} join${m.joins === 1 ? '' : 's'}` : ''}</span></div>
-          <div className="mh-li-acts"><button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'delete')}>Delete</button></div></li>)}</ul></> : null}
+          <div className="mh-li-acts">{m.form ? <button className="mh-btn mh-sm" onClick={() => setAtt(m.code)}>Attendance</button> : null}<button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'delete')}>Delete</button></div></li>)}</ul></> : null}
       </section> : null}
 
       <section className="mh-features" aria-label="What you get">
@@ -185,10 +186,12 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
           <div className="mh-f"><span>Who can speak</span><div className="mh-seg" role="group" aria-label="Who can speak">
             <button type="button" aria-pressed={sheet.speakers === 'everyone'} onClick={() => setSheet({ ...sheet, speakers: 'everyone' })}>Everyone</button>
             <button type="button" aria-pressed={sheet.speakers === 'invited'} onClick={() => setSheet({ ...sheet, speakers: 'invited' })}>Only people I let speak</button></div></div>
+          <FormSettings value={sheet.form} onChange={(f) => setSheet({ ...sheet, form: f })} />
           <div className="mh-row"><button className="mh-btn mh-go" disabled={busy === 'schedule'}>{busy === 'schedule' ? 'Saving…' : sheet.edit ? 'Save' : 'Schedule'}</button><button type="button" className="mh-btn mh-quiet" onClick={() => setSheet(null)}>Cancel</button></div>
         </form>}
       </div>
     </div> : null}
+    {att ? <Attendance code={att} onClose={() => setAtt(null)} onDeleted={() => setToast('The attendance list was deleted.')} /> : null}
     {toast ? <p className="mh-toast" role="status">{toast}</p> : null}
   </div>)
 }

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast, Sheet } from './ui'
 import { makeNotes, notesAudio, dropNotesAudio, notesText, download } from '@/components/meet/notes'
+import { FormSettings, Attendance, formFrom, DEFAULT_FORM } from '@/components/meet/Guests'
+import AdminMeetApp from './AdminMeetApp'
 
 // Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
 // ("Tue 3 Nov" vs "Tue, 3 Nov"), which made React redraw the page. Lagos is UTC+1 all year (no daylight saving).
@@ -66,7 +68,7 @@ export default function AdminMeetings({ data }) {
   const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
   const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
-  const [edit, setEdit] = useState(null)
+  const [edit, setEdit] = useState(null), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
   const refreshLocal = useCallback(() => notesAudio().then(setLocal).catch(() => {}), [])
   useEffect(() => {
     refreshLocal()
@@ -101,19 +103,19 @@ export default function AdminMeetings({ data }) {
     e.preventDefault()
     const later = sched === 'later', startsAt = later ? toIso(date, time) : null
     if (later && !startsAt) { toast('Choose a date and time.'); return }
-    const j = await act({ action: 'create', title, speakers, ...(later ? { startsAt, minutes, ...(rem ? { reminders: rem } : {}) } : {}) }, later ? 'Meeting scheduled.' : 'Meeting created.')
-    if (j && j.code) { setFresh(j.code); setTitle(''); setRem(null) }
+    const j = await act({ action: 'create', title, speakers, ...(askForm.on ? { form: askForm } : {}), ...(later ? { startsAt, minutes, ...(rem ? { reminders: rem } : {}) } : {}) }, later ? 'Meeting scheduled.' : 'Meeting created.')
+    if (j && j.code) { setFresh(j.code); setTitle(''); setRem(null); setAskForm({ ...DEFAULT_FORM }) }
   }
   async function invite(m) {
     const text = `You’re invited: ${m.title}\n${longWhen(m.startsAt)} (Lagos time)\nJoin here: ${link(m.code)}\nYou can add it to your calendar from that page.`
     try { await navigator.clipboard.writeText(text); toast('Invite copied. Paste it into WhatsApp or anywhere.') } catch { window.prompt('Copy the invite:', text) }
   }
-  function openEdit(m) { const [d, t] = lagosParts(m.startsAt || nextSlot()); setEdit({ m, title: m.title, speakers: m.speakers, when: m.startsAt ? 'later' : 'now', date: d, time: t, minutes: m.minutes || 60, rem: m.startsAt && !m.remindersAuto ? m.reminders : null }) }
+  function openEdit(m) { const [d, t] = lagosParts(m.startsAt || nextSlot()); setEdit({ m, title: m.title, speakers: m.speakers, when: m.startsAt ? 'later' : 'now', date: d, time: t, minutes: m.minutes || 60, rem: m.startsAt && !m.remindersAuto ? m.reminders : null, form: formFrom(m.form) }) }
   async function saveEdit() {
     const e = edit, later = e.when === 'later', startsAt = later ? toIso(e.date, e.time) : null
     if (later && !startsAt) { toast('Choose a date and time.'); return }
     const moved = (startsAt || null) !== (e.m.startsAt ? new Date(e.m.startsAt).toISOString() : null)
-    const j = await act({ action: 'update', code: e.m.code, title: e.title, speakers: e.speakers, minutes: e.minutes, ...(moved ? { startsAt } : {}), reminders: e.rem ? e.rem : 'smart' }, 'Meeting updated.')
+    const j = await act({ action: 'update', code: e.m.code, title: e.title, speakers: e.speakers, minutes: e.minutes, ...(moved ? { startsAt } : {}), reminders: e.rem ? e.rem : 'smart', form: e.form && e.form.on ? e.form : { on: false } }, 'Meeting updated.')
     if (j) setEdit(null)
   }
   const closeEdit = useCallback(() => setEdit(null), [])
@@ -148,6 +150,7 @@ export default function AdminMeetings({ data }) {
         <button type="button" aria-pressed={speakers === 'invited'} onClick={() => setSpeakers('invited')}>Only people I let speak</button>
       </div>
       <p className="mg-dim">{speakers === 'everyone' ? 'Good for calls and small meetings. Cameras start off for guests to save data.' : 'Good for classes and big meetings. Guests listen, chat and raise a hand; you let them speak.'}</p>
+      <FormSettings value={askForm} onChange={setAskForm} />
       <When when={sched} setWhen={setSched} date={date} setDate={setDate} time={time} setTime={setTime} minutes={minutes} setMinutes={setMinutes} rem={rem} setRem={setRem} />
       <button className="btn btn-green" disabled={!!busy}>{busy === 'create' ? 'Saving…' : sched === 'later' ? 'Schedule meeting' : 'Create meeting'}</button>
     </form>
@@ -176,9 +179,12 @@ export default function AdminMeetings({ data }) {
       <h2>Ended</h2>
       <ul className="mg-list mg-ended">{ended.map((m) => <li key={m.code} id={'mg-' + m.code} className={focus === m.code ? 'mg-fresh' : ''}>
         <div className="mg-main"><b>{m.title}</b><span className="mg-dim">Ended {when(m.endedAt)}{m.joins ? `. ${m.joins} join${m.joins === 1 ? '' : 's'}` : ''}</span>{noteLine(m)}</div>
-        <div className="mg-acts">{noteBits(m)}<button className="btn btn-line" disabled={!!busy} onClick={() => { if (window.confirm(`Delete “${m.title}”?`)) act({ action: 'delete', code: m.code }, 'Meeting deleted.') }}>Delete</button></div>
+        <div className="mg-acts">{noteBits(m)}{m.form ? <button className="btn btn-line" onClick={() => setAtt(m.code)}>Attendance</button> : null}<button className="btn btn-line" disabled={!!busy} onClick={() => { if (window.confirm(`Delete “${m.title}”?`)) act({ action: 'delete', code: m.code }, 'Meeting deleted.') }}>Delete</button></div>
       </li>)}</ul>
     </section> : null}
+
+    <AdminMeetApp />
+    {att ? <Attendance code={att} onClose={() => setAtt(null)} onDeleted={() => toast('The attendance list was deleted.')} /> : null}
 
     {edit ? <Sheet title={'Edit: ' + edit.m.title} onClose={closeEdit} foot={<><button className="btn btn-green" disabled={!!busy} onClick={saveEdit}>{busy === 'update' + edit.m.code ? 'Saving…' : 'Save'}</button><button className="btn btn-line" onClick={closeEdit}>Cancel</button></>}>
       <div className="mg-edit">
@@ -186,6 +192,7 @@ export default function AdminMeetings({ data }) {
         <input id="mg-etitle" className="input" maxLength={80} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
         <p className="mg-lab">Who can speak</p>
         <div className="seg" role="group" aria-label="Who can speak"><button type="button" aria-pressed={edit.speakers === 'everyone'} onClick={() => setEdit({ ...edit, speakers: 'everyone' })}>Everyone</button><button type="button" aria-pressed={edit.speakers === 'invited'} onClick={() => setEdit({ ...edit, speakers: 'invited' })}>Only people I let speak</button></div>
+        <FormSettings value={edit.form} onChange={(f) => setEdit({ ...edit, form: f })} />
         <When allowNone when={edit.when} setWhen={(v) => setEdit({ ...edit, when: v })} date={edit.date} setDate={(v) => setEdit({ ...edit, date: v })} time={edit.time} setTime={(v) => setEdit({ ...edit, time: v })} minutes={edit.minutes} setMinutes={(v) => setEdit({ ...edit, minutes: v })} rem={edit.rem} setRem={(v) => setEdit({ ...edit, rem: v })} />
         <p className="mg-dim">Moving the time resets the reminders, so each goes out once at its new time. Guests who added it to their calendar keep the old time: send them the new invite.</p>
       </div>

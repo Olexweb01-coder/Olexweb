@@ -13,14 +13,14 @@ export async function POST(request) {
     if (b.action === 'list') return { meetings: await M.myMeetings(mu) }
     if (b.action === 'create') {
       const owner = mu.role === 'owner'
-      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, startsAt: b.startsAt, minutes: b.minutes, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
+      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
       return { ...r, link: M.meetLink(r.code) }
     }
     if (!['update', 'end', 'delete'].includes(b.action)) throw new Refused('Unknown action.')
     await M.mustHost(b.code, null, mu)
     if (b.action === 'end') return M.endMeeting(b.code)
     if (b.action === 'delete') return M.deleteMeeting(b.code)
-    const f = {}; for (const k of ['title', 'speakers', 'startsAt', 'minutes']) if (k in b) f[k] = b[k]
+    const f = {}; for (const k of ['title', 'speakers', 'startsAt', 'minutes', 'form']) if (k in b) f[k] = b[k]
     return M.updateMeeting(b.code, f)
   })
 }

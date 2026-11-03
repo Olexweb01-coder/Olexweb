@@ -286,3 +286,11 @@
 @media (max-width:900px){.mh-features{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.mh-features{grid-template-columns:1fr}.mh-actions{flex-direction:column;align-items:stretch}.mh-new .mh-btn{width:100%}.mh-join{max-width:none;flex:0 0 auto}.mh-menu{left:0;right:0;min-width:0}.mh-top .mh-ghost span{display:none}}
 @media (prefers-reduced-motion:reduce){.mh *{animation:none!important;transition:none!important}}
+
+/* install 2: the guest details form, reports */
+.mt-asks{display:grid;margin-top:14px}.mt-asks .mt-lab{margin-top:10px}
+.mt-consent{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px;color:var(--dim);line-height:1.5;cursor:pointer}
+.mt-consent input,.mt-reasons input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--green)}
+.mt-report-link{appearance:none;border:0;background:none;color:var(--dim);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:10px 16px 14px;cursor:pointer;text-align:left}
+.mt-reasons{display:grid;gap:4px;margin:0 0 12px}.mt-reasons label{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;cursor:pointer;font-size:14.5px}.mt-reasons label:hover{background:rgba(242,239,233,.04)}
+.mt-dialog textarea.mt-in{resize:vertical;font-size:15px}

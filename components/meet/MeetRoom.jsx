@@ -6,6 +6,7 @@
 // LiveKit's library loads after the page appears, so the first load stays light.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MeetRecorder, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
+import { keepWords } from './Guests'
 
 const SAVED_NAME = 'olexweb-meet-name'
 // on the Meet app (meet.olexweb.com) a meeting is /abc-defg-hij; on the main site it's /meet/abc-defg-hij
@@ -57,7 +58,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false }) {
+export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -68,6 +69,8 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const roomRef = useRef(null), lkRef = useRef(null), previewRef = useRef(null), previewTrack = useRef(null), joinInfo = useRef(null)
   const [rec, setRec] = useState(null), [askRec, setAskRec] = useState(false), [recAudio, setRecAudio] = useState(false), [pending, setPending] = useState([])
   const [floats, setFloats] = useState([]), [pop, setPop] = useState(null), [notesReady, setNotesReady] = useState(false)
+  const [det, setDet] = useState({ phone: '', email: '', org: '', answer: '', consent: false }), [reporting, setReporting] = useState(false)
+  const asks = !!(form && !host)                                            // the host's details form (never for the host)
   const recRef = useRef(null), stageRef = useRef(null), lastReact = useRef(0), closing = useRef(false)
   const saverRef = useRef(false), endedRef = useRef(false), panelRef = useRef(null), spoke = useRef(new Map()), levelEls = useRef(new Map())
 
@@ -84,6 +87,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   useEffect(() => { if (!pop) return; const k = (e) => { if (e.key === 'Escape') setPop(null) }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k) }, [pop])
   useEffect(() => { import('livekit-client').then((m) => { lkRef.current = m }).catch(() => {}) }, [])   // ready by the time Join is pressed
   const float = useCallback((e, who) => { const id = Math.random(); setFloats((f) => [...f.slice(-11), { id, e, who, x: 8 + Math.random() * 30 }]); setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 3200) }, [])
+  // tells the attendance list this guest left (the key is the server's own, so it can only speak for this guest)
+  const saidLeft = () => { const j = joinInfo.current; if (j && j.leaveKey && navigator.sendBeacon) navigator.sendBeacon('/api/meet/left', new Blob([JSON.stringify({ identity: j.identity, key: j.leaveKey })], { type: 'application/json' })) }
+  async function sendReport(reason, note) {
+    try { await post('/api/meet/report', { code, reason, note, name }); setReporting(false); toast('Thanks. Your report was sent to Olexweb.') } catch (e) { toast(e.message) }
+  }
   const toast = useCallback((text) => { const id = Math.random(); setToasts((t) => [...t.slice(-1), { id, text }]); setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 5000) }, [])
 
   // ---------- lobby camera preview ----------
@@ -107,7 +115,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     setError(''); setPhase('joining')
     try { localStorage.setItem(SAVED_NAME, n) } catch {}
     try {
-      const j = await post('/api/meet', { code, name: n })
+      const j = await post('/api/meet', { code, name: n, ...(asks ? { details: det } : {}) })
       if (j.state === 'waiting') { setPhase('waiting'); return }
       if (j.state === 'ended') { setPhase('ended'); return }
       if (j.state === 'unavailable') { setPhase('unavailable'); return }
@@ -187,7 +195,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
   useEffect(() => {
     // the tab is closing: leave any recording's saved pieces where they are; the lobby offers them next time
-    const off = () => { closing.current = true; if (roomRef.current) roomRef.current.disconnect() }
+    const off = () => { closing.current = true; saidLeft(); if (roomRef.current) roomRef.current.disconnect() }
     window.addEventListener('pagehide', off)
     return () => { window.removeEventListener('pagehide', off); off() }
   }, [])
@@ -278,7 +286,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
   async function savePending(x) { try { const f = await saveRecording(x.id); if (f) toast('Saved: ' + f.name) } catch { toast('That recording couldn’t be saved.') } setPending(await pendingRecordings()) }
   async function dropPending(x) { if (!window.confirm('Delete this unsaved recording? It can’t be recovered.')) return; await discardRecording(x.id).catch(() => {}); setPending(await pendingRecordings()) }
-  async function leave() { setLeaving(false); if (recRef.current) await stopRec(); if (roomRef.current) roomRef.current.disconnect() }
+  async function leave() { setLeaving(false); if (recRef.current) await stopRec(); saidLeft(); if (roomRef.current) roomRef.current.disconnect() }
   async function endForAll() {
     setLeaving(false)
     if (recRef.current) await stopRec()
@@ -310,13 +318,25 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
           </div> : null}
           <h1 className="mt-h">{title}</h1>
           {startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} host={host} /> : null}
-          <p className="mt-p">{host ? 'You’re the host. Joining starts the meeting for everyone with the link.' : speakers === 'invited' ? 'You’ll join as a listener. Raise your hand to ask to speak, and use the chat anytime.' : 'Check your name, mic and camera, then join.'}</p>
+          <p className="mt-p">{host ? 'You’re the host. Joining starts the meeting for everyone with the link.' : speakers === 'invited' ? 'You’ll join as a listener. Raise your hand to ask to speak, and use the chat anytime.' : asks ? 'The host asks for a few details before you join. Then check your mic and camera.' : 'Check your name, mic and camera, then join.'}</p>
           <div className={'mt-preview' + (camOn ? ' on' : '')}>
             <video ref={previewRef} muted playsInline autoPlay className="mt-mirror" />
             {!camOn ? <span className="mt-av mt-av-lg" style={{ background: tone(name || 'x') }}>{initials(name || '?')}</span> : null}
           </div>
           <label className="mt-lab" htmlFor="mt-name">Your name</label>
           <input id="mt-name" className="mt-in" value={name} maxLength={40} autoComplete="name" onChange={(e) => setName(e.target.value)} placeholder="How others will see you" />
+          {asks ? <div className="mt-asks">
+            {form.phone !== 'off' ? <><label className="mt-lab" htmlFor="mt-phone">Phone number{form.phone === 'optional' ? ' (optional)' : ''}</label>
+              <input id="mt-phone" className="mt-in" type="tel" inputMode="tel" autoComplete="tel" maxLength={30} value={det.phone} onChange={(e) => setDet({ ...det, phone: e.target.value })} placeholder="+234 801 234 5678" /></> : null}
+            {form.email !== 'off' ? <><label className="mt-lab" htmlFor="mt-email">Email{form.email === 'optional' ? ' (optional)' : ''}</label>
+              <input id="mt-email" className="mt-in" type="email" inputMode="email" autoComplete="email" maxLength={200} value={det.email} onChange={(e) => setDet({ ...det, email: e.target.value })} placeholder="you@example.com" /></> : null}
+            {form.org ? <><label className="mt-lab" htmlFor="mt-org">Organisation or role (optional)</label>
+              <input id="mt-org" className="mt-in" maxLength={100} autoComplete="organization" value={det.org} onChange={(e) => setDet({ ...det, org: e.target.value })} /></> : null}
+            {form.question ? <><label className="mt-lab" htmlFor="mt-ans">{form.question} (optional)</label>
+              <input id="mt-ans" className="mt-in" maxLength={500} value={det.answer} onChange={(e) => setDet({ ...det, answer: e.target.value })} /></> : null}
+            <label className="mt-consent"><input type="checkbox" checked={det.consent} onChange={(e) => setDet({ ...det, consent: e.target.checked })} />
+              <span>Share these details with the host of this meeting. Only the host sees them. They’re kept {keepWords(form.keep)}{form.keep ? ' after the meeting' : ''}, then deleted.</span></label>
+          </div> : null}
           {host || speakers === 'everyone' ? <div className="mt-toggles" role="group" aria-label="Before you join">
             <button type="button" className="mt-chip" aria-pressed={micOn} onClick={() => setMicOn((m) => !m)}>{micOn ? I.mic : I.micOff}{micOn ? 'Mic on' : 'Mic off'}</button>
             <button type="button" className="mt-chip" aria-pressed={camOn} disabled={saver} onClick={() => previewOn(!camOn)}>{camOn ? I.cam : I.camOff}{camOn ? 'Camera on' : 'Camera off'}</button>
@@ -373,7 +393,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       {panel ? <aside className="mt-panel" aria-label={panel === 'chat' ? 'Chat' : 'People'}>
         <div className="mt-panel-h"><h2>{panel === 'chat' ? 'Chat' : `People (${all.length})`}</h2><button className="mt-x" onClick={() => setPanel(null)} aria-label="Close">{I.close}</button></div>
         {panel === 'chat' ? <Chat messages={messages} send={sendChat} myId={me.identity} />
-          : <People all={all} me={me} host={host} hands={hands} speaksNow={speaksNow} hostDo={hostDo} lk={lk} />}
+          : <><People all={all} me={me} host={host} hands={hands} speaksNow={speaksNow} hostDo={hostDo} lk={lk} />{!host ? <button className="mt-report-link" onClick={() => setReporting(true)}>Report this meeting</button> : null}</>}
       </aside> : null}
     </div>
 
@@ -397,6 +417,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         {pop === 'more' ? <span className="mt-pop mt-menu" role="menu">
           {canShare ? <button role="menuitem" onClick={() => { setPop(null); toggleShare() }}>{I.share}{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</button> : null}
           <button role="menuitemcheckbox" aria-checked={saver} onClick={() => { setPop(null); toggleSaver() }}>{I.leaf}Data saver{saver ? ': on' : ''}</button>
+          {!host ? <button role="menuitem" onClick={() => { setPop(null); setReporting(true) }}>{I.close}Report this meeting</button> : null}
         </span> : null}
       </span>
       <button className="mt-c mt-leave" onClick={() => (host ? setLeaving(true) : leave())}>{I.leave}<span>Leave</span></button>
@@ -417,6 +438,8 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         </div>
       </div>
     </div> : null}
+
+    {reporting ? <ReportBox onSend={sendReport} onClose={() => setReporting(false)} /> : null}
 
     {leaving ? <div className="mt-modal" role="dialog" aria-modal="true" aria-label="Leave the meeting" onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false) }}>
       <div className="mt-card mt-dialog">
@@ -451,6 +474,19 @@ function When({ at, minutes, code, title, host }) {
     <p className="mt-when-at"><b>{lagos}</b> <span>Lagos time</span>{local ? <><br /><span>{local} your time</span></> : null}</p>
     <p className="mt-when-left">{until}</p>
     {left > 0 && !host ? <div className="mt-row mt-cal"><a className="mt-btn mt-sm" href={google} target="_blank" rel="noopener">Add to Google Calendar</a><a className="mt-btn mt-sm" href={'/api/meet?calendar=1&code=' + code} download="meeting.ics">Apple or Outlook calendar</a></div> : null}
+  </div>)
+}
+function ReportBox({ onSend, onClose }) {
+  const [reason, setReason] = useState(''), [note, setNote] = useState(''), [busy, setBusy] = useState(false)
+  return (<div className="mt-modal" role="dialog" aria-modal="true" aria-labelledby="mt-rep-h" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <form className="mt-card mt-dialog" onSubmit={async (e) => { e.preventDefault(); if (!reason) return; setBusy(true); await onSend(reason, note); setBusy(false) }}>
+      <h2 className="mt-h2" id="mt-rep-h">Report this meeting</h2>
+      <p className="mt-p">Olexweb looks at every report. The host isn’t told who reported.</p>
+      <div className="mt-reasons" role="radiogroup" aria-label="Reason">{[['spam', 'Spam or scam'], ['abuse', 'Abuse or harassment'], ['illegal', 'Illegal or harmful content'], ['other', 'Something else']].map(([v, l]) =>
+        <label key={v}><input type="radio" name="reason" value={v} checked={reason === v} onChange={() => setReason(v)} />{l}</label>)}</div>
+      <textarea className="mt-in" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything that would help (optional)" aria-label="More details (optional)" />
+      <div className="mt-col" style={{ marginTop: 14 }}><button className="mt-btn mt-danger" disabled={!reason || busy}>{busy ? 'Sending…' : 'Send report'}</button><button type="button" className="mt-btn mt-ghost" onClick={onClose}>Cancel</button></div>
+    </form>
   </div>)
 }
 function Elapsed({ from }) {

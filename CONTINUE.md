@@ -397,3 +397,18 @@ content. Add it after the audit is approved, since the audit describes one chann
   the site with MEET_ORIGIN=http://meet.localhost:3000 for it (Chrome sends *.localhost here).
 - Next: install 2 = guest details form (optional per meeting; name always; phone/email required/optional/off; extra
   optional fields; kept 30 days by default, host can change) + attendance list after the meeting + CSV, Report, bans in admin.
+
+## Olexweb Meet, install 2 (3 Nov 2026): guest details, attendance, reports, bans
+- meetings.form (jsonb, null = none): { phone, email: required|optional|off, org: bool, question, keep: 30|90|365|0 }. Set in the
+  Meet app's Schedule/Change sheet and Admin → Meetings (components/meet/Guests.jsx FormSettings). Instant "Start now" meetings
+  have no form (schedule one, or use Change before starting).
+- lib/meet/guests.js: cleanForm/publicForm/checkDetails (name always; consent required; phone and email checked on the server),
+  recordJoin → meet_attendees (one row per join; hosts never), leave times from LiveKit's signed webhook (/api/meet/livekit,
+  WebhookReceiver; set in LiveKit → Settings → Webhooks) and the browser's signed beacon (/api/meet/left, HMAC key from join),
+  endMeeting closes everyone's time. attendance() only after the meeting ends, for its host (mustHost); CSV with BOM and
+  formula-injection guard (/api/meet/attendance?code=&format=csv); delete early. forgetOldDetails() in quickRun.
+- Reports: /api/meet/report (spam|abuse|illegal|other, note; ip only as a hash; 1 per meeting per 10 min, 5 an hour).
+  Admin → Meetings → Meet app (AdminMeetApp.jsx; actions meet-admin, ban, unban, dismiss): banning signs them out, ends their
+  open meetings, marks their reports acted on; the owner can't be banned.
+- Tests: tests/meet/guests.py (51); LiveKit runs with tests/meet/livekit.yaml (webhooks to the site).
+- Still to do: install 3 (usage meter and capacity protections), install 4 (pricing, built but switched off).
