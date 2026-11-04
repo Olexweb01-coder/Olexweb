@@ -3,7 +3,8 @@
 // Join with a code or link (never needs one), then your meetings. Times show in the visitor's own time zone and are
 // rendered only in the browser (servers format dates slightly differently). Installs as an app on the Meet address.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FormSettings, Attendance, formFrom } from './Guests'
+import { FormSettings, Attendance, formFrom, NotesPanel } from './Guests'
+import { notesAudio } from './recorder'
 
 const CODE_RE = /[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}/
 const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
@@ -46,9 +47,10 @@ function calLinks(m) {
 export default function MeetHome({ user, providers, meetings: initial, notice }) {
   const [ready, setReady] = useState(false), [list, setList] = useState(initial || []), [code, setCode] = useState(''), [menu, setMenu] = useState(false)
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [toast, setToast] = useState(notice || ''), [install, setInstall] = useState(null), [ios, setIos] = useState(false)
-  const menuRef = useRef(null), [att, setAtt] = useState(null)
+  const menuRef = useRef(null), [att, setAtt] = useState(null), [notesFor, setNotesFor] = useState(null), [local, setLocal] = useState({})
   useEffect(() => {
     setReady(true)
+    notesAudio().then(setLocal).catch(() => {})                              // recordings on this device that can become AI notes
     if (onMeetApp() && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
     const p = (e) => { e.preventDefault(); setInstall(e) }; window.addEventListener('beforeinstallprompt', p)
     const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
@@ -144,7 +146,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
           </div></li>)}</ul>
           : <p className="mh-empty">No meetings yet. Start one now, or schedule one and share the invite.</p>}
         {past.length ? <><h3>Ended</h3><ul className="mh-list mh-past">{past.map((m) => <li key={m.code}><div className="mh-li-main"><b>{m.title}</b><span>{ready ? 'Ended ' + fmt(m.endedAt) : '\u00a0'}{m.joins ? `, ${m.joins} join${m.joins === 1 ? '' : 's'}` : ''}</span></div>
-          <div className="mh-li-acts">{m.form ? <button className="mh-btn mh-sm" onClick={() => setAtt(m.code)}>Attendance</button> : null}<button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'delete')}>Delete</button></div></li>)}</ul></> : null}
+          <div className="mh-li-acts">{local[m.code] && local[m.code].length ? <button className="mh-btn mh-sm mh-go" onClick={() => setNotesFor({ m, make: true })}>Make AI notes</button> : null}{m.notesAt ? <button className="mh-btn mh-sm" onClick={() => setNotesFor({ m, make: false })}>Notes</button> : null}{m.form ? <button className="mh-btn mh-sm" onClick={() => setAtt(m.code)}>Attendance</button> : null}<button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'delete')}>Delete</button></div></li>)}</ul></> : null}
       </section> : null}
 
       <section className="mh-features" aria-label="What you get">
@@ -191,6 +193,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
         </form>}
       </div>
     </div> : null}
+    {notesFor ? <NotesPanel code={notesFor.m.code} title={notesFor.m.title} make={notesFor.make} onClose={() => { setNotesFor(null); notesAudio().then(setLocal).catch(() => {}); refresh() }} /> : null}
     {att ? <Attendance code={att} onClose={() => setAtt(null)} onDeleted={() => setToast('The attendance list was deleted.')} /> : null}
     {toast ? <p className="mh-toast" role="status">{toast}</p> : null}
   </div>)

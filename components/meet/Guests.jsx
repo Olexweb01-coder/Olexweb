@@ -43,6 +43,19 @@ export function FormSettings({ value, onChange }) {
 }
 
 // The attendance list (host only, after the meeting ends): who joined, when, for how long, and what they gave; CSV; delete.
+const GA_CSS = `
+.ga-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.6)}
+.ga-card{width:100%;max-width:960px;max-height:calc(100dvh - 32px);overflow:auto;padding:22px;border-radius:22px;background:#151815;color:#f2efe9;border:1px solid rgba(242,239,233,.1);font-size:14.5px}
+.ga-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ga-head h2{margin:0;font-size:20px;font-weight:800}
+.ga-x{appearance:none;border:0;background:none;color:rgba(242,239,233,.64);font-size:26px;width:40px;height:40px;border-radius:50%;cursor:pointer}.ga-x:hover{background:rgba(242,239,233,.06)}
+.ga-dim{color:rgba(242,239,233,.64);margin:8px 0 14px}.ga-err{color:#ef7a6a}
+.ga-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(242,239,233,.1)}
+.ga-table{width:100%;border-collapse:collapse;font-size:14px}.ga-table th,.ga-table td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(242,239,233,.08);white-space:nowrap}
+.ga-table th{font-size:12.5px;color:rgba(242,239,233,.64);font-weight:700;background:rgba(242,239,233,.03)}.ga-table td:last-child,.ga-table th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.ga-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.ga-btn{display:inline-flex;align-items:center;padding:11px 18px;border-radius:999px;border:1px solid rgba(242,239,233,.2);background:none;color:#f2efe9;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.ga-go{background:#8fe36a;border-color:#8fe36a;color:#0e1a0b}.ga-quiet{border-color:transparent;color:rgba(242,239,233,.64)}`
+
 export function Attendance({ code, onClose, onDeleted }) {
   const [a, setA] = useState(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false)
   useEffect(() => {
@@ -66,18 +79,40 @@ export function Attendance({ code, onClose, onDeleted }) {
         <div className="ga-acts"><a className="ga-btn ga-go" href={`/api/meet/attendance?code=${encodeURIComponent(code)}&format=csv`} download>Download CSV (Excel, Sheets)</a><button className="ga-btn ga-quiet" disabled={busy} onClick={remove}>Delete the list now</button></div>
       </>}
     </div>
-    <style dangerouslySetInnerHTML={{ __html: `
-.ga-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.6)}
-.ga-card{width:100%;max-width:960px;max-height:calc(100dvh - 32px);overflow:auto;padding:22px;border-radius:22px;background:#151815;color:#f2efe9;border:1px solid rgba(242,239,233,.1);font-size:14.5px}
-.ga-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.ga-head h2{margin:0;font-size:20px;font-weight:800}
-.ga-x{appearance:none;border:0;background:none;color:rgba(242,239,233,.64);font-size:26px;width:40px;height:40px;border-radius:50%;cursor:pointer}.ga-x:hover{background:rgba(242,239,233,.06)}
-.ga-dim{color:rgba(242,239,233,.64);margin:8px 0 14px}.ga-err{color:#ef7a6a}
-.ga-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(242,239,233,.1)}
-.ga-table{width:100%;border-collapse:collapse;font-size:14px}.ga-table th,.ga-table td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(242,239,233,.08);white-space:nowrap}
-.ga-table th{font-size:12.5px;color:rgba(242,239,233,.64);font-weight:700;background:rgba(242,239,233,.03)}.ga-table td:last-child,.ga-table th:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.ga-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.ga-btn{display:inline-flex;align-items:center;padding:11px 18px;border-radius:999px;border:1px solid rgba(242,239,233,.2);background:none;color:#f2efe9;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
-.ga-go{background:#8fe36a;border-color:#8fe36a;color:#0e1a0b}.ga-quiet{border-color:transparent;color:rgba(242,239,233,.64)}` }} />
+    <style dangerouslySetInnerHTML={{ __html: GA_CSS }} />
   </div>)
 }
 export { keepWords }
+
+// AI notes in the Meet app: make them from this device's recording (or the AI note taker), then read, copy, download.
+// Runs on meet.olexweb.com itself, because that's where the recording's audio is kept (each address has its own storage).
+export function NotesPanel({ code, title, make, onClose }) {
+  const [n, setN] = useState(null), [step, setStep] = useState(''), [err, setErr] = useState('')
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      const lib = await import('./notes')
+      try {
+        if (make) { const r = await lib.makeNotes(code, (s) => live && setStep(s), lib.MEET_ROUTES); if (live) setN({ notes: r.notes, by: r.by, at: new Date().toISOString(), transcript: r.transcript, title }) }
+        else { const r = await fetch('/api/meet/notes?code=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'No notes yet.'); if (live) setN(j) }
+      } catch (e) { if (live) setErr(e.message || 'The notes couldn’t be made. Try again.') }
+    })()
+    return () => { live = false }
+  }, [code, make, title])
+  async function copy() { const lib = await import('./notes'); try { await navigator.clipboard.writeText(lib.notesText(n.title || title, n.notes, n.at)); setStep('Copied.') } catch { setStep('Copy didn’t work here. Use Download.') } }
+  async function dl(kind) { const lib = await import('./notes'); if (kind === 'md') lib.download(`${n.title || title} notes.md`, lib.notesText(n.title || title, n.notes, n.at)); else lib.download(`${n.title || title} transcript.txt`, n.transcript, 'text/plain') }
+  const x = n && n.notes
+  return (<div className="ga-modal" role="dialog" aria-modal="true" aria-label="AI notes" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="ga-card ga-notes">
+      <div className="ga-head"><h2>AI notes{title ? `: ${title}` : ''}</h2><button className="ga-x" onClick={onClose} aria-label="Close">×</button></div>
+      {err ? <p className="ga-err">{err}</p> : !x ? <p className="ga-dim" role="status">{step || 'Getting ready…'}</p> : <>
+        <p className="ga-sum">{x.summary}</p>
+        {[['Main points', x.points], ['Decisions', x.decisions], ['Open questions', x.questions]].map(([h, items]) => items && items.length ? <section key={h}><h3>{h}</h3><ul>{items.map((t, i) => <li key={i}>{t}</li>)}</ul></section> : null)}
+        {x.actions && x.actions.length ? <section><h3>Action items</h3><ul>{x.actions.map((a, i) => <li key={i}><b>{a.what}</b>{a.who || a.when ? ` (${[a.who, a.when].filter(Boolean).join(', ')})` : ''}</li>)}</ul></section> : null}
+        <p className="ga-dim">Written by {n.by || 'Olex AI'} from the recording. Check names and numbers before sharing.{step ? ' ' + step : ''}</p>
+        <div className="ga-acts"><button className="ga-btn ga-go" onClick={copy}>Copy notes</button><button className="ga-btn" onClick={() => dl('md')}>Download</button>{n.transcript ? <button className="ga-btn" onClick={() => dl('txt')}>Transcript</button> : null}</div>
+      </>}
+    </div>
+    <style dangerouslySetInnerHTML={{ __html: GA_CSS + `.ga-notes{max-width:640px}.ga-sum{font-size:16px;line-height:1.6;margin:12px 0}.ga-notes h3{margin:16px 0 6px;font-size:14px;color:#8fe36a}.ga-notes ul{margin:0;padding-left:18px;display:grid;gap:5px;line-height:1.55}` }} />
+  </div>)
+}

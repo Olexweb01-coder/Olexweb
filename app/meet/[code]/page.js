@@ -17,5 +17,5 @@ export default async function MeetPage({ params }) {
   // once the Meet app is set up, guests on the old address go there; you stay here, where your sign-in makes you the host
   const mh = meetHost(), here = String(headers().get('x-forwarded-host') || headers().get('host') || '')
   if (mh && here !== mh && !host) redirect(meetLink(code))   // (Meet hosts sign in on the Meet app; Olaitan can host from either)
-  return <MeetRoom code={code} title={m.title} speakers={m.speakers} initialState={m.state} startsAt={m.startsAt || null} minutes={m.minutes || 60} host={host} hostName={h.name} canNotes={!!h.owner} form={m.form || null} />
+  return <MeetRoom code={code} title={m.title} speakers={m.speakers} initialState={m.state} startsAt={m.startsAt || null} minutes={m.minutes || 60} host={host} hostName={h.name} canNotes={!!h.host} form={m.form || null} />
 }

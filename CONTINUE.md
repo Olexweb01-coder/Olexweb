@@ -416,3 +416,24 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Fix (3 Nov 2026): admin-setup's first copy into Meet's own database now carries every Meet table in dependency order
   (meet_users → meet_identities → meet_sessions → meetings → meet_attendees → meet_reports), all-or-nothing. The first
   version copied only meetings and failed (meetings_host_user_fkey) when a meeting belonged to a Meet account.
+
+## Olexweb Meet, install 3 (4 Nov 2026): usage meter, pause, notes in the Meet app, tabs, tidy addresses
+- lib/meet/usage.js: meet_usage rows from LiveKit's signed webhook (participant_joined/left, room_finished; via guests.js
+  livekitEvent), minutes this month (sessions never reported closed stop counting after 6 hours), meet_settings limits
+  (presets: LiveKit free 5,000 min / 100 people, $50 150,000 / 1,000, $500 1.5M / 5,000). usageWatch() in quickRun: push
+  'usage' once a month at 80% and 95%. canCreate (Meet accounts paused at 95%, Olaitan never), canJoin (people-at-once
+  limit for everyone: "Meet is full right now"; at 95% other hosts can't start a not-yet-started meeting; started meetings
+  always let people in). Admin → Meetings → Usage tab (AdminMeetUsage.jsx); actions usage, limits.
+- Pause recording: MeetRecorder.pause()/resume() (main and notes recorders); meta.pausedMs keeps the file length right;
+  host attribute rec='paused' → "Recording paused" for everyone.
+- AI notes in the Meet app: /api/meet/notes (transcribe a piece, write, read) for any host; free first 60 minutes
+  (meetings.notes_pieces < 12, claimed before transcribing, given back on failure; 402 after); Olaitan unlimited.
+  components/meet/notes.js takes routes (ADMIN or MEET_ROUTES). NotesPanel (Guests.jsx) in the room, ended screen and
+  Meet home. "AI notes" switch = MeetRecorder notesOnly (pieces only, no file), attribute notes='1' → badge.
+  Reason: recordings made on meet.olexweb.com live in that address's IndexedDB; olexweb.com/admin can't see them.
+- Admin → Meetings has tabs: Meetings, Usage (#usage), Accounts and reports (#accounts).
+- lib/admin/dburl.js tidyDbUrl(): strips quotes, NAME= in front, psql wrapper, extra lines; else names the setting.
+  Used by lib/admin/db.js and lib/meet/db.js. Admin → Meetings shows a clear message if Meet's database fails.
+- Tests: tests/meet/usage.py (30); e2e.py updated for in-meeting notes. All suites: 122+47+44+61+51+30.
+- Next: install 4 (floating mini window / picture-in-picture, noise cancellation, background blur, MP3 audio recordings),
+  install 5 (SEO for meet.olexweb.com, email sign-up with password and codes via an email service, designed emails).

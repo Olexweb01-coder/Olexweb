@@ -53,7 +53,7 @@ export async function saveRecording(id) {
   parts.sort((a, b) => a.seq - b.seq)
   const blobs = parts.map((x) => x.blob)
   if (/webm/.test(rec.mime)) {                                       // the length goes into the first piece's header
-    const ms = Math.max(1000, (parts[parts.length - 1].at || Date.now()) - rec.startedAt)
+    const ms = Math.max(1000, (parts[parts.length - 1].at || Date.now()) - rec.startedAt - (rec.pausedMs || 0))   // paused time isn't in the file
     blobs[0] = new Blob([withDuration(await blobs[0].arrayBuffer(), ms)], { type: rec.mime })
   }
   const blob = new Blob(blobs, { type: rec.mime })
@@ -143,7 +143,7 @@ const NOTES_MS = () => (typeof window !== 'undefined' && window.__olexNotesPiece
 
 const W = 1280, H = 720, PAD = 16, GAP = 12, FOOT = 34
 export class MeetRecorder {
-  constructor({ room, title, audioOnly, stage, code }) { Object.assign(this, { room, title, audioOnly, stage, code }); this.sources = new Map(); this.writes = []; this.seq = 0; this.part = 0 }
+  constructor({ room, title, audioOnly, stage, code, notesOnly = false }) { Object.assign(this, { room, title, audioOnly: audioOnly || notesOnly, stage, code, notesOnly }); this.sources = new Map(); this.writes = []; this.seq = 0; this.part = 0 }
 
   async start() {
     const mime = pickMime(this.audioOnly)
@@ -161,6 +161,16 @@ export class MeetRecorder {
       tracks = [...this.canvas.captureStream(15).getVideoTracks(), ...tracks]
     }
     this.id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+    if (this.notesOnly) {                                                     // the AI note taker alone: only the 5-minute notes pieces, no file kept
+      this.meta = { id: this.id, notesOnly: true, startedAt: Date.now() }
+      this.mr = { state: 'recording', pause() { this.state = 'paused' }, resume() { this.state = 'recording' } }
+      this.notesMime = this.code ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) : ''
+      if (!this.notesMime) throw new Error('This browser can’t take AI notes. Use Chrome, Edge or Safari.')
+      this.notesPiece()
+      let k = 0
+      this.stopTick = ticker(500, () => { if (++k % 2 === 0) { this.syncAudio(); if (this.nr && !this.paused && Date.now() - this.nrAt - (this.nrPaused || 0) >= NOTES_MS()) this.notesPiece() } })
+      return this.meta
+    }
     this.meta = { id: this.id, title: this.title, mime, audioOnly: !!this.audioOnly, startedAt: Date.now() }
     await put('recs', this.meta)
     this.mr = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 900_000, audioBitsPerSecond: 64_000 })
@@ -172,12 +182,27 @@ export class MeetRecorder {
     let n = 0
     this.stopTick = ticker(this.audioOnly ? 500 : 1000 / 15, () => {
       if (!this.audioOnly) this.draw()
-      if (++n % (this.audioOnly ? 1 : 8) === 0) { this.syncAudio(); if (this.nr && Date.now() - this.nrAt >= NOTES_MS()) this.notesPiece() }
+      if (++n % (this.audioOnly ? 1 : 8) === 0) { this.syncAudio(); if (this.nr && !this.paused && Date.now() - this.nrAt - (this.nrPaused || 0) >= NOTES_MS()) this.notesPiece() }
     })
     return this.meta
   }
 
   // one complete audio file per 5 minutes for the notes: the current one is closed (and saved) as the next starts
+  // pause: nothing from now on goes into the recording or the notes, until resume (for a bad patch of network, say)
+  pause() {
+    if (!this.mr || this.paused) return
+    this.paused = Date.now()
+    if (this.mr.state === 'recording') this.mr.pause()
+    if (this.nr && this.nr.state === 'recording') this.nr.pause()
+  }
+  resume() {
+    if (!this.mr || !this.paused) return
+    const gap = Date.now() - this.paused; this.paused = 0
+    this.meta.pausedMs = (this.meta.pausedMs || 0) + gap; this.nrPaused = (this.nrPaused || 0) + gap
+    if (!this.notesOnly) put('recs', this.meta).catch(() => {})
+    if (this.mr.state === 'paused') this.mr.resume()
+    if (this.nr && this.nr.state === 'paused') this.nr.resume()
+  }
   notesPiece() {
     const old = this.nr
     if (old && old.state !== 'inactive') old.stop()
@@ -185,18 +210,20 @@ export class MeetRecorder {
     const part = this.part++, startedAt = Date.now()
     nr.ondataavailable = (e) => { if (e.data && e.data.size) this.writes.push(put('notes', { code: this.code, rec: this.id, part, blob: e.data, mime: this.notesMime, title: this.title, startedAt, at: Date.now() }).catch(() => {})) }
     nr.stopped = new Promise((ok) => { nr.onstop = ok })
-    nr.start(); this.nr = nr; this.nrAt = startedAt
+    nr.start(); this.nr = nr; this.nrAt = startedAt; this.nrPaused = 0
   }
 
   // stops, writes the last piece, and downloads the file. Returns { name, bytes, notes } (notes: pieces kept for AI notes).
   async stop() {
     if (!this.mr) return null
+    if (this.paused) this.resume()                                           // so the last piece is written and the length is right
     if (this.stopTick) this.stopTick()
-    if (this.mr.state !== 'inactive') { this.mr.stop(); await this.stopped }
+    if (this.notesOnly) { this.mr.state = 'inactive' } else if (this.mr.state !== 'inactive') { this.mr.stop(); await this.stopped }
     if (this.nr && this.nr.state !== 'inactive') { this.nr.stop(); await this.nr.stopped }
     await Promise.all(this.writes)
     for (const s of this.sources.values()) s.disconnect()
     this.sources.clear(); this.ac.close().catch(() => {}); this.mr = null; this.nr = null
+    if (this.notesOnly) return { name: null, bytes: 0, notes: this.part }
     const f = await saveRecording(this.id)
     return f && { ...f, notes: this.notesMime ? this.part : 0 }
   }

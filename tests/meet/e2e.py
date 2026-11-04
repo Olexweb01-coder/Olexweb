@@ -299,18 +299,17 @@ with sync_playwright() as pw:
     parts = N.evaluate("""new Promise(ok => { const r = indexedDB.open('olexweb-meet-rec'); r.onsuccess = () => { const q = r.result.transaction('notes').objectStore('notes').getAll(); q.onsuccess = () => ok(q.result.map(x => [x.code, x.part, x.blob.size, x.mime])) } })""")
     mine = [x for x in parts if x[0] == CODE4]
     check(len(mine) >= 3 and all(x[2] < 4 * 1024 * 1024 for x in mine), 'the notes audio is kept as separate pieces, each under 4 MB', mine)
-    with host.expect_page(timeout=10000) as np: N.click('.mt-banner a:has-text("Make AI notes")')
-    A2 = np.value; A2.wait_for_load_state()
-    check('/admin/meetings#notes-' + CODE4 in A2.url, 'Make AI notes opens Meetings in a new tab (the meeting keeps running)', A2.url)
-    A2.wait_for_selector('#mg-' + CODE4 + '.mg-fresh', timeout=8000); check(True, 'the meeting is highlighted there')
+    # since install 3: Make AI notes works right in the meeting (no new tab). A part that keeps failing stops it calmly.
+    N.click('.mt-banner button:has-text("Make AI notes")'); N.wait_for_selector('.ga-notes .ga-err', timeout=40000)
+    check(True, 'Make AI notes works right in the meeting; when a part keeps failing it stops calmly: “' + N.locator('.ga-notes .ga-err').inner_text() + '”')
+    log = ai('/log'); check([x['n'] for x in log if x['kind'] == 'audio'] == [1, 2, 3], 'a failed part is retried once before stopping', [(x['n'], x.get('failed')) for x in log])
+    ai('/control', {'failNth': []}); N.click('.ga-notes .ga-x')
+    # the admin can still make the notes from the same device (olexweb.com keeps the audio until notes are saved)
+    A2 = host.new_page(); A2.goto(APP + '/admin/meetings#notes-' + CODE4); A2.wait_for_load_state()
+    A2.wait_for_selector('#mg-' + CODE4 + '.mg-fresh', timeout=8000); check(True, 'the meeting is highlighted in Admin → Meetings')
     check(A2.locator('#mg-' + CODE4 + ' .mg-dim:has-text("ready for AI notes")').count() == 1, 'it says a recording on this device is ready for notes')
     A2.click('#mg-' + CODE4 + ' button:has-text("Make AI notes")')
     A2.wait_for_selector('.mg-job:has-text("part")', timeout=8000); check(True, 'progress shows which part is being turned into text')
-    A2.wait_for_selector('.toast:has-text("Try again"), [class*=toast]:has-text("Try again"), :text("Try again")', timeout=40000)
-    check(A2.locator('#mg-' + CODE4 + ' button:has-text("Make AI notes")').count() == 1, 'when a part keeps failing, it stops calmly and offers to try again')
-    log = ai('/log'); check([x['n'] for x in log if x['kind'] == 'audio'] == [1, 2, 3], 'a failed part is retried once before stopping', [(x['n'], x.get('failed')) for x in log])
-    ai('/control', {'failNth': []})
-    A2.click('#mg-' + CODE4 + ' button:has-text("Make AI notes")')
     A2.wait_for_selector('.sheet .mg-summary', timeout=60000); check(True, 'the notes open when they’re ready')
     log = ai('/log'); au = [x for x in log if x['kind'] == 'audio' and not x.get('failed')]; nt = [x for x in log if x['kind'] == 'notes']
     check(len(au) == len(mine) and [x['part'] for x in au] == list(range(1, len(mine) + 1)), 'trying again carries on: part 1 isn’t sent twice', [(x['n'], x.get('part')) for x in au])
@@ -349,7 +348,8 @@ with sync_playwright() as pw:
     N.click('.mt-c.mt-leave')
     with N.expect_download(timeout=30000) as d: N.click('button:has-text("End for everyone")')
     N.wait_for_selector('h1:has-text("ended")', timeout=10000)
-    check(N.locator('a:has-text("Make AI notes")').get_attribute('href') == '/admin/meetings#notes-' + CODE4, 'after ending, the host can go straight to Make AI notes')
+    N.click('button:has-text("Make AI notes")'); N.wait_for_selector('.ga-notes .ga-sum', timeout=60000)
+    check(True, 'after ending, Make AI notes on the ended screen makes the notes right there')
     N.screenshot(path=SHOTS + '/12-ended-notes.png')
 
     # the admin page

@@ -125,7 +125,7 @@ with sync_playwright() as pw:
     s, j = post('/api/meet/report', {'code': BADC, 'reason': 'spam'}, origin=APP); check(s == 400 and 'already reported' in j.get('error', ''), 'the same person can’t flood one meeting with reports')
     s, j = post('/api/meet/report', {'code': PLAIN, 'reason': 'nonsense'}, origin=APP); check(s == 400, 'an unknown reason is refused')
     s, j = post('/api/meet/report', {'code': PLAIN, 'reason': 'spam'}); check(s == 403, 'reports from other sites are refused')
-    A3 = host.new_page(); A3.goto(APP + '/admin/meetings'); A3.wait_for_selector('.ma .mg-list li', timeout=8000)
+    A3 = host.new_page(); A3.goto(APP + '/admin/meetings#accounts'); A3.wait_for_selector('.ma .mg-list li', timeout=8000)   # its own tab since install 3
     check('Spam or scam' in A3.locator('.ma').inner_text() and 'Selling fake investments' in A3.locator('.ma').inner_text() and 'Bad Host' in A3.locator('.ma').inner_text(), 'you see the report in Admin → Meetings → Meet app')
     A3.screenshot(path=SHOTS + '/20-admin-meet-app.png', full_page=True)
     A3.on('dialog', lambda d: d.accept('Scam meeting'))

@@ -6,7 +6,7 @@
 // LiveKit's library loads after the page appears, so the first load stays light.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MeetRecorder, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
-import { keepWords } from './Guests'
+import { keepWords, NotesPanel } from './Guests'
 
 const SAVED_NAME = 'olexweb-meet-name'
 // on the Meet app (meet.olexweb.com) a meeting is /abc-defg-hij; on the main site it's /meet/abc-defg-hij
@@ -32,6 +32,8 @@ const I = {
   stop: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2" className="mt-fill" /></svg>,
   smile: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14.2a4.2 4.2 0 0 0 7 0" /><path d="M9.3 9.6h.01M14.7 9.6h.01" strokeWidth="2.6" /></svg>,
   dots: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01" strokeWidth="3" /></svg>,
+  notes: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3.5 3.5v13.5H6z" /><path d="M9 10h6M9 13.5h6M9 17h4" /><path d="M18 3l.7 1.6 1.6.7-1.6.7L18 7.6l-.7-1.6-1.6-.7 1.6-.7z" className="mt-fill" /></svg>,
+  pause: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.5" height="13" rx="1" className="mt-fill" /><rect x="13.5" y="5.5" width="3.5" height="13" rx="1" className="mt-fill" /></svg>,
 }
 // quick reactions float up on everyone's screen; the picker's set covers everyday chat
 export const REACTIONS = ['👍', '👏', '😂', '❤️', '🎉', '😮']
@@ -71,7 +73,8 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const [floats, setFloats] = useState([]), [pop, setPop] = useState(null), [notesReady, setNotesReady] = useState(false)
   const [det, setDet] = useState({ phone: '', email: '', org: '', answer: '', consent: false }), [reporting, setReporting] = useState(false)
   const asks = !!(form && !host)                                            // the host's details form (never for the host)
-  const recRef = useRef(null), stageRef = useRef(null), lastReact = useRef(0), closing = useRef(false)
+  const prevRec = useRef(''), recRef = useRef(null), notesRef = useRef(null), stageRef = useRef(null)
+  const [noting, setNoting] = useState(false), [showNotes, setShowNotes] = useState(false), lastReact = useRef(0), closing = useRef(false)
   const saverRef = useRef(false), endedRef = useRef(false), panelRef = useRef(null), spoke = useRef(new Map()), levelEls = useRef(new Map())
 
   useEffect(() => { saverRef.current = saver }, [saver])
@@ -153,7 +156,8 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
         if (info.host && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(`${p.name || 'Someone'} raised a hand.`)
-        if (!info.host && isHostId(p.identity) && 'rec' in changed) toast(changed.rec ? 'The host started recording this meeting.' : 'The host stopped recording.')
+        if (!info.host && isHostId(p.identity) && 'rec' in changed) toast(changed.rec === 'paused' ? 'The host paused the recording.' : changed.rec ? (prevRec.current === 'paused' ? 'The host resumed recording.' : 'The host started recording this meeting.') : 'The host stopped recording.')
+        if (isHostId(p.identity) && 'rec' in changed) prevRec.current = changed.rec
         bump()
       })
       .on(E.ParticipantPermissionsChanged, (prev, p) => {
@@ -272,6 +276,16 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       toast(audioOnly ? 'Recording audio. Everyone can see it’s on.' : 'Recording. Everyone can see it’s on.')
     } catch (e) { toast(e.message || 'Recording couldn’t start. Try again.') }
   }
+  async function toggleNotes() {
+    if (notesRef.current) { const r = notesRef.current; notesRef.current = null; setNoting(false); me.setAttributes({ notes: '' }).catch(() => {}); try { const f = await r.stop(); if (f && f.notes) { setNotesReady(true); toast('AI notes stopped. Make the notes when you’re ready.') } } catch {} return }
+    try { const r = new MeetRecorder({ room, title, code, notesOnly: true }); await r.start(); notesRef.current = r; setNoting(true); await me.setAttributes({ notes: '1' }).catch(() => {}); toast('AI notes are on. Everyone can see it.') }
+    catch (e) { toast(e.message || 'AI notes couldn’t start. Try again.') }
+  }
+  async function pauseRec() {
+    const r = recRef.current; if (!r) return
+    if (rec.pausedAt) { r.resume(); setRec({ ...rec, pausedAt: 0, pausedTotal: (rec.pausedTotal || 0) + (Date.now() - rec.pausedAt) }); me.setAttributes({ rec: '1' }).catch(() => {}); toast('Recording again.') }
+    else { r.pause(); setRec({ ...rec, pausedAt: Date.now() }); me.setAttributes({ rec: 'paused' }).catch(() => {}); toast('Recording paused. Nothing is recorded until you resume.') }
+  }
   async function stopRec() {
     const r = recRef.current; if (!r) return
     recRef.current = null; setRec(null)
@@ -286,10 +300,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
   async function savePending(x) { try { const f = await saveRecording(x.id); if (f) toast('Saved: ' + f.name) } catch { toast('That recording couldn’t be saved.') } setPending(await pendingRecordings()) }
   async function dropPending(x) { if (!window.confirm('Delete this unsaved recording? It can’t be recovered.')) return; await discardRecording(x.id).catch(() => {}); setPending(await pendingRecordings()) }
-  async function leave() { setLeaving(false); if (recRef.current) await stopRec(); saidLeft(); if (roomRef.current) roomRef.current.disconnect() }
+  async function leave() { setLeaving(false); if (recRef.current) await stopRec(); if (notesRef.current) await toggleNotes(); saidLeft(); if (roomRef.current) roomRef.current.disconnect() }
   async function endForAll() {
     setLeaving(false)
     if (recRef.current) await stopRec()
+    if (notesRef.current) await toggleNotes()
     try { await post('/api/meet/host', { action: 'end', code }) } catch (e) { toast(e.message); return }
     endedRef.current = true; setPhase('ended'); if (roomRef.current) roomRef.current.disconnect()
   }
@@ -299,11 +314,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
 
   // ---------- screens other than the room ----------
-  if (phase !== 'in') return (<div className="mt mt-solo">
+  if (phase !== 'in') return (<div className="mt mt-solo">{showNotes ? <NotesPanel code={code} title={title} make onClose={() => setShowNotes(false)} /> : null}
     <header className="mt-brand"><img src="/studio/mark.png" alt="" width="22" height="26" /><span>Olexweb</span></header>
     <main className="mt-card">
       {phase === 'ended' ? <><h1 className="mt-h">This meeting has ended</h1><p className="mt-p">{host && notesReady ? 'Your recording is saved. Olex AI can turn it into notes: a summary, decisions and action items.' : 'Thanks for being here. You can close this page.'}</p>
-          {host && notesReady ? <div className="mt-row"><a className="mt-btn mt-go" href={'/admin/meetings#notes-' + code}>Make AI notes</a></div> : null}</>
+          {host && notesReady ? <div className="mt-row"><button className="mt-btn mt-go" onClick={() => setShowNotes(true)}>Make AI notes</button></div> : null}</>
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
         : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
@@ -364,11 +379,13 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const audioPubs = [...room.remoteParticipants.values()].flatMap((p) => [...p.audioTrackPublications.values()].filter((x) => x.track))
   const canShare = canSpeak && typeof navigator !== 'undefined' && navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices
   const recording = !!rec || all.some((p) => isHostId(p.identity) && p.attributes && p.attributes.rec)
+  const notesOn = noting || all.some((p) => isHostId(p.identity) && p.attributes && p.attributes.notes)
+  const recPaused = rec ? !!rec.pausedAt : all.some((p) => isHostId(p.identity) && p.attributes && p.attributes.rec === 'paused')
   const hand = !!(me.attributes && me.attributes.hand)
 
   return (<div className={'mt mt-in-room' + (panel ? ' mt-panel-on' : '')} onPointerDown={(e) => { if (pop && !e.target.closest('.mt-popwrap')) setPop(null) }}>
     <header className="mt-top">
-      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className="mt-recbadge" role="status"><i aria-hidden="true" />Recording</span> : null}</div>
+      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className={'mt-recbadge' + (recPaused ? ' mt-paused' : '')} role="status"><i aria-hidden="true" />{recPaused ? 'Recording paused' : 'Recording'}</span> : null}{notesOn ? <span className="mt-recbadge mt-notesbadge" role="status"><i aria-hidden="true" />AI notes</span> : null}</div>
       <div className="mt-top-end">
         <span className="mt-count" title="People in the meeting">{I.people}{all.length}</span>
         <button className="mt-btn mt-sm" onClick={copyLink}>{I.link}<span>Copy link</span></button>
@@ -377,7 +394,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
 
     {conn.reconnecting ? <p className="mt-banner" role="status">Reconnecting… Your audio comes back on its own.</p>
       : conn.weak ? <p className="mt-banner mt-warn" role="status">{I.weak}Your connection is weak.{!saver ? <> <button className="mt-link" onClick={toggleSaver}>Turn on Data saver</button> to keep voices clear.</> : ' Voices come first.'}</p> : null}
-    {host && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <a className="mt-link" href={'/admin/meetings#notes-' + code} target="_blank" rel="noopener">Make AI notes</a> (opens in a new tab)<button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
+    {host && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <button className="mt-link" onClick={() => setShowNotes(true)}>Make AI notes</button><button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
     <div className="mt-body">
@@ -408,7 +425,9 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         <button className={'mt-c' + (pop === 'react' ? ' mt-on' : '')} aria-expanded={pop === 'react'} onClick={() => setPop((x) => (x === 'react' ? null : 'react'))}>{I.smile}<span>React</span></button>
         {pop === 'react' ? <span className="mt-pop mt-reacts" role="group" aria-label="Send a reaction">{REACTIONS.map((e) => <button key={e} onClick={() => react(e)} aria-label={'Send ' + e}>{e}</button>)}</span> : null}
       </span>
-      {host && canRecord() ? <button className={'mt-c' + (rec ? ' mt-recording' : '')} aria-pressed={!!rec} onClick={() => (rec ? stopRec() : setAskRec(true))}>{rec ? I.stop : I.rec}<span>{rec ? <RecTime from={rec.at} /> : 'Record'}</span></button> : null}
+      {host && canRecord() ? <button className={'mt-c' + (rec ? ' mt-recording' : '')} aria-pressed={!!rec} onClick={() => (rec ? stopRec() : setAskRec(true))}>{rec ? I.stop : I.rec}<span>{rec ? <RecTime from={rec.at} paused={rec.pausedAt} pausedTotal={rec.pausedTotal} /> : 'Record'}</span></button> : null}
+      {host && canRecord() ? <button className={'mt-c mt-wide' + (noting ? ' mt-on' : '')} aria-pressed={noting} onClick={toggleNotes}>{I.notes}<span>{noting ? 'Stop notes' : 'AI notes'}</span></button> : null}
+      {host && rec ? <button className={'mt-c' + (rec.pausedAt ? ' mt-on' : '')} aria-pressed={!!rec.pausedAt} onClick={pauseRec}>{rec.pausedAt ? I.rec : I.pause}<span>{rec.pausedAt ? 'Resume' : 'Pause'}</span></button> : null}
       <button className={'mt-c' + (panel === 'chat' ? ' mt-on' : '')} aria-pressed={panel === 'chat'} onClick={() => setPanel((x) => (x === 'chat' ? null : 'chat'))}>{I.chat}<span>Chat</span>{unread ? <i className="mt-badge" aria-label={unread + ' new'}>{unread > 9 ? '9+' : unread}</i> : null}</button>
       <button className={'mt-c' + (panel === 'people' ? ' mt-on' : '')} aria-pressed={panel === 'people'} onClick={() => setPanel((x) => (x === 'people' ? null : 'people'))}>{I.people}<span>People</span>{host && hands.length ? <i className="mt-badge">{hands.length}</i> : null}</button>
       <button className={'mt-c mt-wide' + (saver ? ' mt-on' : '')} aria-pressed={saver} onClick={toggleSaver}>{I.leaf}<span>Data saver</span></button>
@@ -417,6 +436,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         {pop === 'more' ? <span className="mt-pop mt-menu" role="menu">
           {canShare ? <button role="menuitem" onClick={() => { setPop(null); toggleShare() }}>{I.share}{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</button> : null}
           <button role="menuitemcheckbox" aria-checked={saver} onClick={() => { setPop(null); toggleSaver() }}>{I.leaf}Data saver{saver ? ': on' : ''}</button>
+          {host && canRecord() ? <button role="menuitemcheckbox" aria-checked={noting} onClick={() => { setPop(null); toggleNotes() }}>{I.notes}{noting ? 'Stop AI notes' : 'AI notes'}</button> : null}
           {!host ? <button role="menuitem" onClick={() => { setPop(null); setReporting(true) }}>{I.close}Report this meeting</button> : null}
         </span> : null}
       </span>
@@ -439,6 +459,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       </div>
     </div> : null}
 
+    {showNotes ? <NotesPanel code={code} title={title} make onClose={() => setShowNotes(false)} /> : null}
     {reporting ? <ReportBox onSend={sendReport} onClose={() => setReporting(false)} /> : null}
 
     {leaving ? <div className="mt-modal" role="dialog" aria-modal="true" aria-label="Leave the meeting" onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false) }}>
@@ -494,10 +515,10 @@ function Elapsed({ from }) {
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
   return <span className="mt-time">{from ? clock(now - from) : ''}</span>
 }
-function RecTime({ from }) {
+function RecTime({ from, paused = 0, pausedTotal = 0 }) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
-  return <>{clock(now - from)}</>
+  return <>{clock((paused || now) - from - pausedTotal)}{paused ? ' paused' : ''}</>
 }
 function AudioOut({ track }) {
   const ref = useRef(null)

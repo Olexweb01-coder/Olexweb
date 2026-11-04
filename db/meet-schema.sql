@@ -44,3 +44,14 @@ create index if not exists meet_attendees_code on meet_attendees (code, joined_a
 create table if not exists meet_reports (id serial primary key, code text not null, reason text not null check (reason in ('spam', 'abuse', 'illegal', 'other')),
   note text, reporter_name text, ip_hash text, status text not null default 'open' check (status in ('open', 'dismissed', 'actioned')), created_at timestamptz not null default now(), decided_at timestamptz);
 create index if not exists meet_reports_open on meet_reports (created_at desc) where status = 'open';
+
+-- install 3 (Nov 2026): the usage meter. One row per person per meeting session, from LiveKit's signed webhook events.
+create table if not exists meet_usage (id bigserial primary key, identity text not null unique, code text not null, joined_at timestamptz not null default now(), left_at timestamptz);
+create index if not exists meet_usage_live on meet_usage (code) where left_at is null;
+create index if not exists meet_usage_month on meet_usage (joined_at);
+-- your limits (the plan you're on) and which warnings went out this month
+create table if not exists meet_settings (id int primary key default 1 check (id = 1), minutes_allowance int not null default 5000, max_people int not null default 100,
+  warned jsonb not null default '{}', updated_at timestamptz not null default now());
+insert into meet_settings (id) values (1) on conflict do nothing;
+-- AI notes in the Meet app: how many 5-minute pieces a meeting has had turned into text (free: the first 12, an hour)
+alter table meetings add column if not exists notes_pieces int not null default 0;

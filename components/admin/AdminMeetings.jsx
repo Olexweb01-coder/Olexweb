@@ -7,6 +7,7 @@ import { toast, Sheet } from './ui'
 import { makeNotes, notesAudio, dropNotesAudio, notesText, download } from '@/components/meet/notes'
 import { FormSettings, Attendance, formFrom, DEFAULT_FORM } from '@/components/meet/Guests'
 import AdminMeetApp from './AdminMeetApp'
+import AdminMeetUsage from './AdminMeetUsage'
 
 // Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
 // ("Tue 3 Nov" vs "Tue, 3 Nov"), which made React redraw the page. Lagos is UTC+1 all year (no daylight saving).
@@ -68,10 +69,11 @@ export default function AdminMeetings({ data }) {
   const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
   const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
-  const [edit, setEdit] = useState(null), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
+  const [edit, setEdit] = useState(null), [tab, setTab] = useState('meetings'), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
   const refreshLocal = useCallback(() => notesAudio().then(setLocal).catch(() => {}), [])
   useEffect(() => {
     refreshLocal()
+    if (window.location.hash === '#usage' || window.location.hash === '#accounts') setTab(window.location.hash.slice(1))
     const m = /^#(?:notes|meet)-([a-z-]{12})$/.exec(window.location.hash)          // arrived from "Make AI notes" or a reminder
     if (m) { setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
   }, [refreshLocal])
@@ -133,6 +135,11 @@ export default function AdminMeetings({ data }) {
 
   return (<div className="mg">
     <div className="top"><h1 className="d">Meetings</h1></div>
+    <div className="seg mg-tabs" role="tablist" aria-label="Meetings sections">{[['meetings', 'Meetings'], ['usage', 'Usage'], ['accounts', 'Accounts and reports']].map(([k, l]) =>
+      <button key={k} type="button" role="tab" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => { setTab(k); history.replaceState(null, '', k === 'meetings' ? '#' : '#' + k) }}>{l}</button>)}</div>
+    {tab === 'usage' ? (data.ready ? <AdminMeetUsage /> : <section className="mg-box"><p className="mg-dim">Usage shows once the video service is connected.</p></section>) : null}
+    {tab === 'accounts' ? <AdminMeetApp /> : null}
+    {tab === 'meetings' ? <>
     {!data.ready ? <section className="mg-box mg-setup">
       <h2>Connect the video service</h2>
       <p>Meetings run on LiveKit. Create a free project at cloud.livekit.io, open Settings → Keys, then add these three in Vercel → Settings → Environment Variables and redeploy:</p>
@@ -183,7 +190,7 @@ export default function AdminMeetings({ data }) {
       </li>)}</ul>
     </section> : null}
 
-    <AdminMeetApp />
+    </> : null}
     {att ? <Attendance code={att} onClose={() => setAtt(null)} onDeleted={() => toast('The attendance list was deleted.')} /> : null}
 
     {edit ? <Sheet title={'Edit: ' + edit.m.title} onClose={closeEdit} foot={<><button className="btn btn-green" disabled={!!busy} onClick={saveEdit}>{busy === 'update' + edit.m.code ? 'Saving…' : 'Save'}</button><button className="btn btn-line" onClick={closeEdit}>Cancel</button></>}>
@@ -212,7 +219,7 @@ export default function AdminMeetings({ data }) {
     </Sheet> : null}
 
     <style>{`
-.mg{display:grid;gap:14px;max-width:880px}
+.mg{display:grid;gap:14px;max-width:880px}.mg-tabs{justify-self:start;margin-bottom:2px}
 .mg-box{padding:18px;border-radius:20px;border:1px solid var(--line);background:var(--raise)}
 .mg-box h2{margin:0 0 12px;font-size:17px;font-weight:800}
 .mg-box p{margin:0 0 12px;font-size:14.5px;line-height:1.6}

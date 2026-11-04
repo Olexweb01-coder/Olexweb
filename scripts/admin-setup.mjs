@@ -77,7 +77,7 @@ async function meetDatabase(mainDb) {
     // Everything Meet keeps, in the order each depends on the last: accounts, their sign-in methods, signed-in browsers
     // (nobody is signed out), meetings, attendance lists, reports. One all-or-nothing step: if anything fails, nothing
     // is copied and the main database is untouched. Each row travels as JSON text, so every value arrives exactly as it was.
-    const TABLES = [['meet_users', true], ['meet_identities', false], ['meet_sessions', false], ['meetings', true], ['meet_attendees', true], ['meet_reports', true]]
+    const TABLES = [['meet_users', true], ['meet_identities', false], ['meet_sessions', false], ['meetings', true], ['meet_attendees', true], ['meet_reports', true], ['meet_usage', true], ['meet_settings', false]]
     const have = (await mdb.query('select (select count(*) from meetings) + (select count(*) from meet_users) as n')).rows[0].n
     if (Number(have)) { ok('Meet\u2019s data is already there (not copied again)'); return }
     const rows = {}

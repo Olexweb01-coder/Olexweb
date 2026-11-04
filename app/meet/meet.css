@@ -294,3 +294,7 @@
 .mt-report-link{appearance:none;border:0;background:none;color:var(--dim);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:10px 16px 14px;cursor:pointer;text-align:left}
 .mt-reasons{display:grid;gap:4px;margin:0 0 12px}.mt-reasons label{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;cursor:pointer;font-size:14.5px}.mt-reasons label:hover{background:rgba(242,239,233,.04)}
 .mt-dialog textarea.mt-in{resize:vertical;font-size:15px}
+
+/* install 3: recording paused */
+.mt-recbadge.mt-paused{background:rgba(240,179,94,.14)}.mt-recbadge.mt-paused i{background:var(--warn);animation:none}
+.mt-recbadge.mt-notesbadge{background:rgba(143,227,106,.14);margin-left:6px}.mt-recbadge.mt-notesbadge i{background:var(--green);animation:none}

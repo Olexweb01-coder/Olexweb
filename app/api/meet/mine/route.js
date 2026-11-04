@@ -4,6 +4,7 @@ import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
 import { currentMeetUser } from '@/lib/meet/auth'
 import * as M from '@/lib/site/meet'
+import { canCreate } from '@/lib/meet/usage'
 export const dynamic = 'force-dynamic'
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
@@ -13,6 +14,7 @@ export async function POST(request) {
     if (b.action === 'list') return { meetings: await M.myMeetings(mu) }
     if (b.action === 'create') {
       const owner = mu.role === 'owner'
+      await canCreate(owner)                                              // paused near the monthly limit (not for Olaitan)
       const r = await M.createMeeting({ title: b.title, speakers: b.speakers, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
       return { ...r, link: M.meetLink(r.code) }
     }
