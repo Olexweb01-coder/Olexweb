@@ -437,3 +437,24 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Tests: tests/meet/usage.py (30); e2e.py updated for in-meeting notes. All suites: 122+47+44+61+51+30.
 - Next: install 4 (floating mini window / picture-in-picture, noise cancellation, background blur, MP3 audio recordings),
   install 5 (SEO for meet.olexweb.com, email sign-up with password and codes via an email service, designed emails).
+
+## Olexweb Meet, install 4 (4 Nov 2026): noise cancellation, blur, MP3, mini window, iPhone
+- New packages (exact, each 2+ weeks old when added): @livekit/track-processors 0.8.2, @sapphi-red/web-noise-suppressor 0.4.1,
+  @breezystack/lamejs 1.2.7. The install block runs npm install.
+- components/meet/effects.js: RNNoise as a LiveKit audio processor (on by default; files in public/meet/noise), background
+  blur via BackgroundProcessor with MediaPipe served from public/meet/vision (model selfie_segmenter.tflite, ~19 MB of wasm,
+  loaded only when blur is switched on). Choice remembered in localStorage 'olexweb-meet-effects'. Lobby chips + More menu.
+  The room root has data-noise / data-blur = what's really running (tests use it).
+- components/meet/pip.js: MiniWindow (Document Picture-in-Picture on Chrome/Edge desktop with Mute, Camera, Leave, Back;
+  otherwise canvas → video requestPictureInPicture), callControls (Media Session togglemicrophone/togglecamera/hangup and
+  enterpictureinpicture = Chrome's automatic PiP for calls), callState. "Mini window" in More.
+- More is now on computers too, listing only what isn't on the bar (.mt-menu button.mt-narrow hidden ≥761px).
+- MP3: audio-only recordings are MP3 (public/meet/pcm-worklet.js → components/meet/mp3worker.js, LAME), mono, 64 kbps
+  (Standard) or 96 (High), saved every 2 s like other recordings; pause stops the feed. Video stays WebM.
+- recorder.js lengthWritten(): writes the WebM length using enough of the file's start (harmless robustness). An
+  intermittent "video recording without a length" was seen once in a busy test run; not reproduced since; cause unknown.
+- iPhone/iPad: Apple pauses a web page's mic in the background. Others see "Stepped away (iPhone pauses the mic)"
+  (attribute away), the mic restarts on return if it was on, and a lobby tip. True background audio needs a native app
+  (LiveKit iOS/Android SDKs with CallKit) — a possible later phase.
+- Tests: tests/meet/effects.py (33). All suites: 122+47+44+61+51+30+33.
+- Next: install 5 (SEO for meet.olexweb.com; email sign-up with password and codes via an email service; designed emails).

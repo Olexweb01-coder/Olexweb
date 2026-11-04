@@ -37,7 +37,9 @@ export async function discardRecording(id) {
   t.objectStore('recs').delete(id); t.objectStore('chunks').delete(IDBKeyRange.bound([id, 0], [id, Infinity]))
   await done(t); d.close()
 }
-const ext = (mime) => (/^audio\/mp4/.test(mime) ? 'm4a' : /mp4/.test(mime) ? 'mp4' : 'webm')
+const ext = (mime) => (/^audio\/mpeg/.test(mime) ? 'mp3' : /^audio\/mp4/.test(mime) ? 'm4a' : /mp4/.test(mime) ? 'mp4' : 'webm')
+// audio-only recordings are MP3 (plays everywhere) where the browser can run the encoder: 64 kbps mono by default (~29 MB an hour), 96 for higher quality
+export const canMp3 = () => typeof window !== 'undefined' && typeof AudioWorkletNode !== 'undefined' && typeof Worker !== 'undefined'
 export function fileName(rec) {
   const d = new Date(rec.startedAt), p = (n) => String(n).padStart(2, '0')
   const t = String(rec.title || 'Meeting').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Meeting'
@@ -52,9 +54,9 @@ export async function saveRecording(id) {
   if (!rec || !parts.length) { await discardRecording(id).catch(() => {}); return null }
   parts.sort((a, b) => a.seq - b.seq)
   const blobs = parts.map((x) => x.blob)
-  if (/webm/.test(rec.mime)) {                                       // the length goes into the first piece's header
+  if (/webm/.test(rec.mime)) {                                       // the length goes into the file's Info section
     const ms = Math.max(1000, (parts[parts.length - 1].at || Date.now()) - rec.startedAt - (rec.pausedMs || 0))   // paused time isn't in the file
-    blobs[0] = new Blob([withDuration(await blobs[0].arrayBuffer(), ms)], { type: rec.mime })
+    blobs.splice(0, blobs.length, ...(await lengthWritten(blobs, ms, rec.mime)))
   }
   const blob = new Blob(blobs, { type: rec.mime })
   const url = URL.createObjectURL(blob), a = document.createElement('a')
@@ -77,6 +79,19 @@ function eid(b, i) {                                                 // an eleme
   if (!len || i + len > b.length) return null
   let id = 0; for (let k = 0; k < len; k++) id = id * 256 + b[i + k]
   return { len, id }
+}
+// Writes the length using enough of the file's start: when a recording starts while the device is busy, its first saved
+// piece can be tiny and end part-way through the Info section, so the first pieces are joined until the Info section is
+// whole (up to 8 MB). Returns the pieces with the length written, or unchanged if the file already has one or isn't WebM.
+export async function lengthWritten(blobs, ms, type) {
+  for (const want of [64 * 1024, 1024 * 1024, 8 * 1024 * 1024]) {
+    let k = 0, size = 0
+    while (k < blobs.length && size < want) size += blobs[k++].size
+    const head = await new Blob(blobs.slice(0, k)).arrayBuffer(), fixed = withDuration(head, ms)
+    if (fixed !== head) return [new Blob([fixed], { type }), ...blobs.slice(k)]
+    if (k >= blobs.length) break
+  }
+  return blobs
 }
 export function withDuration(buf, ms) {
   const b = new Uint8Array(buf)
@@ -143,10 +158,11 @@ const NOTES_MS = () => (typeof window !== 'undefined' && window.__olexNotesPiece
 
 const W = 1280, H = 720, PAD = 16, GAP = 12, FOOT = 34
 export class MeetRecorder {
-  constructor({ room, title, audioOnly, stage, code, notesOnly = false }) { Object.assign(this, { room, title, audioOnly: audioOnly || notesOnly, stage, code, notesOnly }); this.sources = new Map(); this.writes = []; this.seq = 0; this.part = 0 }
+  constructor({ room, title, audioOnly, stage, code, notesOnly = false, kbps = 64 }) { Object.assign(this, { room, title, audioOnly: audioOnly || notesOnly, stage, code, notesOnly, kbps: kbps === 96 ? 96 : 64 }); this.sources = new Map(); this.writes = []; this.seq = 0; this.part = 0 }
 
   async start() {
-    const mime = pickMime(this.audioOnly)
+    this.useMp3 = this.audioOnly && !this.notesOnly && canMp3()
+    const mime = this.useMp3 ? 'audio/mpeg' : pickMime(this.audioOnly)
     if (!mime) throw new Error('This browser can’t record. Use Chrome, Edge or Safari on a computer.')
     const AC = window.AudioContext || window.webkitAudioContext
     this.ac = new AC(); await this.ac.resume().catch(() => {})
@@ -173,21 +189,47 @@ export class MeetRecorder {
     }
     this.meta = { id: this.id, title: this.title, mime, audioOnly: !!this.audioOnly, startedAt: Date.now() }
     await put('recs', this.meta)
-    this.mr = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 900_000, audioBitsPerSecond: 64_000 })
-    this.mr.ondataavailable = (e) => { if (e.data && e.data.size) this.writes.push(put('chunks', { rec: this.id, seq: this.seq++, blob: e.data, at: Date.now() }).catch(() => {})) }
-    this.stopped = new Promise((ok) => { this.mr.onstop = ok })
-    this.mr.start(2000)
+    if (this.useMp3) await this.startMp3()
+    else {
+      this.mr = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 900_000, audioBitsPerSecond: 64_000 })
+      this.mr.ondataavailable = (e) => { if (e.data && e.data.size) this.writes.push(put('chunks', { rec: this.id, seq: this.seq++, blob: e.data, at: Date.now() }).catch(() => {})) }
+      this.stopped = new Promise((ok) => { this.mr.onstop = ok })
+      this.mr.start(2000)
+    }
     this.notesMime = this.code ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) : ''
     if (this.notesMime) this.notesPiece()
     let n = 0
     this.stopTick = ticker(this.audioOnly ? 500 : 1000 / 15, () => {
       if (!this.audioOnly) this.draw()
+      if (this.useMp3 && n % 4 === 0) this.flushMp3()                       // MP3 saved every 2 seconds (crash-safe)
       if (++n % (this.audioOnly ? 1 : 8) === 0) { this.syncAudio(); if (this.nr && !this.paused && Date.now() - this.nrAt - (this.nrPaused || 0) >= NOTES_MS()) this.notesPiece() }
     })
     return this.meta
   }
 
   // one complete audio file per 5 minutes for the notes: the current one is closed (and saved) as the next starts
+  // MP3: the mixed audio (mono) → an AudioWorklet → the encoder in a Worker → saved in pieces. Pausing stops the feed,
+  // so paused time simply isn't in the file (MP3 players read the length from the audio itself).
+  async startMp3() {
+    await this.ac.audioWorklet.addModule('/meet/pcm-worklet.js')
+    this.tap = this.ac.createMediaStreamSource(this.dest.stream)
+    this.pcm = new AudioWorkletNode(this.ac, 'olex-pcm', { channelCount: 1, channelCountMode: 'explicit', channelInterpretation: 'speakers' })
+    this.mute = this.ac.createGain(); this.mute.gain.value = 0
+    this.tap.connect(this.pcm); this.pcm.connect(this.mute); this.mute.connect(this.ac.destination)
+    this.worker = new Worker(new URL('./mp3worker.js', import.meta.url), { type: 'module' })
+    this.worker.postMessage({ init: true, sampleRate: this.ac.sampleRate, kbps: this.kbps })
+    this.mp3Buf = []
+    this.worker.onmessage = (e) => { if (e.data.bytes) this.mp3Buf.push(e.data.bytes); if (e.data.done && this.mp3Done) this.mp3Done() }
+    this.pcm.port.onmessage = (e) => { if (!this.paused && this.worker) this.worker.postMessage(e.data, [e.data.buffer]) }
+    if (this.ac.state === 'suspended') await this.ac.resume().catch(() => {})
+    this.mr = { state: 'recording', pause() { this.state = 'paused' }, resume() { this.state = 'recording' } }
+    this.stopped = Promise.resolve()
+  }
+  flushMp3() {
+    if (!this.mp3Buf || !this.mp3Buf.length) return
+    const blob = new Blob(this.mp3Buf, { type: 'audio/mpeg' }); this.mp3Buf = []
+    this.writes.push(put('chunks', { rec: this.id, seq: this.seq++, blob, at: Date.now() }).catch(() => {}))
+  }
   // pause: nothing from now on goes into the recording or the notes, until resume (for a bad patch of network, say)
   pause() {
     if (!this.mr || this.paused) return
@@ -218,7 +260,12 @@ export class MeetRecorder {
     if (!this.mr) return null
     if (this.paused) this.resume()                                           // so the last piece is written and the length is right
     if (this.stopTick) this.stopTick()
-    if (this.notesOnly) { this.mr.state = 'inactive' } else if (this.mr.state !== 'inactive') { this.mr.stop(); await this.stopped }
+    if (this.notesOnly) { this.mr.state = 'inactive' }
+    else if (this.useMp3) {                                                   // the encoder's last frames, then saved
+      try { this.tap.disconnect(); this.pcm.disconnect() } catch {}
+      await new Promise((ok) => { this.mp3Done = ok; this.worker.postMessage({ flush: true }); setTimeout(ok, 3000) })
+      this.flushMp3(); this.worker.terminate(); this.worker = null; this.mr.state = 'inactive'
+    } else if (this.mr.state !== 'inactive') { this.mr.stop(); await this.stopped }
     if (this.nr && this.nr.state !== 'inactive') { this.nr.stop(); await this.nr.stopped }
     await Promise.all(this.writes)
     for (const s of this.sources.values()) s.disconnect()

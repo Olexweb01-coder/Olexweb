@@ -12,7 +12,10 @@
     "notify:keys": "node scripts/notify-keys.mjs"
   },
   "dependencies": {
+    "@breezystack/lamejs": "1.2.7",
+    "@livekit/track-processors": "0.8.2",
     "@node-rs/argon2": "^2.2.2",
+    "@sapphi-red/web-noise-suppressor": "0.4.1",
     "aws4fetch": "^1.0.20",
     "docx": "9.0.2",
     "livekit-client": "2.22.4",
