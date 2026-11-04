@@ -55,3 +55,13 @@ create table if not exists meet_settings (id int primary key default 1 check (id
 insert into meet_settings (id) values (1) on conflict do nothing;
 -- AI notes in the Meet app: how many 5-minute pieces a meeting has had turned into text (free: the first 12, an hour)
 alter table meetings add column if not exists notes_pieces int not null default 0;
+
+-- install 5: email sign-in. Passwords are scrypt hashes; codes are hashes too, valid 10 minutes, 5 tries each.
+alter table meet_users add column if not exists password_hash text;
+create table if not exists meet_codes (id bigserial primary key, email text not null, purpose text not null check (purpose in ('signup', 'signin', 'reset')),
+  code_hash text not null, name text, pw_hash text, attempts int not null default 0, ip_hash text, created_at timestamptz not null default now(), expires_at timestamptz not null, used_at timestamptz);
+create index if not exists meet_codes_email on meet_codes (lower(email), created_at desc);
+create index if not exists meet_codes_ip on meet_codes (ip_hash, created_at desc);
+-- failed password attempts (to slow down guessing)
+create table if not exists meet_login_fails (id bigserial primary key, email text not null, ip_hash text, at timestamptz not null default now());
+create index if not exists meet_login_fails_email on meet_login_fails (lower(email), at desc);

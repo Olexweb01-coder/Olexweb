@@ -305,3 +305,23 @@
 @media (min-width:761px){.mt-menu button.mt-narrow{display:none}}   /* on computers these are buttons on the bar already; phones keep them in More */
 .mt-away{position:absolute;left:8px;right:8px;top:8px;padding:6px 10px;border-radius:10px;background:rgba(10,11,10,.78);color:var(--paper);font-size:12.5px;font-weight:600;text-align:center;z-index:2}
 .mt-iostip{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:rgba(242,239,233,.05);color:var(--dim);font-size:13.5px;line-height:1.5}
+
+/* install 5: what Meet is for, and the FAQ (what Google reads is what people see) */
+.mh-why{margin-top:clamp(48px,8vh,88px);max-width:760px}.mh-why h2,.mh-faq h2{font-family:var(--font-hubot),'Hubot Sans',var(--font-mona),sans-serif;font-stretch:108%;font-size:clamp(22px,3vw,28px);font-weight:750;margin:0 0 12px;letter-spacing:-.01em}
+.mh-why p{color:var(--dim);margin:0 0 12px;line-height:1.65}
+.mh-faq{margin-top:clamp(36px,6vh,64px);max-width:760px}
+.mh-faq details{border-top:1px solid var(--line)}.mh-faq details:last-child{border-bottom:1px solid var(--line)}
+.mh-faq summary{list-style:none;cursor:pointer;padding:16px 36px 16px 0;font-weight:700;position:relative}.mh-faq summary::-webkit-details-marker{display:none}
+.mh-faq summary::after{content:"+";position:absolute;right:6px;top:12px;font-size:22px;color:var(--green);transition:transform .15s}.mh-faq details[open] summary::after{transform:rotate(45deg)}
+.mh-faq details p{margin:0 0 16px;color:var(--dim);line-height:1.65}
+
+/* install 5: email sign-in */
+.es{display:grid}.es form{display:grid}.es-wide{width:100%;margin-top:4px}
+.es-or{display:flex;align-items:center;gap:12px;margin:6px 0 14px;color:var(--faint);font-size:13px}.es-or::before,.es-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.es-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:12px 0 2px}
+.es-links button,.es-switch button{appearance:none;border:0;background:none;color:var(--green);font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:4px 0}
+.es-links button:disabled{color:var(--faint);cursor:default}
+.es-switch{margin:12px 0 0;font-size:14px;color:var(--dim)}
+.es-note{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:rgba(143,227,106,.08);font-size:14px;line-height:1.5;color:var(--paper)}
+.es-code{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:26px!important;letter-spacing:.35em;text-align:center}
+.es-err{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:rgba(239,122,106,.12);color:#f3a296;font-size:14px}

@@ -115,7 +115,8 @@ with sync_playwright() as pw:
     G.wait_for_selector('.mt-when-at b', timeout=5000)
     w = G.locator('.mt-when').inner_text()
     check('5:30 pm' in w and 'Lagos time' in w and '4:30 pm' in w and 'your time' in w, 'a guest in London sees Lagos time and their own time', w)
-    check('Starts in 2 days' in w, 'and how long until it starts', w)
+    left_h = float(sql(f"select extract(epoch from starts_at - now()) / 3600 from meetings where code = '{code5}'"))   # worked out from the real time, so any time of day works
+    check(f'Starts in {int(left_h // 24)} day' in w, 'and how long until it starts', w)
     check(G.locator('.mt-cal a:has-text("Google Calendar")').get_attribute('href').startswith('https://calendar.google.com/calendar/render?action=TEMPLATE'), 'Add to Google Calendar is offered')
     with G.expect_download() as d: G.click('.mt-cal a:has-text("Apple or Outlook")')
     check('BEGIN:VCALENDAR' in open(d.value.path()).read(), 'and the Apple or Outlook file downloads')

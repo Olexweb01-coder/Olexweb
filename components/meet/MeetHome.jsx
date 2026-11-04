@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FormSettings, Attendance, formFrom, NotesPanel } from './Guests'
 import { notesAudio } from './recorder'
+import EmailSignIn from './EmailSignIn'
 
 const CODE_RE = /[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}/
 const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
@@ -44,7 +45,7 @@ function calLinks(m) {
   return { google: 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: m.title, dates: `${z(t)}/${z(t + (m.minutes || 60) * 60e3)}`, details: 'Join the meeting: ' + url, location: url }), ics: '/api/meet?calendar=1&code=' + m.code }
 }
 
-export default function MeetHome({ user, providers, meetings: initial, notice }) {
+export default function MeetHome({ user, providers, meetings: initial, notice, faq = [], emailOn = false }) {
   const [ready, setReady] = useState(false), [list, setList] = useState(initial || []), [code, setCode] = useState(''), [menu, setMenu] = useState(false)
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [toast, setToast] = useState(notice || ''), [install, setInstall] = useState(null), [ios, setIos] = useState(false)
   const menuRef = useRef(null), [att, setAtt] = useState(null), [notesFor, setNotesFor] = useState(null), [local, setLocal] = useState({})
@@ -155,6 +156,13 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
           [ICON.rec, 'Record to your device', 'Saved on your phone or computer. Nothing is stored on our servers.'],
           [ICON.bell, 'Schedule with invites', 'Guests add it to their calendar in one tap, with reminders built in.']].map(([i, t, d]) => <div key={t} className="mh-feat">{i}<b>{t}</b><span>{d}</span></div>)}
       </section>
+      <section className="mh-why" aria-labelledby="mh-why-h">
+        <h2 id="mh-why-h">Free video meetings built for real-world connections</h2>
+        <p>Most meeting apps assume fast, steady internet. Olexweb Meet is built for mobile data, busy networks and connections that come and go. Voice is protected first, video adjusts by itself, and Data saver keeps calls going on the smallest bundles. Guests join from a link in their browser, with nothing to install and no account to make.</p>
+        <p>Hosts get the tools for real work: screen sharing, recording to your own device (video, or audio as an MP3), AI notes with a summary and action items, scheduled meetings with calendar invites, and attendance lists when you need them.</p>
+      </section>
+      {faq.length ? <section className="mh-faq" aria-labelledby="mh-faq-h"><h2 id="mh-faq-h">Questions people ask</h2>
+        {faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</section> : null}
       {ios ? <p className="mh-fine mh-ios">On iPhone: tap Share, then <b>Add to Home Screen</b> to install Meet as an app.</p> : null}
     </main>
 
@@ -166,7 +174,8 @@ export default function MeetHome({ user, providers, meetings: initial, notice })
           <h2 id="mh-sheet-h">Sign in to Olexweb Meet</h2>
           <p>Sign in to create and schedule meetings. People joining your meetings never need an account.</p>
           {providers.length ? <div className="mh-providers">{providers.map((p) => <a key={p.id} className="mh-provider" href={`/api/meet/auth/${p.id}?next=${encodeURIComponent(sheet.next || '/')}`}>{PROVIDER_ICON[p.id]}<span>Continue with {p.name}</span></a>)}</div>
-            : <p className="mh-note">Sign-in isn’t available yet. Check back soon.</p>}
+            : !emailOn ? <p className="mh-note">Sign-in isn’t available yet. Check back soon.</p> : null}
+          {emailOn ? <>{providers.length ? <p className="es-or"><span>or with email</span></p> : null}<EmailSignIn next={sheet.next || '/'} /></> : null}
           <p className="mh-fine">By continuing you agree to Olexweb’s <a href="https://olexweb.com/terms">terms</a> and <a href="https://olexweb.com/privacy">privacy policy</a>.</p>
           <button className="mh-btn mh-quiet mh-close" onClick={() => setSheet(null)}>Not now</button>
         </> : sheet.done ? <>

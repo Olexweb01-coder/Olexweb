@@ -494,3 +494,17 @@ alter table meetings add column if not exists reminders_auto boolean not null de
 alter table meetings add column if not exists reminded jsonb not null default '[]';           -- reminders already sent (minutes before)
 alter table meetings add column if not exists start_notified_at timestamptz;
 create index if not exists meetings_upcoming on meetings (starts_at) where ended_at is null and starts_at is not null;
+
+-- Olexweb Mail (Nov 2026): Olaitan's own email platform for the whole site. Pipes (own server, Resend, Mailjet) are
+-- tried in order; each has daily and monthly limits and rests after failures. lib/mail/index.js.
+create table if not exists mail_messages (id bigserial primary key, created_at timestamptz not null default now(), to_email text not null, subject text not null,
+  kind text not null default 'system', source text not null default 'site', status text not null default 'queued' check (status in ('queued', 'sent', 'failed', 'suppressed', 'skipped', 'bounced', 'complained')),
+  pipe text, provider_id text, tries jsonb not null default '[]', error text, sent_at timestamptz);
+create index if not exists mail_messages_recent on mail_messages (created_at desc);
+create index if not exists mail_messages_to on mail_messages (lower(to_email), created_at desc);
+create index if not exists mail_messages_provider on mail_messages (pipe, provider_id) where provider_id is not null;
+-- addresses never sent to again (bounced, complained, or added by hand); kind 'code' emails respect it too
+create table if not exists mail_suppressions (email text primary key, reason text not null, note text, created_at timestamptz not null default now());
+-- each pipe's use per day (months are summed from these), and when it may be tried again after failures
+create table if not exists mail_pipe_days (pipe text not null, day date not null, sent int not null default 0, primary key (pipe, day));
+create table if not exists mail_pipes (pipe text primary key, rest_until timestamptz, fails int not null default 0, last_error text, last_ok timestamptz, last_fail timestamptz);

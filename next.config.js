@@ -3,7 +3,7 @@
 const MEET_HOST = { type: 'host', value: 'meet\\..+' }
 const MAIN_ORIGIN = (process.env.MAIN_ORIGIN || 'https://olexweb.com').replace(/\/$/, '')
 const CODE = '[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}'
-const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'apple-touch-icon\\.png$', CODE + '$'].join('|')
+const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', CODE + '$'].join('|')
 const nextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
@@ -23,6 +23,8 @@ const nextConfig = {
     { source: '/sw.js', has: [MEET_HOST], destination: '/meet/sw.js' },
     { source: '/favicon.ico', has: [MEET_HOST], destination: '/meet/favicon-32.png' },
     { source: '/apple-touch-icon.png', has: [MEET_HOST], destination: '/meet/apple-touch-icon.png' },
+    { source: '/robots.txt', has: [MEET_HOST], destination: '/api/meet/seo/robots' },   // the Meet address's own search instructions
+    { source: '/sitemap.xml', has: [MEET_HOST], destination: '/api/meet/seo/sitemap' },
   ] }; },
 };
 module.exports = nextConfig;

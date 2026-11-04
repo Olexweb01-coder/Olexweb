@@ -458,3 +458,22 @@ content. Add it after the audit is approved, since the audit describes one chann
   (LiveKit iOS/Android SDKs with CallKit) — a possible later phase.
 - Tests: tests/meet/effects.py (33). All suites: 122+47+44+61+51+30+33.
 - Next: install 5 (SEO for meet.olexweb.com; email sign-up with password and codes via an email service; designed emails).
+
+## Install 5 (4 Nov 2026): search, Olexweb Mail, email sign-in, own mail server
+- SEO for meet.olexweb.com: lib/meet/seo.js (title, description, FAQ shared by page and JSON-LD), og image public/meet/og.png,
+  /robots.txt and /sitemap.xml on the Meet address → /api/meet/seo/[f]. Tests: tests/meet/seo.py (15).
+- Olexweb Mail (lib/mail): sendMail() for the whole site; pipes own → resend → mailjet (lib/mail/pipes.js; switched on by
+  OWN_MAIL_URL+OWN_MAIL_TOKEN, RESEND_API_KEY, MAILJET_API_KEY+MAILJET_SECRET_KEY; limits *_DAILY_LIMIT / *_MONTHLY_LIMIT,
+  Resend default 80/day shared with Belloft). Codes first (non-urgent mail only to 80% of a day). Failover in the same
+  request; a failing pipe rests 1,2,4…30 min. Tables mail_messages, mail_suppressions, mail_pipe_days, mail_pipes (main DB).
+  Admin → Mail (/admin/mail, AdminMail.jsx; /admin/api/mail). Delivery reports: /api/mail/events/resend (Svix-signed,
+  RESEND_WEBHOOK_SECRET), /api/mail/events/mailjet?token=MAIL_EVENTS_TOKEN, /api/mail/events/own (Bearer OWN_MAIL_TOKEN):
+  permanent bounces and complaints → do-not-send. Tests: tests/mail/mail.py (45, stand-in tests/mail/mock-pipes.mjs).
+- Email sign-in for Meet (lib/meet/emailauth.js, /api/meet/email, components/meet/EmailSignIn.jsx): sign up with a code,
+  password or emailed code, forgot password; scrypt hashes; codes hashed, 10 min, 5 tries; limits per address/network;
+  no account enumeration; same verified email = same account (upsertUser). Emails: lib/meet/email.js (designed).
+  Tests: tests/meet/signin_email.py (33).
+- Own mail server (scripts/mailserver): setup.sh (Ubuntu 24.04/Oracle: Postfix, OpenDKIM selector "olex", Caddy HTTPS,
+  firewall incl. Oracle's iptables, checks, prints DNS + Vercel values), relay.mjs (private sending API), bounce.mjs.
+  Tests: tests/mail/relay.py (13). Needs Oracle to unblock port 25 and set PTR first.
+- Tests made time-of-day independent (olex.py, schedule.py).

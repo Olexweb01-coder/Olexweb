@@ -17,6 +17,7 @@ export const Icon = {
   bin: <svg {...P}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>,
   grip: <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true"><circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" /></svg>,
   leads: <svg {...P}><path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" /></svg>,
+  mail: <svg {...P}><path d="M21 3 10.5 13.5" /><path d="M21 3l-6.5 18-4-7.5L3 9.5z" /></svg>,
   side: <svg {...P}><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>,
   menu: <svg {...P}><path d="M4 7h16M4 12h16M4 17h10" /></svg>,
   compose: <svg {...P}><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" /><path d="M17.5 3.5a2.1 2.1 0 0 1 3 3L13 14l-4 1 1-4z" /></svg>,

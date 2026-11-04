@@ -28,6 +28,7 @@ python3 tests/meet/app.py || R=1
 python3 tests/meet/guests.py || R=1
 python3 tests/meet/usage.py || R=1
 python3 tests/meet/effects.py || R=1
+python3 tests/meet/seo.py || R=1
 pkill -f mock-oauth.mjs
 pkill -f livekit-server; pkill -f "next start"; pkill -f next-server; pkill -f mock-ai.mjs
 exit $R
