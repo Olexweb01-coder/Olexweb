@@ -15,7 +15,7 @@ export async function POST(request) {
     if (b.action === 'overview') return Mail.mailOverview()
     if (b.action === 'log') return { messages: await Mail.mailLog({ search: b.search }) }
     if (b.action === 'suppressions') return { list: await Mail.suppressions() }
-    if (b.action === 'suppress') return Mail.suppress(b.email, 'manual', b.note)
+    if (b.action === 'suppress') { try { return await Mail.suppress(b.email, 'manual', b.note) } catch (e) { if (e instanceof Mail.MailError) throw new Refused(e.message); throw e } }   // a plain message for a mistyped address
     if (b.action === 'unsuppress') return Mail.unsuppress(b.email)
     if (b.action === 'test') {
       try {

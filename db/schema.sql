@@ -508,3 +508,30 @@ create table if not exists mail_suppressions (email text primary key, reason tex
 -- each pipe's use per day (months are summed from these), and when it may be tried again after failures
 create table if not exists mail_pipe_days (pipe text not null, day date not null, sent int not null default 0, primary key (pipe, day));
 create table if not exists mail_pipes (pipe text primary key, rest_until timestamptz, fails int not null default 0, last_error text, last_ok timestamptz, last_fail timestamptz);
+
+-- Olex Sales (Nov 2026): Olaitan's own client-finding agent (ideas from the open-source Harvey, MIT). Finds UK/US
+-- businesses, reads their websites for honest signals, finds published emails, drafts short emails with the free AI pool,
+-- sends at most 20 a day from a Gmail account after Olaitan approves, handles replies, books calls. lib/sales.
+create table if not exists sales_settings (id int primary key default 1 check (id = 1), enabled boolean not null default false,
+  require_approval boolean not null default true, daily_cap int not null default 20, start_date date, sender_name text not null default 'Olaitan Adebayo',
+  postal_address text, opt_out_line text not null default 'Not interested? Reply "no thanks" and I won''t email again.',
+  call_hours jsonb not null default '{"days":[1,2,3,4,5],"from":"14:00","to":"18:00"}', targets jsonb not null default '{}', updated_at timestamptz not null default now());
+insert into sales_settings (id) values (1) on conflict (id) do nothing;
+create table if not exists sales_companies (id bigserial primary key, created_at timestamptz not null default now(), name text not null, website text, domain text,
+  country text not null check (country in ('GB', 'US')), city text, region text, phone text, category text, source text not null, source_ref text,
+  ch_number text, company_type text, status text not null default 'new', score int, profiled_at timestamptz, profile_error text, notes text,
+  unique (country, source, source_ref));
+create unique index if not exists sales_companies_domain on sales_companies (lower(domain)) where domain is not null;
+create index if not exists sales_companies_status on sales_companies (status, created_at);
+-- one row per thing observed about a company (no website, slow on mobile, no booking…), with its evidence
+create table if not exists sales_signals (company_id bigint not null references sales_companies(id) on delete cascade, code text not null,
+  value_num numeric, value_text text, evidence text, observed_at timestamptz not null default now(), primary key (company_id, code));
+create table if not exists sales_contacts (id bigserial primary key, company_id bigint not null references sales_companies(id) on delete cascade,
+  name text, role text, email text not null, email_status text not null default 'unchecked', source_url text, opted_out_at timestamptz, created_at timestamptz not null default now());
+create unique index if not exists sales_contacts_email on sales_contacts (lower(email));
+create table if not exists sales_outbox (id bigserial primary key, created_at timestamptz not null default now(), company_id bigint not null references sales_companies(id) on delete cascade,
+  contact_id bigint not null references sales_contacts(id) on delete cascade, step int not null default 1, subject text not null, body text not null,
+  status text not null default 'waiting' check (status in ('waiting', 'approved', 'sent', 'rejected', 'held', 'failed', 'cancelled')),
+  held_reason text, send_after timestamptz, sent_at timestamptz, message_id text, error text);
+create index if not exists sales_outbox_due on sales_outbox (status, send_after);
+create table if not exists sales_dnc (entry text primary key, reason text, created_at timestamptz not null default now());   -- never contact (an address or a whole domain)

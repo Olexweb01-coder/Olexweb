@@ -491,3 +491,18 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Hydration fix everywhere: <style>{css}</style> → <style dangerouslySetInnerHTML={{ __html: css }} /> (14 files, incl.
   /tools, /tools/[slug], /aoc, Pages & links pages, admin screens). /tools had 7 React #425 errors; now 0.
 - 6.1: the opening plays on every homepage load (refresh, logo, arriving from any page); the once-per-visit sessionStorage check is gone.
+
+## Install 7 (Nov 2026): Olex Sales, part 1 (find → read sites → draft → approve → send)
+- lib/sales: sources.js (Companies House by SIC + limited-company check for UK/PECR; Serper places + website search;
+  OpenStreetMap with mirrors; pasted lists; directory domains never taken as a business's site), profile.js (signals
+  NO_WEBSITE, SITE_DOWN, NO_HTTPS, NOT_MOBILE, OLD_COPYRIGHT, NO_BOOKING, SLOW_MOBILE via PageSpeed; only emails published on
+  the business's own pages; MX check; statuses qualified / no_email / uk_unconfirmed / skipped), write.js (free AI pool,
+  checkDraft rules: 25–75 words, no links, no template phrases, ends with a question; 3 tries then write_failed), send.js
+  (Gmail SMTP with GMAIL_USER + GMAIL_APP_PASSWORD; warm-up 5/day +1/day to cap ≤20; weekdays 9:00–16:30 recipient time;
+  one per 12 min; footer = opt-out line + postal address, nothing sends without the address; DNC/opt-out checks at send),
+  index.js (salesRun in quickRun: send ≤1, profile ≤3, draft ≤2). Tables sales_* in db/schema.sql.
+- Admin → Sales (/admin/sales, AdminSales.jsx, /admin/api/sales): Outbox, Companies, Find (+ Test my sources), Settings, DNC.
+- lib/assistant/net.js safeFetch/checkUrl: allowHttp option (default false; only Olex Sales uses it).
+- Tests: tests/sales/sales.py (41) with tests/sales/mock.mjs (SALES_TEST_BASE, SALES_TEST_NOW).
+- Next (part 2): reading replies (IMAP), opt-outs/bounces automatically, follow-ups only when no reply, reply drafts,
+  and a public "Book a call" page on Olexweb Meet.
