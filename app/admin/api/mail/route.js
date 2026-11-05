@@ -3,6 +3,7 @@ import { currentUser, sameOrigin, ownerOnly } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
 import * as Mail from '@/lib/mail'
+import { testEmail } from '@/lib/mail/design'
 export const dynamic = 'force-dynamic'
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
@@ -18,9 +19,8 @@ export async function POST(request) {
     if (b.action === 'unsuppress') return Mail.unsuppress(b.email)
     if (b.action === 'test') {
       try {
-        const r = await Mail.sendMail({ to: b.to || u.email, kind: 'system', source: 'admin-test', subject: 'Olexweb Mail test',
-          html: '<p style="font-family:system-ui,sans-serif;font-size:16px">This is a test from <b>Olexweb Mail</b>. If you’re reading it, sending works.</p>',
-          text: 'This is a test from Olexweb Mail. If you’re reading it, sending works.' })
+        const o = await Mail.mailOverview(), m = testEmail({ pipes: o.pipes.filter((x) => x.ready).map((x) => x.name), from: o.from })   // the shared design
+        const r = await Mail.sendMail({ to: b.to || u.email, kind: 'system', source: 'admin-test', subject: m.subject, html: m.html, text: m.text })
         return r
       } catch (e) { throw new Refused(e.message) }
     }

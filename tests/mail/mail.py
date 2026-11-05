@@ -105,6 +105,7 @@ with sync_playwright() as pw:
     c.add_cookies([{'name': '__Host-olex_sess', 'value': OWNER, 'domain': 'localhost', 'path': '/', 'secure': True, 'httpOnly': True, 'sameSite': 'Strict'}])
     P = c.new_page(); errs = []; P.on('pageerror', lambda e: errs.append(str(e)[:90])); P.goto(APP + '/admin/mail'); P.wait_for_selector('.ml-pipe', timeout=10000)
     check(P.locator('.side-nav a:has-text("Mail")').count() == 1, 'Mail is in the sidebar')
+    P.wait_for_selector('.ml-table tbody tr', timeout=10000)                  # the log loads just after the pipes
     check(P.locator('.ml-pipe').count() == 3 and P.locator('.ml-table tbody tr').count() >= 10, 'the pipes and the sent log are shown')
     P.fill('.ml-test input', 'screen@example.com'); P.click('.ml-test button'); P.wait_for_selector('.toast:has-text("Sent through")', timeout=10000)
     check(True, 'Send test works from the screen: ' + P.locator('.toast').inner_text())

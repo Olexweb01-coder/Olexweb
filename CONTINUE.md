@@ -477,3 +477,5 @@ content. Add it after the audit is approved, since the audit describes one chann
   firewall incl. Oracle's iptables, checks, prints DNS + Vercel values), relay.mjs (private sending API), bounce.mjs.
   Tests: tests/mail/relay.py (13). Needs Oracle to unblock port 25 and set PTR first.
 - Tests made time-of-day independent (olex.py, schedule.py).
+- 5.1: lib/mail/design.js = the shared email design (frame, p, esc; brand 'meet' or 'olexweb') used by every email;
+  Meet's emails import it; Admin → Mail → Send test sends a designed "Olexweb Mail is working" email (testEmail).
