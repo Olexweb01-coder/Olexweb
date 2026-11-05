@@ -506,3 +506,18 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Tests: tests/sales/sales.py (41) with tests/sales/mock.mjs (SALES_TEST_BASE, SALES_TEST_NOW).
 - Next (part 2): reading replies (IMAP), opt-outs/bounces automatically, follow-ups only when no reply, reply drafts,
   and a public "Book a call" page on Olexweb Meet.
+
+## Install 8 (Nov 2026): Olex Sales part 2 (replies → follow-ups → booked calls)
+- lib/sales/inbox.js: IMAP (imapflow + mailparser, same Gmail App Password) every 10 min; matches by thread then address;
+  bounces → contact bounced + DNC + company bounced, pause (paused_reason) if >5% of last 50 bounced (≥10 sent);
+  opt-outs by regex (never the AI) → DNC + opted_out + cancel waiting; out-of-office → next_touch_after +5 days;
+  real replies → AI intent (interested/question/not_now/wrong_person/other) + notify('sales') + for interested/question a
+  threaded answer (step 9, always approval) with bookLink (HMAC token ?t=).
+- write.js draftFollowUp: step 2 at 3 days, step 3 at 4 more, only with no reply; threaded (Re:, in_reply_to).
+- send.js: step 9 answers skip office hours and the cold cap (still need approval); threading headers; paused_reason blocks.
+- Booking: meet.olexweb.com/book (app/meet/book, components/meet/BookCall.jsx, /api/meet/book, lib/sales/book.js):
+  30-min slots in call_hours (Lagos), 14 days, ≥12 h ahead, no overlap with meetings; createMeeting; confirmation through
+  Olexweb Mail with join + calendar links ("(Chicago time)" wording); notify; company booked via token; honeypot,
+  3/hour per network, one upcoming per email. next.config: 'book$' kept on the Meet address.
+- Admin → Sales: Replies tab, step labels, call hours, Resume after a bounce pause. notify KINDS: sales.
+- Tests: tests/sales/part2.py (36).

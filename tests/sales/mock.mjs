@@ -2,7 +2,7 @@
 // Companies House (/ch), Serper (/serper), OpenStreetMap (/osm), PageSpeed (/psi), test business websites (/site/<domain>/),
 // Gmail (/gmail/send), and Gemini for the writer. POST /control {ai: 'good'|'bad'|'badThenGood', reset}. GET /log.
 import http from 'node:http'
-let log = [], ai = 'good', aiCalls = 0
+let log = [], ai = 'good', aiCalls = 0, inbox = [], uid = 100
 const send = (res, code, body, type = 'application/json') => { res.writeHead(code, { 'Content-Type': type }); res.end(type === 'application/json' ? JSON.stringify(body) : body) }
 const page = (body, { viewport = true, year = 2026, extra = '' } = {}) => `<!doctype html><html><head>${viewport ? '<meta name="viewport" content="width=device-width">' : ''}<title>x</title></head><body>${body}${extra}<footer>© ${year} Business</footer></body></html>`
 const SITES = {
@@ -19,9 +19,15 @@ http.createServer((req, res) => {
   let body = ''; req.on('data', (c) => (body += c)); req.on('end', () => {
     const u = new URL(req.url, 'http://x'), p = u.pathname
     if (p === '/log') return send(res, 200, log)
-    if (p === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; aiCalls = 0 } if (j.ai) { ai = j.ai; aiCalls = 0 } return send(res, 200, { ok: true }) }
+    if (p === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; aiCalls = 0; inbox = [] } if (j.inbox) for (const m of j.inbox) inbox.push({ uid: ++uid, references: [], auto: false, ...m }); if (j.ai) { ai = j.ai; aiCalls = 0 } return send(res, 200, { ok: true }) }
     if (p === '/v1beta/models') return send(res, 200, { models: [{ name: 'models/gemini-9-flash', supportedGenerationMethods: ['generateContent'] }] })
-    if (/:generateContent$/.test(p)) { aiCalls++; const d = ai === 'bad' || (ai === 'badThenGood' && aiCalls === 1) ? BAD : GOOD(); log.push({ kind: 'ai', n: aiCalls, prompt: JSON.parse(body).contents[0].parts.map((x) => x.text).join(' ').slice(0, 600), system: JSON.stringify(JSON.parse(body).systemInstruction || JSON.parse(body).system_instruction || '').slice(0, 3000) }); return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(d) }] } }] }) }
+    if (/:generateContent$/.test(p)) {
+      const req = JSON.parse(body), sys = JSON.stringify(req.systemInstruction || ''), text = req.contents[0].parts.map((x) => x.text).join(' ')
+      const reply = (o) => { log.push({ kind: 'ai', role: o.role, prompt: text.slice(0, 600), system: sys.slice(0, 3000) }); return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(o.json) }] } }] }) }
+      if (sys.includes('Sort a reply')) return reply({ role: 'sort', json: /love to|sounds good|interested/i.test(text) ? { intent: 'interested', summary: 'Wants to talk about a new site' } : /how much|price|cost/i.test(text) ? { intent: 'question', summary: 'Asks about the price' } : /next year|later/i.test(text) ? { intent: 'not_now', summary: 'Maybe next year' } : { intent: 'other', summary: 'Something else' } })
+      if (sys.includes('reply (he runs Olexweb')) return reply({ role: 'answer', json: { body: 'Thanks for getting back to me. Happy to share a few ideas on a short call. Pick a time that suits you here:\nBOOKING_LINK' } })
+      if (sys.includes('follow-up')) return reply({ role: 'followup', json: { body: 'Hi, one more thought: most of your visitors arrive on phones, so a faster page usually means more calls. Would a two-minute idea help?' } })
+      aiCalls++; const d = ai === 'bad' || (ai === 'badThenGood' && aiCalls === 1) ? BAD : GOOD(); log.push({ kind: 'ai', n: aiCalls, prompt: JSON.parse(body).contents[0].parts.map((x) => x.text).join(' ').slice(0, 600), system: JSON.stringify(JSON.parse(body).systemInstruction || JSON.parse(body).system_instruction || '').slice(0, 3000) }); return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(d) }] } }] }) }
     if (p.startsWith('/ch/advanced-search/companies')) { log.push({ kind: 'ch-search', q: u.search }); return send(res, 200, { items: [
       { company_name: 'LEDGER ACCOUNTANTS LIMITED', company_number: '01234567', company_type: 'ltd', company_status: 'active', registered_office_address: { locality: 'Leeds' } },
       { company_name: 'SMITH PARTNERS', company_number: 'SO000111', company_type: 'limited-partnership', company_status: 'active', registered_office_address: { locality: 'Leeds' } }] }) }
@@ -36,6 +42,7 @@ http.createServer((req, res) => {
     if (p === '/osm') { log.push({ kind: 'osm' }); return send(res, 200, { elements: [{ type: 'node', id: 9, tags: { name: 'Corner Cafe', amenity: 'cafe', website: 'https://corner-cafe.test', phone: '+44 1904 000000', email: 'hello@corner-cafe.test', 'addr:city': 'York' } }] }) }
     if (p === '/psi') { const host = new URL(u.searchParams.get('url')).pathname.split('/')[2]; return send(res, 200, { lighthouseResult: { categories: { performance: { score: (PSI[host] || 80) / 100 } }, audits: { 'largest-contentful-paint': { numericValue: PSI[host] < 50 ? 9200 : 2100 } } } }) }
     if (p.startsWith('/site/')) { const [, , host, ...rest] = p.split('/'), path = '/' + rest.join('/'), s = SITES[host]; log.push({ kind: 'site', host, path }); if (s && s[path]) return send(res, 200, s[path], 'text/html'); return send(res, s ? 404 : 503, 'no', 'text/html') }
+    if (p === '/gmail/inbox') { const since = Number(u.searchParams.get('since') || 0); return send(res, 200, inbox.filter((m) => m.uid > since)) }
     if (p === '/gmail/send') { const j = JSON.parse(body); log.push({ kind: 'gmail', ...j }); return send(res, 200, { id: '<' + Date.now() + '@gmail.test>' }) }
     send(res, 404, { error: 'unknown ' + p })
   })

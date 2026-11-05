@@ -535,3 +535,14 @@ create table if not exists sales_outbox (id bigserial primary key, created_at ti
   held_reason text, send_after timestamptz, sent_at timestamptz, message_id text, error text);
 create index if not exists sales_outbox_due on sales_outbox (status, send_after);
 create table if not exists sales_dnc (entry text primary key, reason text, created_at timestamptz not null default now());   -- never contact (an address or a whole domain)
+-- Olex Sales part 2: replies, bounces, follow-ups, booking
+alter table sales_settings add column if not exists imap_uid bigint not null default 0;          -- the last inbox message read
+alter table sales_settings add column if not exists paused_reason text;                          -- set when too many emails bounce
+alter table sales_outbox add column if not exists in_reply_to text;                              -- keeps follow-ups and answers in the same thread
+alter table sales_companies add column if not exists next_touch_after timestamptz;               -- an out-of-office reply pushes follow-ups back
+create table if not exists sales_replies (id bigserial primary key, received_at timestamptz not null default now(), company_id bigint references sales_companies(id) on delete cascade,
+  contact_id bigint references sales_contacts(id) on delete set null, outbox_id bigint references sales_outbox(id) on delete set null, from_email text not null, subject text,
+  body text, intent text not null, summary text, message_id text, handled boolean not null default false);
+create index if not exists sales_replies_recent on sales_replies (received_at desc);
+create table if not exists sales_bookings (id bigserial primary key, created_at timestamptz not null default now(), meeting_code text not null, starts_at timestamptz not null,
+  name text not null, email text not null, company text, note text, company_id bigint references sales_companies(id) on delete set null, ip_hash text);

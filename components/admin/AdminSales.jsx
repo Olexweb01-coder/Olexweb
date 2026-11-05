@@ -4,9 +4,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from './ui'
 
-const TABS = [['outbox', 'Outbox'], ['companies', 'Companies'], ['find', 'Find'], ['settings', 'Settings']]
+const TABS = [['outbox', 'Outbox'], ['replies', 'Replies'], ['companies', 'Companies'], ['find', 'Find'], ['settings', 'Settings']]
+const STEP = { 1: 'First email', 2: 'Follow-up 1', 3: 'Follow-up 2', 9: 'Answer to their reply' }
+const INTENT = { interested: 'Interested', question: 'Question', not_now: 'Not now', wrong_person: 'Wrong person', other: 'Reply', opt_out: 'Opted out (done)', auto_reply: 'Out of office', bounce: 'Bounced' }
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const STATUS = { new: 'Waiting to be checked', qualified: 'Ready to email', drafted: 'Email drafted', contacted: 'Emailed', no_email: 'No published email', uk_unconfirmed: 'UK: not confirmed as a limited company',
-  skipped: 'Skipped', write_failed: 'Draft failed', error: 'Couldn’t check', replied: 'Replied', booked: 'Call booked', opted_out: 'Opted out' }
+  skipped: 'Skipped', write_failed: 'Draft failed', error: 'Couldn’t check', replied: 'Replied', booked: 'Call booked', opted_out: 'Opted out', bounced: 'Bounced' }
 const SIG = { NO_WEBSITE: 'No website', SITE_DOWN: 'Site down', SLOW_MOBILE: 'Slow on phones', NOT_MOBILE: 'Not mobile-friendly', NO_HTTPS: 'No padlock', NO_BOOKING: 'No online booking', OLD_COPYRIGHT: 'Looks out of date', PLATFORM: 'Platform' }
 async function call(body) {
   const r = await fetch('/admin/api/sales', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -25,7 +28,7 @@ export default function AdminSales() {
     {o ? <p className="sl-lead">Olex Sales finds UK and US businesses whose websites need help, drafts a short email to each, and sends at most {o.settings.daily_cap} a day from your outreach Gmail once you approve.
       {' '}<b>{o.sentToday} sent today</b> (limit today {o.capToday}).{o.blocked ? <span className="sl-warn"> {o.blocked}</span> : null}</p> : null}
     <div className="seg sl-tabs" role="tablist">{TABS.map(([t, l]) => <button key={t} type="button" role="tab" aria-selected={tab === t} aria-pressed={tab === t} onClick={() => go(t)}>{l}{t === 'outbox' && o && o.outbox.waiting ? ` (${o.outbox.waiting})` : ''}</button>)}</div>
-    {!o ? <p className="mg-dim">Loading…</p> : tab === 'outbox' ? <Outbox reload={load} /> : tab === 'companies' ? <Companies reload={load} /> : tab === 'find' ? <Find o={o} reload={load} /> : <Settings o={o} setO={setO} />}
+    {!o ? <p className="mg-dim">Loading…</p> : tab === 'outbox' ? <Outbox reload={load} /> : tab === 'replies' ? <Replies /> : tab === 'companies' ? <Companies reload={load} /> : tab === 'find' ? <Find o={o} reload={load} /> : <Settings o={o} setO={setO} />}
     <style dangerouslySetInnerHTML={{ __html: CSS }} />
   </div>)
 }
@@ -43,7 +46,7 @@ function Outbox({ reload }) {
     <div className="seg sl-sub"><button type="button" aria-pressed={which === 'waiting'} onClick={() => setWhich('waiting')}>To approve</button><button type="button" aria-pressed={which === 'sent'} onClick={() => setWhich('sent')}>Sent and done</button></div>
     {!items ? <p className="mg-dim">Loading…</p> : !items.length ? <p className="mg-dim">{which === 'waiting' ? 'Nothing to approve. New drafts appear as Olex Sales checks the businesses you find.' : 'Nothing sent yet.'}</p> :
       <ul className="sl-out">{items.map((m) => <li key={m.id} className={'sl-m sl-' + m.status}>
-        <div className="sl-mh"><b>{m.company}</b><span className="mg-dim">{m.city ? m.city + ', ' : ''}{m.country === 'GB' ? 'UK' : 'US'} · to {m.email}{m.website ? <> · <a href={m.website} target="_blank" rel="noreferrer">their site</a></> : null}</span></div>
+        <div className="sl-mh"><span className="sl-step">{STEP[m.step] || 'Email'}</span><b>{m.company}</b><span className="mg-dim">{m.city ? m.city + ', ' : ''}{m.country === 'GB' ? 'UK' : 'US'} · to {m.email}{m.website ? <> · <a href={m.website} target="_blank" rel="noreferrer">their site</a></> : null}</span></div>
         <Sigs list={m.signals} />
         {edit && edit.id === m.id ? <div className="sl-edit"><input className="input" value={edit.subject} onChange={(e) => setEdit({ ...edit, subject: e.target.value })} aria-label="Subject" />
           <textarea className="input" rows={8} value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} aria-label="Email" />
@@ -53,6 +56,21 @@ function Outbox({ reload }) {
         {which === 'waiting' && !(edit && edit.id === m.id) ? <div className="mg-acts">{m.status === 'approved' ? <span className="sl-ok">Approved, waiting for their office hours</span> : <button className="btn btn-green" onClick={() => act('approve', m.id)}>Approve</button>}
           <button className="btn btn-line" onClick={() => setEdit({ id: m.id, subject: m.subject, body: m.body })}>Edit</button><button className="btn btn-line" onClick={() => act('reject', m.id)}>Reject</button></div>
           : which === 'sent' ? <p className="mg-dim">{m.status === 'sent' ? 'Sent ' + new Date(m.sent_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' }) : m.status}</p> : null}
+      </li>)}</ul>}
+  </section>)
+}
+
+function Replies() {
+  const [rows, setRows] = useState(null)
+  const load = useCallback(async () => { try { setRows((await call({ action: 'replies' })).replies) } catch (e) { toast(e.message) } }, [])
+  useEffect(() => { load() }, [load])
+  return (<section className="mg-box">
+    {!rows ? <p className="mg-dim">Loading…</p> : !rows.length ? <p className="mg-dim">No replies yet. They appear here within 10 minutes of arriving in the outreach Gmail.</p> :
+      <ul className="sl-out">{rows.map((r) => <li key={r.id} className={'sl-m' + (r.handled ? ' sl-done' : '')}>
+        <div className="sl-mh"><span className={'sl-step sl-i-' + r.intent}>{INTENT[r.intent] || r.intent}</span><b>{r.company || r.from_email}</b><span className="mg-dim">{r.from_email} · {new Date(r.received_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })}</span></div>
+        {r.summary ? <p className="sl-subj">{r.summary}</p> : null}{r.body && r.intent !== 'bounce' ? <pre className="sl-body">{r.body}</pre> : null}
+        {['interested', 'question'].includes(r.intent) && !r.handled ? <p className="mg-dim">An answer with your booking link is waiting in the Outbox.</p> : null}
+        {!r.handled ? <div className="mg-acts"><button className="btn btn-line" onClick={async () => { await call({ action: 'reply-done', id: r.id }); load() }}>Done</button></div> : null}
       </li>)}</ul>}
   </section>)
 }
@@ -104,8 +122,11 @@ function Settings({ o, setO }) {
   useEffect(() => { loadDnc() }, [])
   async function save(e) { e.preventDefault(); try { setO(await call({ action: 'settings', settings: { ...s, start_date: s.start_date ? String(s.start_date).slice(0, 10) : null } })); toast('Saved.') } catch (err) { toast(err.message) } }
   async function addDnc(e) { e.preventDefault(); try { await call({ action: 'dnc-add', entry: add }); setAdd(''); loadDnc(); toast('Added. They’ll never be emailed.') } catch (err) { toast(err.message) } }
-  const K = o.keys
+  const K = o.keys, ch = s.call_hours || { days: [1, 2, 3, 4, 5], from: '14:00', to: '18:00' }
+  const setCh = (v) => setS({ ...s, call_hours: { ...ch, ...v } })
+  async function resume() { try { setO(await call({ action: 'settings', settings: { ...s, resume: true, start_date: s.start_date ? String(s.start_date).slice(0, 10) : null } })); setS({ ...s, paused_reason: null }); toast('Resumed.') } catch (err) { toast(err.message) } }
   return (<section className="mg-box">
+    {s.paused_reason ? <div className="sl-paused"><b>{s.paused_reason}</b><button className="btn btn-green" onClick={resume}>Resume sending</button></div> : null}
     <ul className="sl-keys">{[['Outreach Gmail', K.gmail, 'GMAIL_USER, GMAIL_APP_PASSWORD'], ['Companies House', K.companiesHouse, 'COMPANIES_HOUSE_API_KEY'], ['Serper', K.serper, 'SERPER_API_KEY'], ['PageSpeed', K.pageSpeed, 'PAGESPEED_API_KEY']].map(([n, ok, env]) =>
       <li key={n} className={ok ? 'on' : ''}><b>{n}</b>{ok ? 'connected' : <span className="mg-dim">add {env} in Vercel</span>}</li>)}</ul>
     <form className="sl-set" onSubmit={save}>
@@ -115,6 +136,10 @@ function Settings({ o, setO }) {
       <label><span className="mg-lab">Warm-up started on (5 a day at first, +1 a day)</span><input className="input" type="date" value={s.start_date ? String(s.start_date).slice(0, 10) : ''} onChange={set('start_date')} /></label>
       <label><span className="mg-lab">Your name (as the sender)</span><input className="input" value={s.sender_name || ''} onChange={set('sender_name')} /></label>
       <label className="sl-wide"><span className="mg-lab">Your postal address (US law requires it in every email)</span><textarea className="input" rows={2} value={s.postal_address || ''} onChange={set('postal_address')} /></label>
+      <div className="sl-wide sl-hours"><span className="mg-lab">Call hours for the booking page (Lagos time)</span>
+        <div className="sl-days">{DAYS.map((d, i) => <label key={d} className="sl-day"><input type="checkbox" checked={ch.days.includes(i)} onChange={(e) => setCh({ days: e.target.checked ? [...ch.days, i].sort() : ch.days.filter((x) => x !== i) })} />{d}</label>)}</div>
+        <div className="sl-days"><input className="input" type="time" value={ch.from} onChange={(e) => setCh({ from: e.target.value })} aria-label="From" /><span className="mg-dim">to</span><input className="input" type="time" value={ch.to} onChange={(e) => setCh({ to: e.target.value })} aria-label="To" /></div>
+        <span className="mg-dim">Your booking page: <a href="https://meet.olexweb.com/book" target="_blank" rel="noreferrer">meet.olexweb.com/book</a> (times show in each visitor’s own time zone)</span></div>
       <label className="sl-wide"><span className="mg-lab">Opt-out line (under every email)</span><input className="input" value={s.opt_out_line || ''} onChange={set('opt_out_line')} /></label>
       <button className="btn btn-green">Save</button>
     </form>
@@ -135,4 +160,5 @@ const CSS = `.sl{display:grid;gap:14px;max-width:980px}.sl-lead{margin:0;color:v
 .sl-check{display:flex!important;gap:8px;align-items:center;grid-column:1/-1}
 .sl-test{margin-top:14px;display:grid;gap:8px}.sl-test ul{margin:0;padding-left:18px;color:var(--dim);line-height:1.7}
 .sl-keys{list-style:none;padding:0;margin:0 0 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.sl-keys li{display:grid;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:14px}.sl-keys li.on{border-color:rgba(143,227,106,.4)}.sl-keys li.on::after{content:"✓";color:var(--green)}
-.sl-h{font-size:16px;margin:20px 0 8px}.sl-dnc{display:flex;gap:8px;margin-bottom:10px}.sl-dnc .input{flex:1}`
+.sl-h{font-size:16px;margin:20px 0 8px}.sl-step{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--green)}.sl-i-opt_out,.sl-i-bounce,.sl-i-auto_reply{color:var(--dim)!important}.sl-done{opacity:.6}
+.sl-paused{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:rgba(240,179,94,.12);color:#f0b35e;margin-bottom:14px}.sl-hours{display:grid;gap:8px}.sl-days{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sl-day{display:flex;gap:4px;align-items:center;font-size:14px}.sl-dnc{display:flex;gap:8px;margin-bottom:10px}.sl-dnc .input{flex:1}`

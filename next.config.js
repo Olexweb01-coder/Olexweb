@@ -3,7 +3,7 @@
 const MEET_HOST = { type: 'host', value: 'meet\\..+' }
 const MAIN_ORIGIN = (process.env.MAIN_ORIGIN || 'https://olexweb.com').replace(/\/$/, '')
 const CODE = '[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}'
-const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', CODE + '$'].join('|')
+const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', 'book$', CODE + '$'].join('|')
 const nextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
@@ -19,6 +19,7 @@ const nextConfig = {
   async rewrites() { return { beforeFiles: [
     { source: '/', has: [MEET_HOST], destination: '/meet' },
     { source: `/:code(${CODE})`, has: [MEET_HOST], destination: '/meet/:code' },
+    { source: '/book', has: [MEET_HOST], destination: '/meet/book' },          // "Book a call with Olaitan" (Olex Sales)
     { source: '/manifest.webmanifest', has: [MEET_HOST], destination: '/meet/app.webmanifest' },
     { source: '/sw.js', has: [MEET_HOST], destination: '/meet/sw.js' },
     { source: '/favicon.ico', has: [MEET_HOST], destination: '/meet/favicon-32.png' },

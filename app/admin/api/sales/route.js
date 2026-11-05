@@ -38,7 +38,7 @@ async function handle(b) {
         case 'profile': return { status: await profileCompany(Number(b.id)) }
         case 'draft': { const id = await draftFirst(Number(b.id)); if (!id) throw new Refused('No email could be drafted (see the company’s reason).'); return { id } }
         case 'skip': await q("update sales_companies set status = 'skipped', profile_error = 'Skipped by you' where id = $1", [Number(b.id)]); return { ok: true }
-        case 'outbox': return { items: (await q(`select o.id, o.subject, o.body, o.status, o.error, o.sent_at, o.created_at, c.name as company, c.country, c.city, c.website, k.email,
+        case 'outbox': return { items: (await q(`select o.id, o.step, o.subject, o.body, o.status, o.error, o.sent_at, o.created_at, c.name as company, c.country, c.city, c.website, k.email,
             (select json_agg(json_build_object('code', s.code, 'evidence', s.evidence)) from sales_signals s where s.company_id = c.id) as signals
             from sales_outbox o join sales_companies c on c.id = o.company_id join sales_contacts k on k.id = o.contact_id
             where o.status = any($1) order by o.id desc limit 100`, [b.which === 'sent' ? ['sent', 'failed', 'cancelled', 'rejected'] : ['waiting', 'approved', 'held']])).rows }
@@ -52,14 +52,18 @@ async function handle(b) {
         }
         case 'settings': {
           const s = b.settings || {}
-          await q(`update sales_settings set enabled = $1, require_approval = $2, daily_cap = $3, start_date = $4, sender_name = $5, postal_address = $6, opt_out_line = $7, updated_at = now() where id = 1`,
+          const ch = s.call_hours || {}, days = (Array.isArray(ch.days) ? ch.days : [1, 2, 3, 4, 5]).map(Number).filter((d) => d >= 0 && d <= 6), hhmm = (v, d) => (/^([01]\d|2[0-3]):[0-5]\d$/.test(v || '') ? v : d)
+          const hours = { days, from: hhmm(ch.from, '14:00'), to: hhmm(ch.to, '18:00') }; if (hours.from >= hours.to) throw new Refused('Call hours: the end must be after the start.')
+          await q(`update sales_settings set enabled = $1, require_approval = $2, daily_cap = $3, start_date = $4, sender_name = $5, postal_address = $6, opt_out_line = $7, call_hours = $8, paused_reason = case when $9 then null else paused_reason end, updated_at = now() where id = 1`,
             [!!s.enabled, s.require_approval !== false, Math.max(1, Math.min(20, Number(s.daily_cap) || 20)), s.start_date || null, String(s.sender_name || 'Olaitan Adebayo').slice(0, 80),
-             String(s.postal_address || '').slice(0, 300) || null, String(s.opt_out_line || '').slice(0, 200) || 'Not interested? Reply "no thanks" and I won\'t email again.'])
+             String(s.postal_address || '').slice(0, 300) || null, String(s.opt_out_line || '').slice(0, 200) || 'Not interested? Reply "no thanks" and I won\'t email again.', JSON.stringify(hours), !!s.resume])
           return Sales.overview()
         }
         case 'dnc-add': { const e = String(b.entry || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, ''); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$|^[a-z0-9.-]+\.[a-z]{2,}$/.test(e)) throw new Refused('Add an email address or a website (domain).')
           await q('insert into sales_dnc (entry, reason) values ($1, $2) on conflict (entry) do nothing', [e, String(b.reason || '').slice(0, 120) || null])
           await q("update sales_outbox o set status = 'cancelled', error = 'On the do-not-contact list' from sales_contacts k where k.id = o.contact_id and o.status in ('waiting', 'approved', 'held') and (lower(k.email) = $1 or split_part(lower(k.email), '@', 2) = $1)", [e]); return { ok: true } }
+        case 'replies': return { replies: (await q(`select r.*, c.name as company, c.website from sales_replies r left join sales_companies c on c.id = r.company_id order by r.id desc limit 100`)).rows }
+        case 'reply-done': await q('update sales_replies set handled = true where id = $1', [Number(b.id)]); return { ok: true }
         case 'dnc': return { list: (await q('select entry, reason, created_at from sales_dnc order by created_at desc limit 300')).rows }
         case 'dnc-remove': await q('delete from sales_dnc where entry = $1', [String(b.entry || '').toLowerCase()]); return { ok: true }
         default: throw new Refused('Unknown action.')
