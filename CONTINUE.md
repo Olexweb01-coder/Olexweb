@@ -490,3 +490,4 @@ content. Add it after the audit is approved, since the audit describes one chann
 - app/layout.js: site fonts preload: false (they no longer crowd the page on slow connections).
 - Hydration fix everywhere: <style>{css}</style> → <style dangerouslySetInnerHTML={{ __html: css }} /> (14 files, incl.
   /tools, /tools/[slug], /aoc, Pages & links pages, admin screens). /tools had 7 React #425 errors; now 0.
+- 6.1: the opening plays on every homepage load (refresh, logo, arriving from any page); the once-per-visit sessionStorage check is gone.
