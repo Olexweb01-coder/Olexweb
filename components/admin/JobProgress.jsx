@@ -63,9 +63,9 @@ export default function JobProgress({ kind, title, watch = false, onDone }) {
       <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: beat[0], marginRight: 6, animation: p.finished ? 'none' : 'jpPulse 1.2s ease-in-out infinite' }} />{beat[1]}</span>
       {p.bytes ? <span title="How fast the server is downloading the websites and sources (not your own internet)">Server download: {p.finished ? fmtBytes(p.bytes) + ' in total' : fmtRate(p.rate) + ' · ' + fmtBytes(p.bytes) + ' so far'}</span> : null}
     </div>
-    <style>{`@keyframes jpPulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes jpMove{from{background-position:0 0}to{background-position:28px 0}}
+    <style dangerouslySetInnerHTML={{ __html: `@keyframes jpPulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes jpMove{from{background-position:0 0}to{background-position:28px 0}}
       .jp-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);animation:jpPulse 1s ease-in-out infinite}
-      @media (prefers-reduced-motion: reduce){.jp-dot,.jp-bar{animation:none!important}}`}</style>
+      @media (prefers-reduced-motion: reduce){.jp-dot,.jp-bar{animation:none!important}}` }} />
   </div>)
 }
 function Bar({ pct, live, bad }) {

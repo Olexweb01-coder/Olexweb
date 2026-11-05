@@ -479,3 +479,14 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Tests made time-of-day independent (olex.py, schedule.py).
 - 5.1: lib/mail/design.js = the shared email design (frame, p, esc; brand 'meet' or 'olexweb') used by every email;
   Meet's emails import it; Admin → Mail → Send test sends a designed "Olexweb Mail is working" email (testEmail).
+
+## Install 6 (5 Nov 2026): the main site on slow connections
+- Homepage (v2/live/home.js; edit with Node by loading `parts`, never by hand): the opening and headline use an inline
+  8.7 KB subset of Hubot Sans ('Olex Opening': letters of "Olexweb" + the headline, wdth/wght kept); the wall shows inline
+  tiny previews (TINY, ~4 KB each) swapped for full screenshots as each arrives (upgrade()); .track img has
+  aspect-ratio 440/962 (no jumping); the opening no longer waits for document.fonts.ready; the 9 screenshot preloads are
+  gone; About photos load lazily. public/v2/fonts/mona-digits.woff2 trimmed to digits (98 KB → 9 KB).
+  Results: layout shift on a slow phone 0.59 → 0.017; opening visible ~1.25 s on 1.6 Mbps (fully dressed), ~5 s on 0.4 Mbps.
+- app/layout.js: site fonts preload: false (they no longer crowd the page on slow connections).
+- Hydration fix everywhere: <style>{css}</style> → <style dangerouslySetInnerHTML={{ __html: css }} /> (14 files, incl.
+  /tools, /tools/[slug], /aoc, Pages & links pages, admin screens). /tools had 7 React #425 errors; now 0.

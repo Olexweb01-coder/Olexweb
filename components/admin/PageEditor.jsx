@@ -123,7 +123,7 @@ export default function PageEditor({ data }) {
       <div><button className="btn btn-line" style={{ color: '#ff8a8a' }} disabled={!!busy} onClick={async () => { if (window.prompt('This deletes the page and everyone who signed up. Type DELETE to confirm.') === 'DELETE' && await call({ action: 'delete' }, 'Page deleted.')) window.location.assign('/admin/pages') }}>Delete this page</button></div>
     </section> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .pe-ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linejoin:round}
 .pe-hero{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}.pe-back{font-size:13.5px;color:var(--dim);text-decoration:none}.pe-hb{display:flex;gap:8px;flex-wrap:wrap}
 .pe-pill{display:inline-flex;gap:8px;align-items:center;margin-top:8px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:13px;background:rgba(143,227,106,.12);color:var(--green)}.pe-pill i{width:8px;height:8px;border-radius:50%;background:currentColor}.pe-pill.draft{background:rgba(242,239,233,.08);color:var(--dim)}.pe-pill.closed{background:rgba(242,239,233,.12);color:var(--paper)}
@@ -148,6 +148,6 @@ export default function PageEditor({ data }) {
 .pe-pr{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line)}.pe-pr b{font-size:15px}.pe-pr p{margin:2px 0 0;font-size:13px;color:var(--dim)}
 .pe-av{width:38px;height:38px;border-radius:50%;background:rgba(242,239,233,.08);display:grid;place-items:center;font-weight:800;font-size:13.5px}.pe-del{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:16px}
 .pe-fb{padding:14px;border-radius:16px;background:rgba(242,239,233,.05);margin-bottom:10px;font-size:14.5px;line-height:1.5;white-space:pre-wrap}.pe-fb span{display:block;margin-top:6px;font-size:12.5px;color:var(--dim)}
-`}</style>
+` }} />
   </>)
 }

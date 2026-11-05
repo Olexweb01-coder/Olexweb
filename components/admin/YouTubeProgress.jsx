@@ -45,7 +45,7 @@ export default function YouTubeProgress({ data }) {
 
     {tab === 'done' ? (data.done.length ? <section className="yp-card">{data.done.map((x, i) => <a key={i} className="yp-done" href={x.link}>✓ {x.title}<span>{x.what} · {ago(x.at)}</span></a>)}</section> : <p className="yp-empty">Nothing finished in the last day yet.</p>) : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .yp-tabs{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;margin:0 0 16px;border-bottom:1px solid var(--line)}
 .yp-tab{flex:none;padding:10px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--dim);font:700 14.5px inherit;cursor:pointer}.yp-tab i{font-style:normal;margin-left:4px;padding:1px 7px;border-radius:99px;background:var(--raise);font-size:12px}
 .yp-tab.yp-on{color:var(--paper);border-color:var(--green)}.yp-tab.yp-alert i{background:rgba(255,138,138,.2);color:#ff8a8a}
@@ -56,6 +56,6 @@ export default function YouTubeProgress({ data }) {
 .yp-steps{display:flex;gap:6px;flex-wrap:wrap}.yp-steps span{padding:5px 10px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid var(--line);color:var(--dim)}.yp-steps .yp-ok{color:var(--green);border-color:rgba(143,227,106,.35)}.yp-steps .yp-now{color:#111;background:#ffc94d;border-color:#ffc94d}
 .yp-done{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14.5px;text-decoration:none;color:var(--paper)}.yp-done:last-child{border:0}.yp-done span{color:var(--dim);font-size:13px}
 .yp-empty{color:var(--dim);padding:20px 2px}
-`}</style>
+` }} />
   </>)
 }

@@ -130,7 +130,7 @@ export default function AocCourse({ data }) {
     </form>)
 
   return (<div className="aoc" ref={root} id="top">
-    <style>{CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: CSS }} />
     <header className="nav"><div className="wrap">
       <a className="brand" href="#top"><Mark />Anatomy of Creation</a>
       <nav className="links" aria-label="On this page"><a href="#get">What you’ll get</a><a href="#for">Who it’s for</a><a href="#about">About</a><a href="/">Main website ↗</a></nav>

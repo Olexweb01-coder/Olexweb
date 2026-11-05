@@ -117,7 +117,7 @@ export default function PageView({ page, preview = false }) {
       <button className="pv-btn pv-cta" type="submit" disabled={busy}>{busy ? 'One moment…' : cta}<Ico n="arrow" /></button></form>)
 
   return (<div ref={root} className={'pv pv-' + type}>
-    <style>{CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: CSS }} />
     <div className="pv-topbar"><div className="pv-w"><header className="pv-bar"><a className="pv-mark" href="/"><span><i /></span>Olaitan Adebayo</a>
       <span className="pv-live">{type === 'webinar' ? <><span className="pv-dot" />LIVE SESSION</> : type === 'event' ? <><Ico n="pin" />IN PERSON</> : <><Ico n="head" />AUDIO</>}</span></header></div></div>
 

@@ -96,7 +96,7 @@ export default function AdminAoc({ data }) {
       <div><button className="btn btn-green" disabled={!!busy} onClick={() => call({ action: 'save-content', content: { ...c, learn: String(c.learn || '').split('\n') } }, 'Course saved.')}>{busy === 'save-content' ? 'Saving…' : 'Save course'}</button></div>
     </section> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .ca-hero{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin:4px 0 14px}.ca-hb{display:flex;gap:8px;flex-wrap:wrap}
 .ca-pill{display:inline-flex;gap:8px;align-items:center;margin-top:8px;padding:7px 13px;border-radius:999px;background:rgba(143,227,106,.12);color:var(--green);font-weight:700;font-size:13.5px}.ca-pill i{width:8px;height:8px;border-radius:50%;background:currentColor}.ca-pill.few,.ca-pill.bonus{background:rgba(255,201,77,.12);color:#ffc94d}.ca-pill.closed{background:rgba(255,138,138,.12);color:#ff8a8a}
 .ca-tabs{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;margin:0 0 16px;border-bottom:1px solid var(--line)}.ca-tab{flex:none;padding:10px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--dim);font:700 14.5px inherit;cursor:pointer}.ca-tab.on{color:var(--paper);border-color:var(--green)}.ca-tab i{font-style:normal;margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--raise);font-size:12px}
@@ -113,6 +113,6 @@ export default function AdminAoc({ data }) {
 .ca-url{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:rgba(242,239,233,.05);font-size:17px}
 .ca-msg{padding:12px 14px;border-radius:14px;border:1px solid var(--line);font-size:14.5px;color:var(--dim)}.ca-msg .ca-more{margin:0 0 0 6px}
 .ca-l{display:grid;gap:6px;font-size:14px}.ca-part{display:grid;gap:8px;padding:12px;border-radius:14px;border:1px solid var(--line)}@media(min-width:760px){.ca-part{grid-template-columns:1fr 1fr}.ca-part textarea{grid-column:1/-1}}
-`}</style>
+` }} />
   </>)
 }

@@ -19,7 +19,7 @@ export default function DirEntry({ e }) {
   }, [e.slug])
   const price = (c.pricing && c.pricing.status) || 'unknown', host = (() => { try { return new URL(e.url).hostname.replace(/^www\./, '') } catch { return e.url } })()
   return (<div ref={root} className="dx">
-    <style>{DIR_CSS + CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: DIR_CSS + CSS }} />
     <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
       <nav className="de-crumb" aria-label="Breadcrumb"><a href="/tools">Directory</a><span>/</span>{e.category ? <span>{e.category}</span> : null}{e.category ? <span>/</span> : null}<span aria-current="page">{name}</span></nav>
       <section className="de-hero">

@@ -218,7 +218,7 @@ export default function AdminMeetings({ data }) {
       </div>
     </Sheet> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .mg{display:grid;gap:14px;max-width:880px}.mg-tabs{justify-self:start;margin-bottom:2px}
 .mg-box{padding:18px;border-radius:20px;border:1px solid var(--line);background:var(--raise)}
 .mg-box h2{margin:0 0 12px;font-size:17px;font-weight:800}
@@ -256,6 +256,6 @@ export default function AdminMeetings({ data }) {
 .mg-actions li{display:grid;gap:2px;padding:10px 12px;border-radius:12px;background:var(--raise);border:1px solid var(--line)}
 .mg-actions span{font-size:13px;color:var(--dim)}
 .mg-by{margin:0}
-`}</style>
+` }} />
   </div>)
 }

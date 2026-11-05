@@ -9,7 +9,7 @@ export default function DirLibrary({ entries }) {
   const list = useMemo(() => { const n = q.trim().toLowerCase(); return entries.filter((e) => (cat === 'All' || e.category === cat) && (price === 'all' || (price === 'free' ? ['free', 'freemium'].includes(e.price) : e.price === price))
     && (!n || [e.name, e.one, e.category, ...(e.tags || [])].join(' ').toLowerCase().includes(n))) }, [entries, q, cat, price])
   return (<div className="dx">
-    <style>{DIR_CSS + CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: DIR_CSS + CSS }} />
     <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools" aria-current="page">Directory</a><a href="/aoc">Free course</a></nav></header>
       <section className="dl-hero"><span className="dx-eb">The Olexweb Directory</span>
         <h1 className="dx-h1"><span className="dx-ln"><span>Useful tools,</span></span><span className="dx-ln"><span style={{ animationDelay: '.1s' }}>explained <span className="dl-hl">clearly.</span></span></span></h1>

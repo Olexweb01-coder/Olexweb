@@ -66,7 +66,7 @@ export default function AdminPages({ data }) {
         <button className="btn btn-green" disabled={!!busy} onClick={async () => { const j = await call({ action: 'link-save', slug: lk.slug, original: lk.original, phone: lk.kind === 'wa' ? lk.phone : '', message: lk.kind === 'wa' ? lk.message : '', url: lk.kind === 'url' ? lk.url : '' }, 'Link saved.'); if (j) { setLk(null); router.refresh() } }}>{busy === 'link-save' ? 'Saving…' : 'Save link'}</button></div>
       {err ? <p className="err" role="alert" style={{ marginTop: 10 }}>{err}</p> : null}</div></div> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .pg-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 16px}.pg-ic{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .pg-top .btn,.pg-lh .btn{display:inline-flex;gap:8px;align-items:center}
 .pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
@@ -86,6 +86,6 @@ export default function AdminPages({ data }) {
 .pg-bt{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}.pg-l{display:grid;gap:6px;margin-top:12px;font-size:14px}
 .pg-url{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg,#0d0f0d)}.pg-url span{padding:12px 0 12px 13px;color:var(--dim);font-size:15px}.pg-url input{flex:1;min-width:0;padding:12px 13px 12px 2px;border:0;background:transparent;color:var(--paper);font:700 15px inherit;outline:0}
 .pg-seg{display:inline-flex;gap:4px;margin-top:14px;padding:4px;border-radius:999px;border:1px solid var(--line)}.pg-seg button{padding:8px 14px;border-radius:999px;border:0;background:transparent;color:var(--dim);font:700 13.5px inherit;cursor:pointer}.pg-seg button.on{background:var(--paper);color:#111}
-`}</style>
+` }} />
   </>)
 }

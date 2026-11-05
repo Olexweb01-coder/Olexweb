@@ -6,9 +6,11 @@ import { Manrope } from 'next/font/google'
 import localFont from 'next/font/local'
 import { SITE } from '@/lib/seo'
 
-const manrope = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-manrope', display: 'swap' })   // the studio's font
-const hubot = localFont({ src: './fonts/hubot-sans.woff2', variable: '--font-hubot', weight: '200 900', display: 'swap', declarations: [{ prop: 'font-stretch', value: '75% 125%' }], adjustFontFallback: 'Arial' })
-const mona = localFont({ src: './fonts/mona-sans.woff2', variable: '--font-mona', weight: '200 900', display: 'swap', declarations: [{ prop: 'font-stretch', value: '75% 125%' }], adjustFontFallback: 'Arial' })
+// preload: false — fonts load when the page uses them instead of jumping the queue, so on slow connections the page
+// itself (and the homepage opening, which carries its own small font) arrives first
+const manrope = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-manrope', display: 'swap', preload: false })   // the studio's font
+const hubot = localFont({ src: './fonts/hubot-sans.woff2', variable: '--font-hubot', weight: '200 900', display: 'swap', preload: false, declarations: [{ prop: 'font-stretch', value: '75% 125%' }], adjustFontFallback: 'Arial' })
+const mona = localFont({ src: './fonts/mona-sans.woff2', variable: '--font-mona', weight: '200 900', display: 'swap', preload: false, declarations: [{ prop: 'font-stretch', value: '75% 125%' }], adjustFontFallback: 'Arial' })
 
 export const metadata = {
   metadataBase: new URL(SITE),

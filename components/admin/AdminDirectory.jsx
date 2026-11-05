@@ -59,7 +59,7 @@ export default function AdminDirectory({ data }) {
       <div><button className="btn btn-green" disabled={!!busy} onClick={() => call({ action: 'settings', perDay: Number(per), autoPublish: auto }, 'Settings saved.')}>Save</button></div>
     </section> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .dd-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:4px 0 14px}
 .dd-tabs{display:flex;gap:4px;overflow-x:auto;margin:0 0 16px;border-bottom:1px solid var(--line)}.dd-tab{flex:none;padding:10px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--dim);font:700 14.5px inherit;cursor:pointer}.dd-tab.on{color:var(--paper);border-color:var(--green)}.dd-tab i{font-style:normal;margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--raise);font-size:12px}
 .dd-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}.dd-nums div{padding:16px;border-radius:20px;background:var(--raise);border:1px solid var(--line)}.dd-nums b{display:block;font-family:var(--display);font-stretch:80%;font-weight:900;font-size:38px;line-height:1}.dd-nums span{font-size:13.5px;color:var(--dim)}
@@ -71,6 +71,6 @@ export default function AdminDirectory({ data }) {
 .dd-st{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:800;background:rgba(242,239,233,.08);color:var(--dim)}.dd-st.live{background:rgba(143,227,106,.15);color:var(--green)}.dd-st.blocked{background:rgba(255,138,138,.12);color:#ff8a8a}.dd-q{font-size:12px;color:var(--dim)}
 .dd-why{margin:0;padding-left:18px;font-size:13.5px;color:var(--dim);line-height:1.5}.dd-acts{display:flex;gap:8px;flex-wrap:wrap}
 .dd-l{display:grid;gap:6px;font-size:14px}.dd-tick{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;font-size:14px}.dd-tick small{grid-column:2}.dd-tick input{width:18px;height:18px;accent-color:var(--green)}
-`}</style>
+` }} />
   </>)
 }

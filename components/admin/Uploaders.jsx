@@ -26,7 +26,7 @@ export function AudioUpload({ onDone, label = 'Upload a recording' }) {
     <button type="button" className="btn btn-line" disabled={pct != null} onClick={() => inp.current.click()}>{pct != null ? `Uploading ${pct}%` : label}</button>
     {pct != null ? <span className="up-bar"><i style={{ transform: `scaleX(${pct / 100})` }} /></span> : null}
     {err ? <span className="up-err" role="alert">{err}</span> : null}
-    <style>{CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: CSS }} />
   </span>)
 }
 
@@ -64,7 +64,7 @@ export function PhotoUpload({ onDone, ratio = 4 / 5, label = 'Upload a photo', h
       {err ? <span className="up-err" role="alert">{err}</span> : null}
       <div className="up-bt"><button type="button" className="btn btn-line" onClick={() => setImg(null)}>Cancel</button><button type="button" className="btn btn-green" disabled={busy} onClick={save}>{busy ? 'Uploading…' : 'Use this photo'}</button></div>
     </div></div> : null}
-    <style>{CSS}</style>
+    <style dangerouslySetInnerHTML={{ __html: CSS }} />
   </span>)
 }
 async function post(url, body, type) {

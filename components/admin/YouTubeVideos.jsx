@@ -101,7 +101,7 @@ export default function YouTubeVideos({ data }) {
       <div className="yv-bt"><button className="btn btn-line" onClick={() => setConfirm(null)}>Cancel</button><button className="btn btn-green" disabled={!!busy} onClick={async () => { const v = confirm; setConfirm(null); await call({ action: 'post-now', id: v.id, confirm: true }, 'Posting now.') }}>Yes, post it now</button></div>
     </div></div> : null}
 
-    <style>{`
+    <style dangerouslySetInnerHTML={{ __html: `
 .yv-vq{padding:18px;border-radius:20px;background:var(--raise);border:1px solid var(--line);margin-bottom:6px}.yv-vqh{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:13.5px}.yv-vqh b{font-size:16.5px}
 .yv-vqs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(170px,1fr);gap:10px;overflow-x:auto;padding-bottom:4px}
 .yv-slot{display:grid;gap:5px;align-content:start;padding:12px;border-radius:16px;border:1px solid var(--line);background:rgba(242,239,233,.03)}.yv-slot .yv-d{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}.yv-slot .yv-t{font-weight:700;font-size:14px;line-height:1.3}.yv-slot .yv-s{font-size:12px;color:var(--dim)}
@@ -126,6 +126,6 @@ export default function YouTubeVideos({ data }) {
 .yv-act{display:flex;gap:6px}.yv-act button{flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--paper);font:800 12.5px inherit;cursor:pointer}.yv-act .yv-p{background:var(--green);color:#111;border-color:var(--green)}.yv-act button:disabled{opacity:.5}
 .yv-meta{display:flex;justify-content:space-between;margin-top:auto;font-size:12.5px;color:var(--dim)}.yv-meta a{color:var(--dim)}
 .yv-ov{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}.yv-dl{width:min(94vw,480px);max-height:92vh;overflow:auto;padding:22px;border-radius:22px;background:var(--raise);border:1px solid var(--line)}.yv-dl p{font-size:14.5px;line-height:1.55;margin:0 0 10px}.yv-bt{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
-`}</style>
+` }} />
   </>)
 }
