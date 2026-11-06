@@ -557,3 +557,6 @@ create table if not exists post_agent (platform text primary key check (platform
   per_day int not null default 1 check (per_day between 1 and 3), reviewed_at timestamptz, reviews int not null default 0, note text,
   history jsonb not null default '[]'::jsonb, base_per_day int);
 insert into post_agent (platform) values ('youtube'), ('facebook') on conflict do nothing;
+-- Install 11: one frequent run at a time, and when it last ran (shown on the Today tab)
+create table if not exists run_locks (name text primary key, until timestamptz not null, started_at timestamptz, finished_at timestamptz,
+  last_ok boolean, last_report jsonb);

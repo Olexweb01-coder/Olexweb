@@ -59,7 +59,7 @@ export default function AutomationToday({ data }) {
 
     <section id="at-status" className={'at-hero at-' + data.state} aria-label="Status">
       <span className="at-dot" aria-hidden="true" />
-      <div className="at-ht"><b>{h1}</b><span>{h2}</span></div>
+      <div className="at-ht"><b>{h1}</b><span>{h2}</span>{data.lastRun ? <span className="at-last">Last automatic run: {data.lastRun.label}{data.lastRun.ok ? '' : ' (with errors)'}</span> : null}</div>
       {P.need ? <div className="at-ahead"><b>{P.days == null ? '–' : plural(P.days, 'day')}</b><span>of videos ready ahead</span></div> : null}
     </section>
     {P.need ? <section className={'au-prod' + (P.short ? ' au-short' : '')} aria-label="Production check">
@@ -131,6 +131,7 @@ const TODAY_CSS = `
 .at-dot{width:14px;height:14px;border-radius:50%;flex:none;background:var(--green);box-shadow:0 0 0 6px rgba(143,227,106,.15)}
 .at-low .at-dot{background:var(--warn);box-shadow:0 0 0 6px rgba(240,179,94,.15)}.at-needs .at-dot{background:var(--bad);box-shadow:0 0 0 6px rgba(239,122,106,.15)}.at-off .at-dot{background:var(--faint);box-shadow:none}
 .at-ht{flex:1 1 220px;min-width:0}.at-ht b{display:block;font-family:var(--display);font-weight:800;font-stretch:90%;font-size:22px;line-height:1.15}.at-ht span{color:var(--dim);font-size:14px}
+.at-last{display:block;margin-top:4px;font-size:12.5px;color:var(--faint)}
 .at-ahead{text-align:right;flex:none}.at-ahead b{display:block;font-family:var(--display);font-weight:800;font-size:32px;line-height:1;color:var(--green)}.at-ahead span{font-size:12px;color:var(--dim)}
 .at-low .at-ahead b{color:var(--warn)}
 .at-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}

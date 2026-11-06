@@ -568,3 +568,16 @@ content. Add it after the audit is approved, since the audit describes one chann
   agent section (#at-agent, chip "Posting"). Production check now asks for 3 days ahead (was 2).
 - Tests: tests/youtube/fAGENT.mjs (24); phaseAGENT.sh = phaseAUTO + fAGENT: 197 pass + the known fD2 failure.
   resetD.sh switches the agent off for the older suites. The sandbox stops Postgres between turns: start it before tests.
+
+## Install 11 (6 Nov 2026): one frequent run at a time, and a scheduler that really runs every 10 minutes
+- Found: GitHub's olex-runner ran only ~3 times a day (GitHub drops frequent schedules) and every run "failed" because curl
+  gave up at 70 s while quickRun may take 300 s. Factory fix: olex-runner.yml waits 310 s (timeout-minutes 7).
+- lib/assistant/runlock.js withRunLock('quick', 6 min): table run_locks; a second call while one runs returns
+  { skipped: 'already running' }; a cut-off run frees itself after 6 minutes. /api/assistant/cron?run=due&bg=1 answers 202
+  at once and runs in the background with waitUntil (@vercel/functions 3.11) for schedulers that hang up at 30 s
+  (cron-job.org, every 10 min, header Authorization: Bearer CRON_SECRET). Without bg=1: as before (waits, returns the report).
+- Today tab: "Last automatic run: N min ago"; quiet > 45 min → Needs you "Automation hasn't run for …".
+- Tests: tests/youtube/fCRON.mjs (9); phaseCRON.sh = phaseAGENT + fCRON: 206 pass + the known fD2 failure.
+- Story videos (concept, not built in yet): sketch style approved (story/sketch.mjs, anim4.mjs in the Claude workspace;
+  sample-sketch-viral.mp4). Voice: designed blends A–D (Kokoro style mix + pitch); Chatterbox test = factory
+  workflow voice-test.yml (two venvs: Kokoro numpy 2, Chatterbox 0.1.7 numpy 1). First run took 1 h 8 min for 48 clips on CPU.
