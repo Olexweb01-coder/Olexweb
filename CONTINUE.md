@@ -547,3 +547,9 @@ content. Add it after the audit is approved, since the audit describes one chann
   NDPA and UK/US calling laws), a closing step (proposal, payment link, contract) and a pipeline view.
 - **"More powerful than Claude"**: realistic goal = a system that beats any raw model at Olexweb's own jobs: strong models
   routed by task, plus his data, memory of every lead/conversation, tools, specialist agents and learning from what closed.
+- 9.1: Automation → Today (first tab; key 'overview', label Today): lib/site/automation.js todayData() + components/admin/
+  AutomationToday.jsx (classes at-). Sections: Status (hero: ok / low / needs / off, days of videos ahead, production check +
+  Make more) · YouTube and Facebook (today's posted, queued and empty times, Lagos, worked out on the server) · Being made
+  (factory stage, %, eta; approved, on hold, ideas waiting) · Autopilot this week · Needs you (first when not empty).
+  Sticky section chips, foldable <details> sections, one column under 760 px. AutomationOverview.jsx removed.
+  Tests: fAUTO.mjs §100 (30 in all); phaseAUTO = 173 pass + the known fD2 failure.

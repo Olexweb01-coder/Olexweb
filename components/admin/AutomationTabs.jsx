@@ -1,5 +1,5 @@
-// The Automation heading and its tabs, shared by Overview, YouTube (its own pages, with their sub-tabs below), Facebook and Instagram.
-const TABS = [['overview', 'Overview', '/admin/automation'], ['library', 'Library', '/admin/automation/library'], ['youtube', 'YouTube', '/admin/youtube'], ['facebook', 'Facebook', '/admin/automation/facebook'], ['instagram', 'Instagram', '/admin/automation/instagram']]
+// The Automation heading and its tabs, shared by Today, YouTube (its own pages, with their sub-tabs below), Facebook and Instagram.
+const TABS = [['overview', 'Today', '/admin/automation'], ['library', 'Library', '/admin/automation/library'], ['youtube', 'YouTube', '/admin/youtube'], ['facebook', 'Facebook', '/admin/automation/facebook'], ['instagram', 'Instagram', '/admin/automation/instagram']]
 export default function AutomationHead({ current }) {
   return (<>
     <div className="top"><h1 className="d">Automation</h1></div>

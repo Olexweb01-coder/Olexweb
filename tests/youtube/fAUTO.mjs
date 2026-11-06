@@ -112,6 +112,17 @@ r = await row(sS); check(j.ok && r.hold_until && r.status === 'needs_review', 'i
 await api('/admin/api/youtube', { action: 'yt-mode', mode: 'approval' }); r = await row(sS)
 check(!r.hold_until, 'back on Approval, it waits for you again')
 
+console.log('\n100. The Today tab')
+h = await html('/admin/automation')
+check(['>Today</a>', 'id="at-status"', 'id="at-yt"', 'id="at-fb"', 'id="at-make"', 'id="at-auto"', 'id="at-needs"'].every((t) => h.includes(t)), 'Today is the first tab, in sections: Status · YouTube · Facebook · Being made · Autopilot · Needs you')
+check(/<nav class="at-chips"[^>]*>(<a href="#at-[a-z]+">[^<]+<\/a>){6}<\/nav>/.test(h), 'a row of section chips jumps to each section (6)')
+check(h.includes('Something needs you') && h.indexOf('id="at-needs"') < h.indexOf('id="at-yt"'), 'when something needs you, it says so at the top and Needs you comes first')
+check(h.includes('Production check') && h.includes('Make more') && /thrown away and written again/.test(h), 'the production check, Make more and what Autopilot did this week are there')
+await db.query("update yt_scripts set status = 'failed', render_tries = 1 where id = $1", [sG])
+await mode('autopilot')
+h = await html('/admin/automation')
+check(!h.includes('Something needs you') && h.indexOf('id="at-needs"') > h.indexOf('id="at-auto"'), 'with nothing waiting, Needs you moves to the end')
+
 // clean up
 await db.query("delete from yt_scripts where idea_id in (select id from yt_ideas where key like 'auto-%.test')")
 await db.query("delete from yt_ideas where key like 'auto-%.test'")
