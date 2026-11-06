@@ -546,3 +546,8 @@ create table if not exists sales_replies (id bigserial primary key, received_at 
 create index if not exists sales_replies_recent on sales_replies (received_at desc);
 create table if not exists sales_bookings (id bigserial primary key, created_at timestamptz not null default now(), meeting_code text not null, starts_at timestamptz not null,
   name text not null, email text not null, company text, note text, company_id bigint references sales_companies(id) on delete set null, ip_hash text);
+-- Install 9: hands-off automation (no human gate)
+alter table yt_scripts add column if not exists hold_until timestamptz;    -- Autopilot: a script with small problems waits until then, then goes ahead
+alter table yt_scripts add column if not exists auto_fixes jsonb;          -- what Autopilot mended itself, in plain words
+alter table yt_scripts add column if not exists render_tries int not null default 0;   -- factory attempts; a failed video is made again up to 3 times
+alter table yt_ideas add column if not exists rewrites int not null default 0;          -- scripts thrown away for a critical problem; after 2 the idea is set aside

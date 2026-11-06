@@ -521,3 +521,29 @@ content. Add it after the audit is approved, since the audit describes one chann
   3/hour per network, one upcoming per email. next.config: 'book$' kept on the Meet address.
 - Admin → Sales: Replies tab, step labels, call hours, Resume after a bounce pause. notify KINDS: sales.
 - Tests: tests/sales/part2.py (36).
+
+## Install 9 (6 Nov 2026): hands-off automation (no human gate), step 1 of the re-plan
+- On Autopilot nothing waits for Olaitan. lib/site/scripts.js autoFix(): in code, never guessing: claims without a real quote
+  are dropped with their line, unproven numbers/years come out (screen words, stats, lines), too-short lines removed, the
+  address and the looping ending added, titles trimmed to 60 (3 options), hashtags tidied (#shorts). CRITICAL keys (length,
+  scenes, hook, footage, numbers, claims, years) still failing → replaceIdea(): script deleted, yt_ideas.rewrites + 1, written
+  again on a later run; after 2 → idea 'passed' (reason in risks), next idea takes its place (audit 'yt_script_replaced').
+  Anything else → needs_review with yt_scripts.hold_until = +60 min, then approved anyway (auto_fixes lists what was done).
+- lib/site/autonomy.js autonomySweep() in quickRun (autopilot only): drafts approved at once; needs_review gets its hour
+  (first seen) then mended/approved or replaced; long videos after the hour go ahead if length + chapters pass (else deleted);
+  failed videos remade (render_tries < 3, failed 10 min–2 days ago). Gave up after 3 → Overview "Needs you".
+  writeLong on Autopilot leaves out chapters that failed when 3 good remain. setYoutubeMode starts/clears the hour.
+- Progress tab: held scripts show under In progress ("goes ahead by itself at HH:MM (Lagos)"); script cards show the hold and
+  "Autopilot fixed N things itself". On Approval, behaviour is exactly as before.
+- Tests: tests/youtube/fAUTO.mjs (25), chain phaseAUTO.sh = phaseLIB + fAUTO: 168 pass + the known fD2 failure.
+- Test sandbox notes: Google Fonts and cdn.sheetjs.com are unreachable here: build with
+  NEXT_FONT_GOOGLE_MOCKED_RESPONSES (a stand-in font file) and install xlsx@0.18.5 locally only (never ship that change).
+- Next: the "Today" screen (preview approved? see chat), then separate platform productions, the posting agent, story engine.
+
+## Added to the plan (6 Nov 2026), from Olaitan
+- **Sales engine + closer AI agent**, end to end: lead generation, nurturing, calls, messages (WhatsApp/SMS), emails, closing.
+  Olex Sales 1–2 already covers finding leads, email outreach, replies, follow-ups and booking a call; still to build:
+  WhatsApp/SMS nurturing (needs Meta Tech Provider / coexistence, see §6), AI voice calls (consent + opt-out rules, Nigeria
+  NDPA and UK/US calling laws), a closing step (proposal, payment link, contract) and a pipeline view.
+- **"More powerful than Claude"**: realistic goal = a system that beats any raw model at Olexweb's own jobs: strong models
+  routed by task, plus his data, memory of every lead/conversation, tools, specialist agents and learning from what closed.

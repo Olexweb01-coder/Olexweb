@@ -47,8 +47,10 @@ export default function YouTubeScripts({ data }) {
   </>)
 }
 
+// Lagos time (UTC+1 all year), formatted the same on the server and in the browser (no hydration mismatch)
+const lagos = (d) => { const t = new Date(new Date(d).getTime() + 3600e3); return String(t.getUTCHours()).padStart(2, '0') + ':' + String(t.getUTCMinutes()).padStart(2, '0') }
 function Script({ s, busy, run, factory, rendering }) {
-  const sc = s.script.scenes, pk = s.package, [st, pill] = STATUS[s.status] || [s.status, 'draft']
+  const sc = s.script.scenes, pk = { ...s.package, titles: (s.package && s.package.titles) || [] }, [st, pill] = STATUS[s.status] || [s.status, 'draft']
   const editable = ['draft', 'needs_review', 'approved'].includes(s.status)
   const [edit, setEdit] = useState(null)
   const failed = (s.checks || []).filter((c) => !c.ok)
@@ -63,6 +65,8 @@ function Script({ s, busy, run, factory, rendering }) {
         </div>
       </div>
     </div>
+    {s.hold_until && s.status === 'needs_review' ? <p style={{ margin: 0, fontSize: 14, ...dim }}><b style={{ color: 'var(--paper)' }}>Autopilot:</b> it goes ahead by itself at {lagos(s.hold_until)} (Lagos) unless you change it. Anything critical is thrown away and written again.</p> : null}
+    {Array.isArray(s.auto_fixes) && s.auto_fixes.length ? <details style={{ fontSize: 14, ...dim }}><summary style={{ cursor: 'pointer' }}>Autopilot fixed {s.auto_fixes.length} thing{s.auto_fixes.length === 1 ? '' : 's'} itself</summary><ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>{s.auto_fixes.map((f, i) => <li key={i}>{f}</li>)}</ul></details> : null}
 
     {s.status === 'rendered' && s.video ? <section aria-label="The finished video" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
       <video controls preload="metadata" playsInline src={'/admin/api/youtube/video?id=' + s.id} style={{ width: s.kind === 'long' ? 'min(100%, 560px)' : 'min(100%, 300px)', aspectRatio: s.kind === 'long' ? '16 / 9' : '9 / 16', borderRadius: 16, background: '#000', border: '1px solid var(--line)' }} />
