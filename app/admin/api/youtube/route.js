@@ -12,6 +12,7 @@ import { sendToFactory } from '@/lib/site/factory'
 import { savePublishSettings, savePostingTimes, queueAdd, queueRemove, queueMove, postNow } from '@/lib/site/publish'
 import { writeLong } from '@/lib/site/longform'
 import { makeMore, setYoutubeMode } from '@/lib/site/automation'
+import { setAgent, review as agentReview } from '@/lib/site/postagent'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -45,6 +46,12 @@ export async function POST(request) {
     if (body.action === 'own-idea') { try { return await addOwnIdea({ url: body.url, name: body.name, note: body.note, channels: body.channels, next: body.next === true }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'yt-mode') return await setYoutubeMode(body.mode)   // lib/site/automation.js
+    if (body.action === 'post-agent' || body.action === 'post-agent-review') {      // the posting agent: on/off, or review now
+      if (!['youtube', 'facebook'].includes(body.platform)) throw new Refused('Request refused.')
+      try { const r = body.action === 'post-agent' ? await setAgent(body.platform, body.on === true) : await agentReview(body.platform, { force: true })
+        if (!r && body.action === 'post-agent-review') throw new Error('The agent is off for this platform. Switch it on first.')
+        return { ok: true, note: (r && r.note) || null } } catch (e) { throw new Refused(e.message) }
+    }
     if (body.action === 'make-more') { try { return await makeMore() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'research-times') {
       const r = await timeResearch(); if (r && r.researched_at && Date.now() - new Date(r.researched_at).getTime() < 3600e3) throw new Refused('Researched less than an hour ago. Try again later.')

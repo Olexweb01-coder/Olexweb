@@ -553,3 +553,18 @@ content. Add it after the audit is approved, since the audit describes one chann
   (factory stage, %, eta; approved, on hold, ideas waiting) · Autopilot this week · Needs you (first when not empty).
   Sticky section chips, foldable <details> sections, one column under 760 px. AutomationOverview.jsx removed.
   Tests: fAUTO.mjs §100 (30 in all); phaseAUTO = 173 pass + the known fD2 failure.
+
+## Install 10 (6 Nov 2026): the posting agent (step 2 of the re-plan)
+- lib/site/postagent.js, table post_agent (platform youtube|facebook, enabled, per_day 1–3, reviewed_at, reviews, note, history,
+  base_per_day). postAgentRun() in quickRun (before the factory/upload block): each platform reviews once a week (at once when
+  switched on). decideFrequency(): down 1 if < 1 day of videos ready; YouTube up 1 only if median day-3 views of videos posted
+  3–10 days ago ≥ 90% of those 10–24 days ago, share watched within 5 points, ≥ 3 days ready; down 1 if views fell ≥ 30%; cap 3.
+  Times: bestTimes() picks + START_TIMES, ≥ 2 h apart; every 4th review the last slot is swapped for an untried test hour.
+  Facebook has no Reel view numbers yet: first review 1 a day at one of his own times; later only back up to what he had
+  (base_per_day) when ≥ 3 days of Reels are ready. Note → post_agent.note + notify kind 'posting'.
+- yt_settings.publish_time3 (third slot; slotTimes reads it). Setting times by hand (YouTube posting-times / publish-settings with
+  perDay, Facebook times / per-day) switches that platform's agent off (stepAside, inline in publish.js and meta.js to avoid a
+  circular import). API: /admin/api/youtube actions post-agent {platform, on}, post-agent-review {platform}. Today tab: Posting
+  agent section (#at-agent, chip "Posting"). Production check now asks for 3 days ahead (was 2).
+- Tests: tests/youtube/fAGENT.mjs (24); phaseAGENT.sh = phaseAUTO + fAGENT: 197 pass + the known fD2 failure.
+  resetD.sh switches the agent off for the older suites. The sandbox stops Postgres between turns: start it before tests.

@@ -32,6 +32,13 @@ function Section({ id, title, icon, badge, children }) {
 export default function AutomationToday({ data }) {
   const router = useRouter(), [busy, setBusy] = useState(false)
   const P = data.production, Y = data.youtube, F = data.facebook, M = data.making, W = data.week
+  async function agent(platform, body, done) {
+    setBusy(platform)
+    try { const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ ...body, platform }) })
+      const j = await r.json().catch(() => ({})); if (r.status === 401) { window.location.assign('/admin/login'); return }
+      toast(r.ok ? j.note || done : j.error || 'That didn’t work. Try again.'); if (r.ok) router.refresh() }
+    catch { toast('No connection. Try again.') } finally { setBusy(false) }
+  }
   async function makeMore() {
     setBusy(true)
     try { const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'make-more' }) })
@@ -45,7 +52,7 @@ export default function AutomationToday({ data }) {
     {data.needs.length ? <ul className="au-list">{data.needs.map((n, i) => <li key={i}><span>{n.text}</span><a href={n.href}>Open →</a></li>)}</ul>
       : <p className="at-note">Nothing right now. If something can’t be fixed on its own (for example, the factory fails 3 times), it shows here and on your phone.</p>}
   </Section>
-  const chips = [['at-status', 'Status'], ...(data.needs.length ? [['at-needs', 'Needs you']] : []), ['at-yt', 'YouTube'], ['at-fb', 'Facebook'], ['at-make', 'Being made'], ['at-auto', 'Autopilot'], ...(data.needs.length ? [] : [['at-needs', 'Needs you']])]
+  const chips = [['at-status', 'Status'], ...(data.needs.length ? [['at-needs', 'Needs you']] : []), ['at-yt', 'YouTube'], ['at-fb', 'Facebook'], ['at-make', 'Being made'], ['at-agent', 'Posting'], ['at-auto', 'Autopilot'], ...(data.needs.length ? [] : [['at-needs', 'Needs you']])]
 
   return (<div className="at">
     <nav className="at-chips" aria-label="Sections">{chips.map(([id, l]) => <a key={id} href={'#' + id}>{l}</a>)}</nav>
@@ -58,7 +65,7 @@ export default function AutomationToday({ data }) {
     {P.need ? <section className={'au-prod' + (P.short ? ' au-short' : '')} aria-label="Production check">
       {P.short ? ChIcon.warn : <span className="au-ok" aria-hidden="true" />}
       <p><b>Production check:</b> {P.channels.join(' and ')} need{P.channels.length === 1 ? 's' : ''} <b>{P.need} video{P.need === 1 ? '' : 's'} a day</b>. The factory made <span className="au-n">{P.perDay}</span> a day this week, and <span className="au-n">{P.ready}</span> video{P.ready === 1 ? ' is' : 's are'} ready in the library.{P.short ? '' : ' Keeping up.'}</p>
-      <button className="au-more" disabled={busy} onClick={makeMore}>{busy ? 'Starting…' : 'Make more'}</button>
+      <button className="au-more" disabled={!!busy} onClick={makeMore}>{busy === true ? 'Starting…' : 'Make more'}</button>
     </section> : null}
 
     {data.needs.length ? needsBox : null}
@@ -81,6 +88,19 @@ export default function AutomationToday({ data }) {
           {M.held ? <li><b>{M.held}</b> on hold: Autopilot fixes {M.held === 1 ? 'it' : 'them'} within the hour</li> : null}
         </ul>
         <a className="at-more" href="/admin/youtube?view=progress">See progress →</a>
+      </Section>
+      <Section id="at-agent" title="Posting agent">
+        {[['youtube', 'YouTube'], ['facebook', 'Facebook']].map(([k, name]) => { const a = (data.agent || {})[k]; if (!a) return null
+          return <div key={k} className="at-agent">
+            <div className="at-ag-top"><b>{name}</b><span className={'at-s ' + (a.enabled ? 'at-s-done' : 'at-s-empty')}>{a.enabled ? 'Deciding' : 'Off'}</span></div>
+            <span className="at-ag-line">{a.enabled ? `${plural(a.perDay, 'post')} a day · next review ${a.nextReview === 'now' ? 'on the next run' : a.nextReview}` : 'You choose the posting times yourself.'}</span>
+            {a.note ? <p className="at-ag-note">{a.note}</p> : null}
+            <div className="at-ag-btns">
+              <button className="at-btn" disabled={!!busy} onClick={() => agent(k, { action: 'post-agent', on: !a.enabled }, a.enabled ? `${name}: the agent is off. Your times stay as they are.` : `${name}: the agent is on.`)}>{busy === k ? 'Working…' : a.enabled ? 'Switch off' : 'Let it decide'}</button>
+              {a.enabled ? <button className="at-btn" disabled={!!busy} onClick={() => agent(k, { action: 'post-agent-review' }, 'Reviewed.')}>Review now</button> : null}
+            </div>
+          </div> })}
+        <p className="at-note">Starts at 1 a day, never more than 3. It posts more only when views per video and watch time hold and 3 days of videos are ready.</p>
       </Section>
       <Section id="at-auto" title="Autopilot this week">
         <ul className="at-facts">
@@ -134,6 +154,12 @@ const TODAY_CSS = `
 .at-more{font-size:14px;font-weight:600;color:var(--dim);text-decoration:none;padding:6px 0;overflow-wrap:anywhere}.at-more:hover{color:var(--paper)}
 .at-job b{font-size:14.5px}.at-job span{font-size:13px;color:var(--dim)}
 .at-bar{height:6px;background:var(--raise2);border-radius:9px;overflow:hidden;margin:8px 0 6px}.at-bar i{display:block;height:100%;background:var(--green);border-radius:9px}
+.at-agent{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--line)}.at-agent:first-child{border-top:0;padding-top:2px}
+.at-ag-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.at-ag-top b{font-size:15px}
+.at-ag-line{font-size:13.5px;color:var(--dim)}.at-ag-note{margin:0;font-size:13.5px;line-height:1.5}
+.at-ag-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.at-btn{min-height:40px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--raise2);color:var(--paper);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.at-btn:disabled{opacity:.55;cursor:default}.at-btn:hover:not(:disabled){border-color:var(--green)}
 .at-facts{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--dim);font-size:14px}.at-facts b{color:var(--paper)}
 @media (max-width:760px){
   .at-grid{grid-template-columns:1fr}

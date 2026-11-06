@@ -551,3 +551,9 @@ alter table yt_scripts add column if not exists hold_until timestamptz;    -- Au
 alter table yt_scripts add column if not exists auto_fixes jsonb;          -- what Autopilot mended itself, in plain words
 alter table yt_scripts add column if not exists render_tries int not null default 0;   -- factory attempts; a failed video is made again up to 3 times
 alter table yt_ideas add column if not exists rewrites int not null default 0;          -- scripts thrown away for a critical problem; after 2 the idea is set aside
+-- Install 10: the posting agent (one per platform: how many a day, 1–3, and when, from real results)
+alter table yt_settings add column if not exists publish_time3 text;          -- a third daily slot (the agent may go up to 3 a day)
+create table if not exists post_agent (platform text primary key check (platform in ('youtube', 'facebook')), enabled boolean not null default true,
+  per_day int not null default 1 check (per_day between 1 and 3), reviewed_at timestamptz, reviews int not null default 0, note text,
+  history jsonb not null default '[]'::jsonb, base_per_day int);
+insert into post_agent (platform) values ('youtube'), ('facebook') on conflict do nothing;
