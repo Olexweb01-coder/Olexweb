@@ -581,3 +581,26 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Story videos (concept, not built in yet): sketch style approved (story/sketch.mjs, anim4.mjs in the Claude workspace;
   sample-sketch-viral.mp4). Voice: designed blends A–D (Kokoro style mix + pitch); Chatterbox test = factory
   workflow voice-test.yml (two venvs: Kokoro numpy 2, Chatterbox 0.1.7 numpy 1). First run took 1 h 8 min for 48 clips on CPU.
+
+## Install 12 (6 Nov 2026): story Shorts (sketch style, his acted voice) — site + factory
+- Approved by Olaitan: sketch style (hand-drawn wobbly ink, our own character: round head, green glasses, hair tuft, white tee,
+  green pocket), he does all the talking, emotions + sound effects, hook-first opening, "3 minutes earlier", loop ending.
+  Voice B (Kokoro mix am_michael .45 + am_puck .35 + am_fenrir .2, +1 semitone) as the voice print; Chatterbox 0.1.7 acts each
+  line (panic 1.6/0.25, shock/cry/excited 1.0/0.35, else 0.5/0.5 exaggeration/cfg). Speed ~10 s work per s of speech on CPU.
+- Site: lib/site/story.js (writer: 10 situations scored relatable/surprise/payoff → best one; beats in the shape
+  yell → timejump → desk/buzz/read/panic/cry/idea → reveal → proof → celebrate → again; checkStory: shape, hook ≤ 7 words
+  panic, loop, 18–36 s, pace, feelings, claims quoted, facts (no invented numbers in reveal/proof, no years), named, titles,
+  hashtags; STORY_CRITICAL shape/hook/length/claims/facts/loop; fixStory mends the rest). scripts.js: writeScript(id,{story})
+  → saveStory (kind 'story', script.story.beats + script.scenes mirror for the UI, voice 'story-B'); saveStoryEdit.
+  yt_settings.short_style 'classic' (default) | 'story'. While classic, a test story is never auto-queued (publish.autoQueue)
+  or posted to Facebook (meta WAITING) until queued by hand or style = story. autonomy.js sweeps stories with fixStory.
+  factory.jobFor → { kind: 'story', site, story: { beats } }. API: short-style, write-story {id?}. Scripts tab: "New Shorts"
+  (Story (sketch) · Classic, Write a test story, "Write as a story" per waiting idea), Story pill, beat labels, the 10 situations.
+  Also fixed: Publishing box overflowed phones by 56 px (grid minmax(0,1fr), Series field min(280px, 58vw)); "part null" labels.
+- Factory (olexweb-factory): worker/story/{sketch,scenes,render}.mjs (frames drawn as SVG in Chromium, 24 fps, fonts bundled:
+  Hubot Sans + Inter Black, OFL), voiceprint.py (Kokoro: print + backup lines), act.py (.cbox venv, Chatterbox), mix.py (acted take
+  if sane else backup; effects by scene; music hushed at tense scenes; work/story.wav + story.json). run.mjs: story branches in
+  voice/music/render. render.yml: "Get the job" step sets KIND; Chatterbox venv + HF model cached (first story run installs
+  ~30 min), librosa added to the system install. Local end-to-end: 25 s Short in ~1.5 min without Chatterbox.
+- Tests: tests/youtube/fSTORY.mjs (23); phaseSTORY.sh = phaseCRON + fSTORY: 229 pass + the known fD2 failure. The test factory
+  copy (/home/claude/olexweb-factory) must have the new worker files (fSTORY runs its job step).

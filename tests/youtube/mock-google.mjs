@@ -146,6 +146,31 @@ http.createServer(async (req, res) => {
         { type: 'url', pose: 'pointing', text: L('You can find it at the address on screen, so pause the video if you want to try it right now.'), big: host.replace(/^https?:\/\//, '').split('/')[0] }] }
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
     }
+    if (/^The site: .+? \(https?:/.test(prompt) && /"beats": the story/.test(prompt)) {     // story Shorts (install 12)
+      const name = prompt.match(/^The site: (.+?) \(/)[1], repair = /YOUR PREVIOUS STORY failed/.test(prompt)
+      S.storyCalls = (S.storyCalls || []).concat([name + (repair ? ' (repair)' : '')])
+      const page = (prompt.match(/THE SITE'S OWN PAGE[^\n]*\n([\s\S]*?)\n\nStep 1/) || [])[1] || ''
+      const quote = (page.split('. ')[1] || page).split('.')[0].trim(), host = (prompt.match(/Find it: ([^"\s]+)/) || [])[1] || 'site'
+      const ideas = [...Array(10)].map((_, i) => ({ situation: 'Situation ' + (i + 1) + ' where ' + name + ' helps', relatable: 5 + (i === 3 ? 4 : 0), surprise: 5, payoff: 6 }))
+      const beats = [
+        { scene: 'yell', emotion: 'panic', text: 'No! No no no no!' },
+        { scene: 'timejump', emotion: 'calm', text: '' },
+        { scene: 'desk', emotion: 'happy', text: 'Day thirty of my free trial. Life is good!', note: 'DAY 30' },
+        { scene: 'buzz', emotion: 'curious', text: 'Hm? An email?' },
+        { scene: 'read', emotion: 'shock', text: 'Your free trial ends today?!', from: 'Photo app', line1: 'Your free', line2: 'trial ends', big: 'TODAY' },
+        { scene: 'cry', emotion: 'cry', text: 'I can’t pay every month just to edit photos!' },
+        { scene: 'idea', emotion: 'smug', text: 'Wait. There has to be a better way.' },
+        { scene: 'reveal', emotion: 'excited', text: name + '! It does exactly what I needed.' },
+        { scene: 'proof', emotion: 'smug', text: 'And it works right in the browser.', cards: ['Works in the browser', 'Nothing to install'] },
+        { scene: 'celebrate', emotion: 'excited', text: 'Trial? Cancelled!', stamp: 'CANCELLED' },
+        { scene: 'again', emotion: 'shock', text: 'Wait. Another one?!' }]
+      const good = { ideas, chosen: 3, beats, claims: [{ claim: 'What ' + name + ' does', quote }],
+        titles: ['When your free trial ends today…', 'I almost paid for this', 'This free site saved me'], description: 'He almost paid. Then he found it.\nFind it: ' + host, hashtags: ['#shorts', '#relatable', '#animation'] }
+      const broken = { ...good, beats: beats.slice(2) }                                    // no yell, no time jump: critical
+      const fixable = { ...good, beats: [{ ...beats[0], text: 'No no no no no no no no this cannot be happening to me!' }, ...beats.slice(1)] }
+      out = /BadStory/.test(name) ? broken : /FixStory/.test(name) && !repair ? fixable : good
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
     if (/Write the Short about/.test(prompt)) {
       const name = prompt.match(/Write the Short about (.+?) \(/)[1], repair = /YOUR PREVIOUS SCRIPT failed/.test(prompt)
       S.scriptCalls = (S.scriptCalls || []).concat([name + (repair ? ' (repair)' : '')])

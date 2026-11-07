@@ -560,3 +560,5 @@ insert into post_agent (platform) values ('youtube'), ('facebook') on conflict d
 -- Install 11: one frequent run at a time, and when it last ran (shown on the Today tab)
 create table if not exists run_locks (name text primary key, until timestamptz not null, started_at timestamptz, finished_at timestamptz,
   last_ok boolean, last_report jsonb);
+-- Install 12: story Shorts (the sketch style, his acted voice). New Shorts are classic until you switch them to story.
+alter table yt_settings add column if not exists short_style text not null default 'classic';

@@ -1,5 +1,5 @@
 // YouTube actions (owner only): fetch the numbers now, disconnect, find ideas, pick or skip an idea, write / edit / approve / drop a script.
-import { q } from '@/lib/admin/db'
+import { q, one } from '@/lib/admin/db'
 import { currentUser, sameOrigin, ownerOnly, clientIp } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
 import { Refused } from '@/lib/admin/content'
@@ -13,6 +13,7 @@ import { savePublishSettings, savePostingTimes, queueAdd, queueRemove, queueMove
 import { writeLong } from '@/lib/site/longform'
 import { makeMore, setYoutubeMode } from '@/lib/site/automation'
 import { setAgent, review as agentReview } from '@/lib/site/postagent'
+import { setStoryStyle } from '@/lib/site/story'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -46,6 +47,16 @@ export async function POST(request) {
     if (body.action === 'own-idea') { try { return await addOwnIdea({ url: body.url, name: body.name, note: body.note, channels: body.channels, next: body.next === true }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'yt-mode') return await setYoutubeMode(body.mode)   // lib/site/automation.js
+    if (body.action === 'short-style') { try { return await setStoryStyle(body.style) } catch (e) { throw new Refused(e.message) } }   // new Shorts: story | classic
+    if (body.action === 'write-story') {                                     // write one story now (also while new Shorts are classic: a test)
+      if (body.id != null && !Number.isInteger(body.id)) throw new Refused('Request refused.')
+      const i = body.id != null
+        ? await one("select i.id from yt_ideas i left join yt_scripts s on s.idea_id = i.id where i.id = $1 and i.status in ('picked', 'made') and (s.id is null or s.status in ('draft', 'needs_review', 'approved', 'failed'))", [body.id])
+        : await one("select i.id from yt_ideas i left join yt_scripts s on s.idea_id = i.id where i.status = 'picked' and s.id is null order by i.first desc, i.decided_at nulls last limit 1")
+      if (!i) throw new Refused(body.id != null ? 'That idea’s video is already made or on its way.' : 'There’s no picked idea waiting for a script. Pick one on the Ideas tab first.')
+      await q('update yt_ideas set script_tried_at = now() where id = $1', [i.id])
+      try { const row = await writeScript(i.id, { story: true }); return row && row.status === 'replaced' ? { ok: true, status: 'replaced', message: 'The story didn’t pass its checks, so Autopilot will write it again.' } : row } catch (e) { throw new Refused(e.message) }
+    }
     if (body.action === 'post-agent' || body.action === 'post-agent-review') {      // the posting agent: on/off, or review now
       if (!['youtube', 'facebook'].includes(body.platform)) throw new Refused('Request refused.')
       try { const r = body.action === 'post-agent' ? await setAgent(body.platform, body.on === true) : await agentReview(body.platform, { force: true })

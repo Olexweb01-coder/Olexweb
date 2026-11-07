@@ -10,8 +10,9 @@ const card = { padding: 18, borderRadius: 20, background: 'var(--raise)', border
 const dim = { color: 'var(--dim)' }
 const h3 = { margin: '0 0 8px', fontSize: 14, fontWeight: 700 }
 const STATUS = { needs_review: ['Needs your eye', 'draft'], draft: ['Ready for review', 'res'], approved: ['Approved for the factory', 'live'], rendering: ['In the factory', 'res'], rendered: ['Video ready', 'live'], uploaded: ['Uploaded', 'live'], failed: ['The factory stopped', 'draft'] }
-const TYPE = { hook: 'Hook', demo: 'The site', infographic: 'Infographic', talk: 'Talk', url: 'Address', cta: 'Follow' }
-const POSE = { shocked: '😮', pointing: '👉', thinking: '🤔', dancing: '🕺', waving: '👋', idle: '🙂' }
+const TYPE = { hook: 'Hook', demo: 'The site', infographic: 'Infographic', talk: 'Talk', url: 'Address', cta: 'Follow',
+  'story-yell': 'The peak (opens the video)', 'story-timejump': 'Time jump', 'story-desk': 'Setup', 'story-buzz': 'The trigger', 'story-read': 'Reads it out', 'story-panic': 'Panic', 'story-cry': 'Crying', 'story-idea': 'The idea', 'story-reveal': 'The site', 'story-proof': 'Proof', 'story-celebrate': 'Celebration', 'story-again': 'The loop' }
+const POSE = { shocked: '😮', pointing: '👉', thinking: '🤔', dancing: '🕺', waving: '👋', idle: '🙂', panic: '😱', shock: '😮', cry: '😭', excited: '🤩', happy: '😄', calm: '🙂', curious: '🤔', smug: '😏', focus: '🧐' }
 
 async function call(body) {
   const r = await fetch('/admin/api/youtube', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) })
@@ -29,9 +30,10 @@ export default function YouTubeScripts({ data }) {
   }
   return (<>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>Each picked idea gets a 20–35 second script. The checks run in code: a short hook first, one cut per line, real footage of the site, no year numbers, and every fact backed by a quote from the site’s own page. In Autopilot, a script that passes everything is approved by itself.</p>
-    <JobProgress kind="script" title="Writing the script" watch={/^[wr]\d/.test(busy || '')} onDone={() => router.refresh()} />
+    <JobProgress kind="script" title="Writing the script" watch={/^[wr]\d|^ws/.test(busy || '')} onDone={() => router.refresh()} />
     <JobProgress kind="upload" title="Uploading to YouTube" watch={/^u\d/.test(busy || '')} onDone={() => router.refresh()} />
     <Publishing st={data.settings} run={run} busy={busy} />
+    <StoryStyle st={data.settings} run={run} busy={busy} waiting={data.waiting.length} />
     <JobProgress kind="render" title="Making the video" watch={data.scripts.some((x) => x.status === 'rendering') || /^f\d/.test(busy || '')} onDone={() => router.refresh()} />
     {!data.settings.factory ? <p style={{ ...card, margin: '0 0 12px', padding: '12px 16px', fontSize: 13.5, lineHeight: 1.55, ...dim }}>The video factory isn’t connected yet: it needs FACTORY_SECRET in Vercel and in the factory’s GitHub secrets (see the setup steps).</p> : null}
     {err ? <p className="err" role="alert" style={{ margin: '0 0 12px' }}>{err}</p> : null}
@@ -39,7 +41,10 @@ export default function YouTubeScripts({ data }) {
       <h2 style={{ ...h3, fontSize: 16 }}>Picked, waiting for a script</h2>
       <div style={{ display: 'grid', gap: 8 }}>{data.waiting.map((w) => <div key={w.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
         <span><b>{w.name}</b> <span style={dim}>· {w.score}/100</span></span>
-        <button className="btn btn-green" disabled={!!busy} onClick={() => run('w' + w.id, { action: 'write-script', id: w.id }, (j) => j.status === 'needs_review' ? 'Written, but it needs your eye.' : 'Script written.')}>{busy === 'w' + w.id ? 'Writing…' : 'Write script now'}</button>
+        <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-green" disabled={!!busy} onClick={() => run('w' + w.id, { action: 'write-script', id: w.id }, (j) => j.status === 'replaced' ? 'It didn’t pass its checks; it will be written again.' : j.status === 'needs_review' ? 'Written, but it needs your eye.' : 'Script written.')}>{busy === 'w' + w.id ? 'Writing…' : 'Write script now'}</button>
+          {data.settings.short_style !== 'story' ? <button className="btn btn-line" disabled={!!busy} onClick={() => run('ws' + w.id, { action: 'write-story', id: w.id }, (j) => j.message || (j.status === 'needs_review' ? 'Story written, but it needs your eye.' : 'Story written.'))}>{busy === 'ws' + w.id ? 'Writing the story…' : 'Write as a story'}</button> : null}
+        </span>
       </div>)}</div>
     </section> : null}
     {data.scripts.length ? <div style={{ display: 'grid', gap: 12 }}>{data.scripts.map((s) => <Script key={s.id} s={s} busy={busy} run={run} factory={data.settings.factory} rendering={data.scripts.some((x) => x.status === 'rendering')} />)}</div>
@@ -49,6 +54,25 @@ export default function YouTubeScripts({ data }) {
 
 // Lagos time (UTC+1 all year), formatted the same on the server and in the browser (no hydration mismatch)
 const lagos = (d) => { const t = new Date(new Date(d).getTime() + 3600e3); return String(t.getUTCHours()).padStart(2, '0') + ':' + String(t.getUTCMinutes()).padStart(2, '0') }
+// New Shorts: the story style (sketch, his acted voice) or the classic style. While classic, a test story can be written:
+// its video waits for you (it isn't queued or posted by itself) until you switch new Shorts to story.
+function StoryStyle({ st, run, busy, waiting }) {
+  const story = st.short_style === 'story'
+  return (<section style={{ ...card, marginBottom: 12, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10 }} aria-label="Short style">
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+      <h2 style={{ ...h3, fontSize: 16, margin: 0 }}>New Shorts</h2>
+      <div role="radiogroup" aria-label="Style of new Shorts" style={{ display: 'flex', gap: 6 }}>
+        {[['story', 'Story (sketch)'], ['classic', 'Classic']].map(([k, l]) => <button key={k} role="radio" aria-checked={st.short_style === k} className={st.short_style === k ? 'btn btn-green' : 'btn btn-line'} disabled={!!busy || st.short_style === k}
+          onClick={() => { if (k !== 'story' || window.confirm('Make every new Short a story video? Videos already made stay as they are.')) run('style', { action: 'short-style', style: k }, k === 'story' ? 'New Shorts are now stories.' : 'New Shorts are classic again.') }}>{l}</button>)}
+      </div>
+    </div>
+    <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, ...dim }}>{story
+      ? 'Every new Short is a story: he lives a relatable moment, panics, and the site saves the day, in his own acted voice. The writer tries 10 situations and writes the best.'
+      : 'New Shorts use the classic style. Try a story first: it’s written and made like any Short, but its video waits for you here (it isn’t queued or posted) until you switch new Shorts to story.'}</p>
+    {!story ? <div><button className="btn btn-line" disabled={!!busy || !waiting} onClick={() => run('ws', { action: 'write-story' }, (j) => j.message || (j.status === 'needs_review' ? 'Story written, but it needs your eye.' : 'Story written. Send it to the factory to see it.'))}>{busy === 'ws' ? 'Writing the story…' : 'Write a test story'}</button>
+      {!waiting ? <span style={{ fontSize: 13, marginLeft: 8, ...dim }}>Pick an idea first (Ideas tab).</span> : null}</div> : null}
+  </section>)
+}
 function Script({ s, busy, run, factory, rendering }) {
   const sc = s.script.scenes, pk = { ...s.package, titles: (s.package && s.package.titles) || [] }, [st, pill] = STATUS[s.status] || [s.status, 'draft']
   const editable = ['draft', 'needs_review', 'approved'].includes(s.status)
@@ -59,7 +83,7 @@ function Script({ s, busy, run, factory, rendering }) {
   return (<article style={{ ...card, display: 'grid', gap: 14, borderColor: s.status === 'needs_review' ? 'rgba(255,209,102,.45)' : 'var(--line)' }} aria-labelledby={'sc' + s.id}>
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
       <div style={{ minWidth: 0 }}>
-        <h2 id={'sc' + s.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21 }}>{s.kind === 'long' ? `Long video · Vol. ${s.script.volume}` : s.name || s.script.site.name}</h2>
+        <h2 id={'sc' + s.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21 }}>{s.kind === 'long' ? `Long video · Vol. ${s.script.volume}` : s.name || s.script.site.name}{s.kind === 'story' ? <span className="pill live" style={{ marginLeft: 8, fontSize: 12, verticalAlign: 'middle' }}>Story</span> : null}</h2>
         <div style={{ fontSize: 13, marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', ...dim }}>
           <span className={'pill ' + pill}>{st}</span>{s.part ? <span>Part {s.part}</span> : null}<span>{s.kind === 'long' ? `about ${Math.round(s.seconds / 60 * 10) / 10} min · ${(s.script.chapters || []).filter((c) => c.site).length} sites` : `${s.seconds}s · ${sc.length} scenes`}</span>{s.writer ? <span>· written by {s.writer}</span> : null}{s.mention ? <span>· mentions olexweb.com</span> : null}
         </div>
@@ -71,14 +95,14 @@ function Script({ s, busy, run, factory, rendering }) {
     {s.status === 'rendered' && s.video ? <section aria-label="The finished video" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
       <video controls preload="metadata" playsInline src={'/admin/api/youtube/video?id=' + s.id} style={{ width: s.kind === 'long' ? 'min(100%, 560px)' : 'min(100%, 300px)', aspectRatio: s.kind === 'long' ? '16 / 9' : '9 / 16', borderRadius: 16, background: '#000', border: '1px solid var(--line)' }} />
       <div style={{ fontSize: 14, lineHeight: 1.6, ...dim, flex: '1 1 200px' }}>
-        <b style={{ color: 'var(--paper)', fontSize: 16 }}>{s.kind === 'long' ? `Vol. ${s.script.volume} is ready` : `Part ${s.part} is ready`}</b><br />
+        <b style={{ color: 'var(--paper)', fontSize: 16 }}>{s.kind === 'long' ? `Vol. ${s.script.volume} is ready` : (s.part ? `Part ${s.part} is ready` : 'The video is ready')}</b><br />
         {Math.round(s.video.seconds || 0)} seconds · {s.video.width}×{s.video.height} · {(s.video.bytes / 1048576).toFixed(1)} MB<br />
         Made {new Date(s.video.made_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.
         <div style={{ marginTop: 10 }}>{s.queue_pos != null ? <a className="btn btn-line" href="/admin/youtube?view=videos">Queued: see Up next</a> : <button className="btn btn-green" disabled={!!busy} onClick={() => run('q' + s.id, { action: 'queue-add', id: s.id }, 'Added to the queue: one video a day.')}>{busy === 'q' + s.id ? 'Adding…' : 'Add to queue'}</button>}</div>
       </div>
     </section> : null}
     {s.status === 'uploaded' ? <p style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(143,227,106,.35)', fontSize: 14, lineHeight: 1.6 }}>
-      <b>{s.kind === 'long' ? `On YouTube (Vol. ${s.script.volume})` : `On YouTube as part ${s.part}`}</b> · {s.upload && s.upload.done ? s.upload.done.replace('until', 'until').replace(/T(\d\d:\d\d).*$/, ' $1 UTC') : 'private'} ·{' '}
+      <b>{s.kind === 'long' ? `On YouTube (Vol. ${s.script.volume})` : (s.part ? `On YouTube as part ${s.part}` : 'On YouTube')}</b> · {s.upload && s.upload.done ? s.upload.done.replace('until', 'until').replace(/T(\d\d:\d\d).*$/, ' $1 UTC') : 'private'} ·{' '}
       <a href={'https://youtube.com/shorts/' + s.yt_video_id} target="_blank" rel="noopener noreferrer">watch</a> · <a href={'https://studio.youtube.com/video/' + s.yt_video_id + '/edit'} target="_blank" rel="noopener noreferrer">open in YouTube Studio</a></p> : null}
     {s.status === 'failed' ? <p role="alert" style={{ margin: 0, padding: '10px 14px', borderRadius: 14, border: '1px solid rgba(255,107,107,.45)', fontSize: 14, lineHeight: 1.5 }}><b>The factory stopped:</b> {s.render_error || 'unknown reason'}</p> : null}
     {['approved', 'failed', 'rendered'].includes(s.status) ? <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -105,6 +129,8 @@ function Script({ s, busy, run, factory, rendering }) {
       </div>])}
     </div>
 
+    {s.kind === 'story' && Array.isArray(s.script.ideas) && s.script.ideas.length ? <details style={{ fontSize: 14, ...dim }}><summary style={{ cursor: 'pointer' }}>The 10 situations it considered (the best one was written)</summary>
+      <ol style={{ margin: '8px 0 0', paddingLeft: 20, display: 'grid', gap: 4 }}>{s.script.ideas.map((x, i) => <li key={i} style={i === s.script.chosen ? { color: 'var(--paper)', fontWeight: 600 } : {}}>{x.situation} <span style={dim}>({(x.score || []).reduce((a, b) => a + b, 0)}/30{i === s.script.chosen ? ', chosen' : ''})</span></li>)}</ol></details> : null}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: 14 }}>
       <section aria-label="Checks"><h3 style={h3}>Checks</h3><ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 5, fontSize: 13.5, lineHeight: 1.45 }}>
         {(s.checks || []).map((c) => <li key={c.key} style={{ display: 'flex', gap: 8 }}><span aria-label={c.ok ? 'passed' : 'failed'} style={{ color: c.ok ? 'var(--green)' : '#ffd166', fontWeight: 800 }}>{c.ok ? '✓' : '!'}</span><span style={c.ok ? dim : {}}>{c.note}</span></li>)}
@@ -160,7 +186,7 @@ function Publishing({ st, run, busy }) {
         <button type="button" aria-pressed={yt === 'autopilot'} disabled={!!busy} onClick={() => { setYt('autopilot'); run('ytm', { action: 'yt-mode', mode: 'autopilot' }, 'YouTube is on Autopilot.') }}>Autopilot</button></div></div>
     <span style={{ fontSize: 13, color: 'var(--dim)' }}>{yt === 'autopilot' ? 'Scripts that pass every check go to the factory and into the posting queue by themselves.' : 'Scripts wait for you; approved ones go to the factory.'} Separate from the blog’s setting.</span>
   </section>
-  <section style={{ ...card, marginBottom: 12, display: 'grid', gap: 10 }} aria-label="Publishing">
+  <section style={{ ...card, marginBottom: 12, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10 }} aria-label="Publishing">
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
       <b style={{ fontSize: 14.5 }}>Publishing</b>
       <div className="seg" role="group" aria-label="How videos go up" style={{ margin: 0 }}>
@@ -171,13 +197,13 @@ function Publishing({ st, run, busy }) {
     </div>
     <span style={{ fontSize: 12.5, ...dim }}>{mode === 'private' ? 'Autopilot uploads one finished video a day as Private; your phone tells you, and you make it Public in YouTube Studio (one tap from its card here). After Google’s audit, switch to Scheduled and it goes public by itself.' : 'Autopilot uploads one finished video a day, and it goes public by itself at ' + time + ' (Lagos). Needs the audit to be approved.'}</span>
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-      <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>Series <input className="input" value={series} onChange={(e) => setSeries(e.target.value)} maxLength={50} style={{ width: 280 }} /></label>
+      <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>Series <input className="input" value={series} onChange={(e) => setSeries(e.target.value)} maxLength={50} style={{ width: 'min(280px, 58vw)' }} /></label>
       {tick(inTitle, setInTitle, 'In every title')}{tick(intro, setIntro, 'Said at the start of each video')}
     </div>
     {inTitle ? <span style={{ fontSize: 12.5, ...dim }}>Titles look like: “{sample} (Part 12) | This free site turns photos into palettes”</span> : null}
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
       <b style={{ fontSize: 14 }}>Long videos</b>
-      <div className="seg" role="group" aria-label="Long-video days" style={{ margin: 0 }}>{['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((d) => <button key={d} type="button" aria-pressed={days.includes(d)} onClick={() => setDays(days.includes(d) ? days.filter((x) => x !== d) : [...days, d])}>{d[0].toUpperCase() + d.slice(1)}</button>)}</div>
+      <div className="seg" role="group" aria-label="Long-video days" style={{ margin: 0, minWidth: 0 }}>{['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((d) => <button key={d} type="button" aria-pressed={days.includes(d)} onClick={() => setDays(days.includes(d) ? days.filter((x) => x !== d) : [...days, d])}>{d[0].toUpperCase() + d.slice(1)}</button>)}</div>
       <label style={{ fontSize: 14, display: 'flex', gap: 8, alignItems: 'center' }}>sites in each <select className="input" value={count} onChange={(e) => setCount(Number(e.target.value))} style={{ width: 80 }}>{[4, 5, 6, 7, 8].map((n) => <option key={n} value={n}>{n}</option>)}</select></label>
       <button className="btn btn-line" disabled={!!busy} onClick={() => run('wl', { action: 'write-long' }, 'Long video written.')}>{busy === 'wl' ? 'Writing… (2–3 minutes)' : 'Write long video now'}</button>
     </div>
