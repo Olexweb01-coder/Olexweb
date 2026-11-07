@@ -657,3 +657,16 @@ content. Add it after the audit is approved, since the audit describes one chann
 - automation.todayData adds `simple` {style, sagaTime, sagaToday, step, stepPct, note} and week.posted {yt, fb}.
 - Tests: fSIMPLE.mjs (7); phaseSIMPLE.sh = phaseSAGA + fSIMPLE. fSAGA's "Shorts wait" step now sets the long story's time to
   23:59 (now + 3 h crossed midnight late at night).
+
+## Install 15 (8 Nov 2026): simple YouTube and Facebook tabs
+- components/admin/SimpleSwitch.jsx: Simple / Detailed for any screen (both rendered, one hidden; remembered per device as
+  'olex-view-<k>'; a simple view asks for the detailed one with showDetails() → window event 'olex-view').
+- YouTube (/admin/youtube, connected, no ?yt= note): YouTubeSimple (views over the period + bars, subscribers, % watched;
+  scripts/ideas waiting as links; Coming up (queueList); best videos lately; How it posts (private/scheduled, times, style,
+  Autopilot); links to Videos/Scripts/Ideas/Progress). Detailed = YouTube.jsx with noHead. Data: automation.youtubeSimpleData().
+- Facebook (/admin/automation/facebook, Page connected, no ?fb= note): FacebookSimple (posting / paused / off with one button;
+  coming up; posted lately with plays (meta_posts.views); 1/2/3 a day; read_insights hint when denied). metaStatus() adds
+  recent[].title/views and insights.
+- AutomationSimple exports SIMPLE_CSS (shared). Tests: fSIMPLE.mjs 12.
+- Note: fAU's "an hour later, Part 2 fills the other time" fails when the chain runs just after midnight Lagos (its times are
+  now−125 min and now−5 min, which cross the day); it passes at other hours.

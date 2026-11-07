@@ -30,7 +30,7 @@ const NOTES = {
   error: ['bad', 'Something went wrong. Try again.'],
 }
 
-export default function YouTube({ data, note }) {
+export default function YouTube({ data, note, noHead = false }) {
   const router = useRouter(), d = data, a = d.account
   const [busy, setBusy] = useState(''), [sort, setSort] = useState('new'), [type, setType] = useState('all')
   const [msg, setMsg] = useState(NOTES[note] || null), [dis, setDis] = useState(false), [typed, setTyped] = useState('')
@@ -85,7 +85,7 @@ export default function YouTube({ data, note }) {
         <button className="btn" style={{ background: '#ff8a8a', color: '#2a0000', opacity: typed === 'DISCONNECT' ? 1 : 0.35 }} disabled={typed !== 'DISCONNECT' || !!busy} onClick={() => act('disconnect', { confirm: 'DISCONNECT' })}>Disconnect</button>
       </div></div></div> : null
   return (<>{disDialog}
-    <AutomationHead current="youtube" />
+    {noHead ? null : <AutomationHead current="youtube" />}
     <YouTubeTabs current="analytics" />
     {banner}
     {!d.connected ? connect(true) : null}

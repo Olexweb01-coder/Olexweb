@@ -11,6 +11,9 @@ import YouTubeVideos from '@/components/admin/YouTubeVideos'
 import YouTubeProgress from '@/components/admin/YouTubeProgress'
 import { progressPage } from '@/lib/site/progress'
 import { videosData } from '@/lib/site/publish'
+import { youtubeSimpleData } from '@/lib/site/automation'
+import YouTubeSimple from '@/components/admin/YouTubeSimple'
+import SimpleSwitch from '@/components/admin/SimpleSwitch'
 export const metadata = { title: 'YouTube · Automation' }
 export const dynamic = 'force-dynamic'
 export default async function YouTubePage({ searchParams }) {
@@ -35,5 +38,10 @@ export default async function YouTubePage({ searchParams }) {
   const days = [7, 28, 90].includes(Number(sp.days)) ? Number(sp.days) : 28
   const data = await youtubeData(days)
   const note = typeof sp.yt === 'string' ? sp.yt.slice(0, 20) : null
+  // connected, and not just back from Google: the simple view first (Install 15), the numbers one tap away
+  if (!note && data.connected && data.account && data.account.channel_id) {
+    const plain = JSON.parse(JSON.stringify(data)), extra = JSON.parse(JSON.stringify(await youtubeSimpleData()))
+    return (<><AutomationHead current="youtube" /><SimpleSwitch k="youtube" simple={<YouTubeSimple data={plain} extra={extra} />} detailed={<YouTube data={plain} noHead />} /></>)
+  }
   return <YouTube data={JSON.parse(JSON.stringify(data))} note={note} />
 }

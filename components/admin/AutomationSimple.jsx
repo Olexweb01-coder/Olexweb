@@ -125,7 +125,7 @@ function Switch({ on, busy, disabled, title, text, onClick }) {
     <button className={'sm-tog' + (on ? '' : ' off')} role="switch" aria-checked={on} aria-label={title} disabled={disabled} onClick={onClick}><i /><em>{busy ? '…' : on ? 'ON' : 'OFF'}</em></button></div>
 }
 
-const SIMPLE_CSS = `
+export const SIMPLE_CSS = `
 .sm{display:grid;gap:16px;--yt:#ff4e45;--fb:#4f8cff}
 .sm-hero{border-radius:24px;padding:22px;display:grid;gap:14px;background:linear-gradient(150deg,rgba(143,227,106,.18),rgba(143,227,106,.04));border:1px solid rgba(143,227,106,.35)}
 .sm-hero.sm-needs{background:linear-gradient(150deg,rgba(239,122,106,.2),rgba(239,122,106,.04));border-color:rgba(239,122,106,.5)}
