@@ -644,3 +644,16 @@ content. Add it after the audit is approved, since the audit describes one chann
   Local: ~22 frames/s on 2 cores (a 6-min story ≈ 7 min of drawing).
 - Tests: tests/youtube/fSAGA.mjs (37); phaseSAGA.sh = phaseSTORY + fSAGA. mock-google: plan + chapter writers ("BadChapter"
   fails its shape), /video_insights (insightsDenied, reelViewsAll).
+
+## Install 14 (7 Nov 2026): the simple Automation screen
+- Automation → Today opens on **Simple** (components/admin/AutomationSimple.jsx); **Detailed** is the old screen. Both are
+  rendered; the other is `hidden`; the choice is remembered per device (localStorage 'olex-auto-view').
+- Simple: big status (ok/low/needs/off) + 7 day boxes of videos ready (+ Make more when low); each need as a card with Fix it;
+  Today (YouTube + Facebook in one list); Being made now (5 steps: Written, Filming the site, His voice, Drawing, Sending back,
+  from the render stage; the factory's note, e.g. "acted 34 of 61 lines"); What kind of videos? (Story videos / Classic Shorts,
+  action short-style; with stories: the long story's time and "Make today's long story now"); Switches (Autopilot = yt-mode,
+  Post to Facebook = meta enable/resume, Smart posting times = both posting agents); This week (posted on YouTube/Facebook,
+  fixed by itself).
+- automation.todayData adds `simple` {style, sagaTime, sagaToday, step, stepPct, note} and week.posted {yt, fb}.
+- Tests: fSIMPLE.mjs (7); phaseSIMPLE.sh = phaseSAGA + fSIMPLE. fSAGA's "Shorts wait" step now sets the long story's time to
+  23:59 (now + 3 h crossed midnight late at night).

@@ -1,10 +1,11 @@
 'use client'
 // Automation → Today: the day at a glance, in sections. Built for a phone first: one column, a row of section chips that
 // stays at the top, big tap targets, and each section can be folded. All times are Lagos time, worked out on the server.
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import { ChIcon, CSS } from './automationShared'
+import AutomationSimple from './AutomationSimple'
 
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const HERO = {
@@ -29,7 +30,25 @@ function Section({ id, title, icon, badge, children }) {
   </details>
 }
 
+// Simple (the default, Install 14) or Detailed (everything below). The choice is remembered on this device.
 export default function AutomationToday({ data }) {
+  const [view, setView] = useState('simple')
+  useEffect(() => { try { if (localStorage.getItem('olex-auto-view') === 'detailed') setView('detailed') } catch {} }, [])
+  const pick = (v) => { setView(v); try { localStorage.setItem('olex-auto-view', v) } catch {}; window.scrollTo(0, 0) }
+  return (<>
+    <div className="sm-mode" role="group" aria-label="How much to show">
+      {[['simple', 'Simple'], ['detailed', 'Detailed']].map(([k, l]) => <button key={k} aria-pressed={view === k} onClick={() => pick(k)}>{l}</button>)}
+    </div>
+    {/* both are rendered; the other one is only hidden (so a switch is instant) */}
+    <div hidden={view !== 'simple'}><AutomationSimple data={data} onDetailed={() => pick('detailed')} /></div>
+    <div hidden={view !== 'detailed'}><Detailed data={data} /></div>
+    <style dangerouslySetInnerHTML={{ __html: `.sm-mode{display:inline-flex;gap:4px;background:var(--raise);border:1px solid var(--line);border-radius:999px;padding:4px;margin:0 0 14px}
+.sm-mode button{min-height:38px;padding:0 16px;border-radius:999px;border:0;background:none;color:var(--dim);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.sm-mode button[aria-pressed=true]{background:var(--paper);color:#111}` }} />
+  </>)
+}
+
+function Detailed({ data }) {
   const router = useRouter(), [busy, setBusy] = useState(false)
   const P = data.production, Y = data.youtube, F = data.facebook, M = data.making, W = data.week
   async function agent(platform, body, done) {

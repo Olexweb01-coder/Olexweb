@@ -91,7 +91,7 @@ await db.query("update yt_scripts set status = 'rendering', render_started_at = 
 const sjob = JSON.parse(fs.readFileSync(FAC + '/work/job.json', 'utf8'))
 check(sjob.kind === 'story' && !sjob.fb, 'without Facebook set up, a story is made once (no Facebook version)')
 mp4(FAC + '/out/video.mp4', 720, 1280, 3); worker(sh, 'upload')
-await db.query("update yt_settings set yt_mode = 'autopilot'"); await db.query("update yt_settings set saga_time = $1", [hm(Date.now() + 3 * 3600e3)])
+await db.query("update yt_settings set yt_mode = 'autopilot'"); await db.query("update yt_settings set saga_time = $1", ["23:59"])   // later today (Lagos), whatever the hour
 await run(); let q1 = await one('select queue_pos from yt_scripts where id = $1', [sh])
 check(q1.queue_pos == null, 'while the long story isn’t on YouTube yet, its Shorts aren’t queued')
 await db.query("update yt_settings set saga_time = $1", [hm(Date.now() - 60e3)])
