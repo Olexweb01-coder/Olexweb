@@ -27,6 +27,11 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/v21.0/dialog/oauth') { S.fbDialog = Object.fromEntries(p); return send(res, 302, '', { Location: p.get('redirect_uri') + '?code=fbcode&state=' + encodeURIComponent(p.get('state')) }) }
   if (u.pathname === '/v21.0/oauth/access_token') { if (p.get('code') === 'fbcode' && p.get('client_secret') === 'meta-secret') return send(res, 200, { access_token: 'fb-user-short' }); if (p.get('fb_exchange_token') === 'fb-user-short') return send(res, 200, { access_token: 'fb-user-long' }); return send(res, 400, { error: { message: 'bad code', code: 100 } }) }
   if (u.pathname === '/v21.0/me/accounts') return p.get('access_token') === 'fb-user-long' ? send(res, 200, { data: [{ id: '777', name: 'Olexweb', access_token: 'page-token-777', tasks: ['CREATE_CONTENT', 'MANAGE'] }] }) : send(res, 400, { error: { message: 'bad token', code: 190 } })
+  if (/^\/v21\.0\/[\w-]+\/video_insights$/.test(u.pathname)) {                       // Reel plays (install 13)
+    S.insightCalls = (S.insightCalls || 0) + 1
+    if (S.insightsDenied) return send(res, 400, { error: { message: '(#10) Requires read_insights permission', code: 10 } })
+    const id = u.pathname.split('/')[2]; return send(res, 200, { data: [{ name: 'blue_reels_play_count', period: 'lifetime', values: [{ value: (S.reelViews && S.reelViews[id]) || Number(S.reelViewsAll) || 100 }] }] })
+  }
   if (u.pathname === '/v21.0/777/video_reels' && req.method === 'POST') {
     let raw = ''; for await (const ch of req) raw += ch; const f = new URLSearchParams(raw)
     if (f.get('access_token') !== 'page-token-777') return send(res, 400, { error: { message: 'Invalid OAuth access token.', code: 190 } })
@@ -144,6 +149,38 @@ http.createServer(async (req, res) => {
         { type: 'demo', pose: 'pointing', text: L('Then you can copy the result into your own project, share it, or keep going and try something new.'), capture: 'copy the result' },
         { type: 'talk', pose: 'thinking', text: L('It saves time on the boring parts, so you can spend your energy on the parts that matter most to you.') },
         { type: 'url', pose: 'pointing', text: L('You can find it at the address on screen, so pause the video if you want to try it right now.'), big: host.replace(/^https?:\/\//, '').split('/')[0] }] }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (/^You plan one long animated story/.test(prompt)) {                             // the long story's plan (install 13)
+      S.sagaPlans = (S.sagaPlans || 0) + 1
+      const sites = [...prompt.matchAll(/^(\d+)\. (.+?) \(http/gm)].map((m) => ({ n: Number(m[1]), name: m[2] }))
+      out = { titles: ['I Stopped Paying for 5 Things in One Day', 'My worst day, saved by websites', 'The day the internet saved me'], intro: 'Today was a total disaster from start to finish. And every single time, a website saved me.',
+        outro: 'Which one would you use first? Tell me in the comments, and subscribe for tomorrow.',
+        chapters: sites.map((x, i) => ({ site: x.n, time: `${8 + i * 2}:15 AM`.replace(/^(1[2-9]|2\d):15 AM/, (m, h) => `${h - 12 || 12}:15 PM`), title: 'Disaster ' + (i + 1), situation: 'Something goes wrong and ' + x.name + ' fixes it.' })) }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (/^Write chapter \d+ of \d+ of his day/.test(prompt)) {                             // a long-story chapter (install 13)
+      const name = prompt.match(/saves him in this chapter: (.+?) \(/)[1], repair = /YOUR PREVIOUS CHAPTER failed/.test(prompt)
+      S.chapterCalls = (S.chapterCalls || []).concat([name + (repair ? ' (repair)' : '')])
+      const page = (prompt.match(/THE SITE'S OWN PAGE[^\n]*\n([\s\S]*?)\n\n"beats"/) || [])[1] || ''
+      const quote = (page.split('. ')[1] || page).split('.')[0].trim()
+      const beats = [
+        { scene: 'yell', emotion: 'panic', text: 'No! Not now!' }, { scene: 'timejump', emotion: 'calm', text: '' },
+        { scene: 'desk', emotion: 'happy', text: 'Morning coffee, quiet inbox, everything is finally under control today.', note: 'MONDAY' },
+        { scene: 'desk', emotion: 'calm', text: 'I even finished my slides early for once in my whole life.' },
+        { scene: 'buzz', emotion: 'curious', text: 'Wait, a message?' },
+        { scene: 'read', emotion: 'shock', text: 'The meeting moved to right now?!', from: 'Boss', line1: 'Meeting now', line2: 'Bring slides', big: 'NOW' },
+        { scene: 'panic', emotion: 'panic', text: 'My slides are a mess and the logo is blurry everywhere!' },
+        { scene: 'cry', emotion: 'cry', text: 'Why does this always happen to me on a Monday?' },
+        { scene: 'idea', emotion: 'smug', text: 'Hold on. There has to be a faster way.' },
+        { scene: 'reveal', emotion: 'excited', text: name + '! It fixes exactly this in seconds.' },
+        { scene: 'proof', emotion: 'smug', text: 'Look, it works right in the browser.', cards: ['Works in the browser', 'Nothing to install'] },
+        { scene: 'proof', emotion: 'happy', text: 'No setup, no account, just open it and go.' },
+        { scene: 'proof', emotion: 'smug', text: 'Even my boss would be impressed by this one.' },
+        { scene: 'celebrate', emotion: 'excited', text: 'Slides? Saved!', stamp: 'SAVED' }]
+      const good = { beats, again: 'Wait. Is that my boss?!', ask: 'Would you have panicked too? Tell me below.', claims: [{ claim: 'What ' + name + ' does', quote }],
+        titles: ['When the meeting moves to right now…', 'My slides were a disaster', 'This site saved my meeting'], description: 'The meeting moved. The slides were a mess. Then this.' }
+      out = /BadChapter/.test(name) ? { ...good, beats: beats.slice(2) } : good
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
     }
     if (/^The site: .+? \(https?:/.test(prompt) && /"beats": the story/.test(prompt)) {     // story Shorts (install 12)

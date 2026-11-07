@@ -9,7 +9,8 @@ import { setChannel } from '@/lib/site/library'
 import { writeScript, saveScript, approveScript, dropScript } from '@/lib/site/scripts'
 import { progressOf } from '@/lib/site/progress'
 import { sendToFactory } from '@/lib/site/factory'
-import { savePublishSettings, savePostingTimes, queueAdd, queueRemove, queueMove, postNow } from '@/lib/site/publish'
+import { savePublishSettings, savePostingTimes, queueAdd, queueRemove, queueMove, postNow, setSagaTime } from '@/lib/site/publish'
+import { writeSaga } from '@/lib/site/saga'
 import { writeLong } from '@/lib/site/longform'
 import { makeMore, setYoutubeMode } from '@/lib/site/automation'
 import { setAgent, review as agentReview } from '@/lib/site/postagent'
@@ -47,6 +48,8 @@ export async function POST(request) {
     if (body.action === 'own-idea') { try { return await addOwnIdea({ url: body.url, name: body.name, note: body.note, channels: body.channels, next: body.next === true }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'yt-mode') return await setYoutubeMode(body.mode)   // lib/site/automation.js
+    if (body.action === 'write-saga') { try { return await writeSaga() } catch (e) { throw new Refused(e.message) } }       // today's long story, now
+    if (body.action === 'saga-time') { try { return await setSagaTime(String(body.time || '')) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'short-style') { try { return await setStoryStyle(body.style) } catch (e) { throw new Refused(e.message) } }   // new Shorts: story | classic
     if (body.action === 'write-story') {                                     // write one story now (also while new Shorts are classic: a test)
       if (body.id != null && !Number.isInteger(body.id)) throw new Refused('Request refused.')

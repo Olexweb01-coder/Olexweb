@@ -604,3 +604,43 @@ content. Add it after the audit is approved, since the audit describes one chann
   ~30 min), librosa added to the system install. Local end-to-end: 25 s Short in ~1.5 min without Chatterbox.
 - Tests: tests/youtube/fSTORY.mjs (23); phaseSTORY.sh = phaseCRON + fSTORY: 229 pass + the known fD2 failure. The test factory
   copy (/home/claude/olexweb-factory) must have the new worker files (fSTORY runs its job step).
+
+## Install 13 (7 Nov 2026): the long story (main video), Shorts cut from it, 5 formats, Facebook's own version, Reel views
+- His decisions: a daily long story-style YouTube video is the main product (option B: his whole day in chapters, 16:9, 5–8 min,
+  a different site saving him each chapter); Shorts are extras cut from it; YouTube and Facebook separate productions; five
+  formats rotate; posting agent per platform; no human gate.
+- Site: lib/site/saga.js (kind 'saga', idea_id null). sagaDue: short_style 'story', today in long_days (switching to story sets
+  long_days to every day), none in 20 h, no 'yt_saga_skipped' in 3 h, enough sites. pool(): picked ideas (no script, not in
+  yt_long_items), topped up on Autopilot by status 'new' score ≥ 60 (last 30 days; marked picked when used). writeSaga: plan call
+  (chapters: site, clock time, title, situation; intro/outro lines; 3 titles in the format's pattern) → one call per chapter, all at
+  once (the run has 300 s) with one repair pass; checkChapter = checkStory on the chapter + its "again" (own shape 10–17 beats,
+  32–80 s, 75–190 words); mendChapter = fixStory. Autopilot drops chapters with critical problems, and soft ones when ≥ 3 good;
+  < 3 → audit 'yt_saga_skipped' (retry after 3 h). assemble(): intro → [chapter card (silent 2.2 s) + chapter beats + "again"
+  (not after the last)] → outro; every beat has ch (-1 intro, n outro). checkSaga: length 180–600 s, chapters ≥ 3, claims.
+  cutShort(): up to SHORTS_PER_SAGA = 3 story Shorts (one of each beat, the proof with cards, + the chapter's "again"; drops desk
+  then buzz to fit 36 s), saved kind 'story' with parent_id = the saga and script.from {saga, chapter}.
+- Formats (story.js FORMATS): stop-paying, tested, hard-way, hidden, three-sites (long only). yt_settings.format_turn (Shorts,
+  4 formats) / saga_turn (long, 5); nextFormat/advanceFormat. Stored as script.format.
+- Facebook's version: every story has story.ask (a question; DEFAULT_ASK if the writer's isn't one; check 'ask', non-critical).
+  factory.jobFor adds fb.ask only when Facebook posting is set up; the worker mixes/renders it (mix.py fb, render --variant fb)
+  and uploads it as pieces 500+ (FB_BASE); finish() keeps video.fb {pieces, bytes, seconds, base} only if complete, else drops
+  it. meta.postNext posts video.fb when present (fb.version 'facebook' | 'same'). dropVideo frees both.
+- Publishing: the saga has its own lane (sagaNext: yt_settings.saga_time, default 16:00 Lagos; upload.lane 'saga', slot
+  'YYYY-MM-DD saga'; usedSlots ignores it; never queued: autoQueue/queueList/uploadNext skip it, queueAdd refuses). Runs before
+  autoQueue. A Short with parent_id isn't queued until the parent is uploaded (or failed for good, or 3 days old); its YouTube
+  description starts "Watch my whole day: https://youtu.be/<parent>". YouTube chapters from the worker's timing (chapter cards).
+  Story mode: writeNextScript doesn't run (picked ideas wait for the long story); classic keeps writeLong.
+- Reel views: meta.fbInsights reads /{reel}/video_insights (blue_reels_play_count / fb_reels_total_plays) once a Reel is 3 days old
+  (meta_posts.views/views_at); permission error (code 10/200–299) → meta_settings.insights 'denied', retried weekly, note tells
+  him to add read_insights in the Meta login configuration and reconnect. postagent: Facebook uses decideFrequency with real
+  views when there are any; otherwise the careful no-guesswork rule as before.
+- Fixed: Today tab showed "Empty" for a time whose video was uploaded the day before in Scheduled mode (rows now belong to their
+  slot's day; "Scheduled" label). Series box: "Series (classic Shorts and long videos only)", hidden in story style.
+- Factory: worker/story/wide.mjs (1280×720 scenes + intro/chapter/outro, "My day" note with ticks, clock tag, subtitles at the
+  bottom), scenes.mjs 'ask' scene, sketch.mjs 'wave' pose, render.mjs (kind saga → wide; 2–4 browser pages in parallel; --variant
+  fb), mix.py [fb], act.py (+ the fb line; ACT_BUDGET seconds, big feelings acted first; saga 6600 s), voiceprint.py (+ fb line),
+  run.mjs (saga capture = screenshot per chapter, never fatal; progress per acted line; Facebook version render/upload never
+  fatal; saga chapters at finish), render.yml (KIND story|saga gets Chatterbox; timeout 200 min; heartbeat during first install).
+  Local: ~22 frames/s on 2 cores (a 6-min story ≈ 7 min of drawing).
+- Tests: tests/youtube/fSAGA.mjs (37); phaseSAGA.sh = phaseSTORY + fSAGA. mock-google: plan + chapter writers ("BadChapter"
+  fails its shape), /video_insights (insightsDenied, reelViewsAll).

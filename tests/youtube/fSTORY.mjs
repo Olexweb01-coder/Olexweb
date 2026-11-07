@@ -58,7 +58,7 @@ await api({ action: 'approve-script', id: s.id })
 await db.query("update yt_scripts set status = 'rendering', render_started_at = now() where id = $1", [s.id])
 const out = execFileSync('node', ['worker/run.mjs', '--id', String(s.id), '--step', 'job'], { cwd: '/home/claude/olexweb-factory', env: process.env }).toString()
 const job = JSON.parse(fs.readFileSync('/home/claude/olexweb-factory/work/job.json', 'utf8'))
-check(job.kind === 'story' && job.story.beats.length === 11 && job.site.url.includes('masonry') && /story Short, 11 beats/.test(out), 'the worker receives kind “story” with its 11 beats', out.trim().split('\n').pop())
+check(job.kind === 'story' && job.story.beats.length === 11 && job.site.url.includes('masonry') && /story Short( \(\+ Facebook version\))?, 11 beats/.test(out), 'the worker receives kind “story” with its 11 beats', out.trim().split('\n').pop())
 
 console.log('\n114. A test story waits for you')
 await db.query(`update yt_scripts set status = 'rendered', video = '{"pieces":1,"bytes":1000,"seconds":24}', queue_pos = null where id = $1`, [s.id])

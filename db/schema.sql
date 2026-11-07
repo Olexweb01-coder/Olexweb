@@ -562,3 +562,14 @@ create table if not exists run_locks (name text primary key, until timestamptz n
   last_ok boolean, last_report jsonb);
 -- Install 12: story Shorts (the sketch style, his acted voice). New Shorts are classic until you switch them to story.
 alter table yt_settings add column if not exists short_style text not null default 'classic';
+-- Install 13: the long story (kind 'saga': his whole day in chapters, the main video), Shorts cut from it, the five formats
+-- taking turns, Facebook's own version of each story (a question instead of the loop), and Reel views for the posting agent.
+alter table yt_settings add column if not exists format_turn int not null default 0;     -- whose turn among the Short formats
+alter table yt_settings add column if not exists saga_turn int not null default 0;       -- whose turn among the long-story formats
+alter table yt_settings add column if not exists saga_time text not null default '16:00'; -- the long story's own daily time (Lagos), apart from the Shorts
+alter table yt_scripts add column if not exists parent_id int references yt_scripts(id) on delete set null;   -- a Short cut from a long story
+create index if not exists yt_scripts_parent on yt_scripts (parent_id) where parent_id is not null;
+alter table meta_posts add column if not exists views int;                     -- Reel plays, read 3 days after posting (when Meta allows it)
+alter table meta_posts add column if not exists views_at timestamptz;
+alter table meta_settings add column if not exists insights text;              -- 'ok' | 'denied': whether Meta lets us read Reel views
+alter table meta_settings add column if not exists insights_at timestamptz;    -- when that was last tried

@@ -7,7 +7,7 @@ import { toast } from './ui'
 const dim = { color: 'var(--dim)' }
 const fmtLen = (s) => { s = Math.round(s || 0); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }
 const dayName = (d, today) => { if (d === today) return 'Today'; const t = new Date(Date.parse(today + 'T12:00:00Z') + 86400e3).toISOString().slice(0, 10); if (d === t) return 'Tomorrow'; return new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) }
-const label = (v) => v.kind === 'long' ? `Vol. ${v.volume || ''}` : v.part ? `Part ${v.part}` : 'Video'
+const label = (v) => v.kind === 'long' ? `Vol. ${v.volume || ''}` : v.kind === 'saga' ? 'Long story' : v.kind === 'story' ? 'Story' : v.part ? `Part ${v.part}` : 'Video'
 const when = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 const stamp = (d) => d ? new Date(d).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : ''
 const ago = (d) => { const m = Math.round((Date.now() - new Date(d).getTime()) / 60e3); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago' }
@@ -81,7 +81,7 @@ export default function YouTubeVideos({ data }) {
         <b className="yv-vt">{v.title || v.name}</b>
         {s === 'public' || s === 'youtube' ? <p className="yv-posted">Posted to YouTube · {stamp(v.uploadedAt)} · <b className={s === 'public' ? 'yv-pub' : 'yv-prv'}>{privText(v.privacy)}</b>{v.checkedAt ? <span> (checked {ago(v.checkedAt)})</span> : null}</p> : null}
         {s === 'public' || s === 'youtube' ? <div className="yv-stats"><span><b>{v.views ?? 0}</b> views</span>{v.watched ? <span><b>{Math.round(v.watched)}%</b> watched</span> : null}</div> : null}
-        {s === 'ready' ? <div className="yv-act"><button className="yv-p" disabled={!!busy} onClick={() => call({ action: 'queue-add', id: v.id }, 'Added to the queue.')}>Add to queue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
+        {s === 'ready' ? <div className="yv-act">{v.kind === 'saga' ? null : <button className="yv-p" disabled={!!busy} onClick={() => call({ action: 'queue-add', id: v.id }, 'Added to the queue.')}>Add to queue</button>}<button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
         {s === 'queued' ? <div className="yv-act"><button disabled={!!busy} onClick={() => call({ action: 'queue-remove', id: v.id }, 'Removed from the queue.')}>Unqueue</button><button disabled={!!busy} onClick={() => setConfirm(v)}>Post now…</button></div> : null}
         {v.fb ? <span className="yv-fbc">{v.fb.status === 'posted' && v.fb.id ? <a href={'https://www.facebook.com/reel/' + v.fb.id} target="_blank" rel="noopener noreferrer">Also on Facebook ↗</a> : v.fb.status === 'pending' ? 'Facebook: waiting (next Reel)' : v.fb.status === 'failed' ? 'Facebook: not posted yet' : null}</span> : null}
         <div className="yv-meta"><span>{s === 'public' || s === 'youtube' ? 'Up ' + when(v.uploadedAt) : 'Made ' + when(v.madeAt)}</span>{v.ytId ? <a href={'https://studio.youtube.com/video/' + v.ytId + '/edit'} target="_blank" rel="noopener noreferrer">Studio ↗</a> : <a href="/admin/youtube?view=scripts">Script</a>}</div>
@@ -90,7 +90,7 @@ export default function YouTubeVideos({ data }) {
 
     {play ? <div className="yv-ov" role="dialog" aria-modal="true" aria-label={play.title || play.name} onClick={() => setPlay(null)}><div className="yv-dl" onClick={(e) => e.stopPropagation()}>
       <b style={{ display: 'block', marginBottom: 10 }}>{label(play)} · {play.title || play.name}</b>
-      {play.ytId ? <p style={{ margin: '0 0 12px', ...dim }}>This one is on YouTube. <a href={'https://youtube.com/shorts/' + play.ytId} target="_blank" rel="noopener noreferrer">Watch it there ↗</a></p>
+      {play.ytId ? <p style={{ margin: '0 0 12px', ...dim }}>This one is on YouTube. <a href={(play.kind === 'long' || play.kind === 'saga' ? 'https://youtube.com/watch?v=' : 'https://youtube.com/shorts/') + play.ytId} target="_blank" rel="noopener noreferrer">Watch it there ↗</a></p>
         : <video src={`/admin/api/youtube/video?id=${play.id}`} controls autoPlay playsInline style={{ width: '100%', maxHeight: '70vh', borderRadius: 14, background: '#000' }} />}
       <div className="yv-bt"><button className="btn btn-line" onClick={() => setPlay(null)}>Close</button></div></div></div> : null}
 
