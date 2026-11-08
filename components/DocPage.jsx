@@ -12,7 +12,7 @@ export default function DocPage({ d }) {
     <div className="od-bar"><button onClick={() => window.print()}>Save as PDF</button></div>
     <article className="od-sheet">
       <header className="od-head">
-        <div className="od-brand"><span className="od-mark"><i /></span><div><b>Olexweb</b><small>Websites, web apps and the systems behind them</small></div></div>
+        <div className="od-brand"><img className="od-mark" src="/studio/mark.png" alt="" width="35" height="40" /><div><b>Olexweb</b><small>Websites, web apps and the systems behind them</small></div></div>
         <div className="od-title"><h1>{inv ? 'Invoice' : 'Rate card'}</h1><span>{d.number}</span></div>
       </header>
       <section className="od-meta">
@@ -49,7 +49,7 @@ const CSS = `
 .od-sheet{max-width:820px;margin:0 auto;background:#fff;border-radius:18px;padding:clamp(22px,5vw,56px);box-shadow:0 30px 60px -40px rgba(0,0,0,.35);display:grid;gap:28px}
 .od-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding-bottom:22px;border-bottom:2px solid #0a0b0a}
 .od-brand{display:flex;gap:12px;align-items:center}.od-brand b{display:block;font-family:var(--font-hubot),system-ui;font-weight:900;font-size:26px;letter-spacing:-.02em}.od-brand small{color:rgba(10,11,10,.6);font-size:13px}
-.od-mark{width:40px;height:40px;border-radius:12px;background:#0a0b0a;display:grid;place-items:center}.od-mark i{width:14px;height:14px;border-radius:50%;background:#8fe36a;display:block}
+.od-mark{width:35px;height:40px;object-fit:contain;flex:none}
 .od-title{text-align:right}.od-title h1{margin:0;font-family:var(--font-hubot),system-ui;font-weight:900;font-size:clamp(30px,6vw,44px);line-height:1}.od-title span{color:rgba(10,11,10,.6);font-weight:700}
 .od-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}.od-meta div{display:grid;gap:3px;align-content:start}.od-meta small{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(10,11,10,.5)}
 .od-meta b{font-size:16px}.od-meta span{font-size:14px;color:rgba(10,11,10,.7)}

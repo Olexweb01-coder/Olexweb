@@ -1,6 +1,7 @@
 // The share picture for every Directory post (Install 16): what WhatsApp, Facebook and X show when someone shares a link.
 import { ImageResponse } from 'next/og'
 import { entryBySlug } from '@/lib/site/directory'
+import { MARK_PNG } from '@/lib/brandMark'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -20,7 +21,7 @@ export const shareImage = (kind) => async function Image({ params }) {
         {line ? <div style={{ fontSize: 30, color: 'rgba(242,239,233,.7)', lineHeight: 1.3 }}>{line.slice(0, 130)}</div> : null}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 30, fontWeight: 700 }}>
-        <div style={{ width: 22, height: 22, borderRadius: 999, background: '#8fe36a' }} />olexweb.com
+        <img src={MARK_PNG} width={35} height={40} alt="" />olexweb.com
       </div>
     </div>), size)
 }

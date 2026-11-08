@@ -21,7 +21,7 @@ export default function DirEntry({ e }) {
   const price = (c.pricing && c.pricing.status) || 'unknown', host = (() => { try { return new URL(e.url).hostname.replace(/^www\./, '') } catch { return e.url } })()
   return (<div ref={root} className="dx">
     <style dangerouslySetInnerHTML={{ __html: DIR_CSS + ENTRY_CSS }} />
-    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
+    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
       <nav className="de-crumb" aria-label="Breadcrumb"><a href="/tools">Directory</a><span>/</span>{e.category ? <span>{e.category}</span> : null}{e.category ? <span>/</span> : null}<span aria-current="page">{name}</span></nav>
       <section className="de-hero">
         <div className="de-meta"><span className={'dx-badge dx-' + price}>{PRICE[price]}</span>{e.category ? <span className="dx-eb">{e.category}</span> : null}</div>

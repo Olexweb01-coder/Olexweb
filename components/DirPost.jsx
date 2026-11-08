@@ -18,7 +18,7 @@ export default function DirPost({ e }) {
   const when = e.published_at ? new Date(e.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
   return (<div className="dx">
     <style dangerouslySetInnerHTML={{ __html: DIR_CSS + ENTRY_CSS + CSS }} />
-    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={'/' + PATH[e.kind]}>{NAME[e.kind]}s</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
+    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={'/' + PATH[e.kind]}>{NAME[e.kind]}s</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
       <nav className="de-crumb" aria-label="Breadcrumb"><a href="/tools">Directory</a><span>/</span><a href={'/' + PATH[e.kind]}>{NAME[e.kind]}s</a><span>/</span><span aria-current="page">{c.title}</span></nav>
       <section className="de-hero">
         <div className="de-meta"><span className={'dp-kind dp-' + e.kind}>{NAME[e.kind]}</span>{when ? <span className="dx-eb">{when}</span> : null}</div>

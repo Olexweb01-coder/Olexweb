@@ -5,7 +5,7 @@ export const DIR_CSS = `
 html:has(.dx){background:#f2efe9}.dx *{box-sizing:border-box}.dx :where(a){color:inherit}.dx h1,.dx h2,.dx h3,.dx p{margin:0}.dx-w{max-width:1040px;margin:0 auto;padding:0 20px}
 .dx-ico{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .dx-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;height:62px}.dx-mark{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;text-decoration:none}
-.dx-mark span{width:26px;height:26px;border-radius:8px;background:var(--ink);display:grid;place-items:center}.dx-mark i{width:9px;height:9px;border-radius:2px;background:var(--g);transform:rotate(45deg)}
+.dx-mark img{width:21px;height:24px;object-fit:contain;flex:none}
 .dx-nav{display:flex;gap:16px;font-weight:700;font-size:14px}.dx-nav a{text-decoration:none;color:var(--dim)}.dx-nav a:hover{color:var(--ink)}
 .dx-eb{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--gi)}
 .dx-h1{font-family:var(--font-hubot),system-ui;font-stretch:76%;font-weight:900;font-size:clamp(46px,10vw,104px);line-height:.88;letter-spacing:-.02em;margin-top:12px}

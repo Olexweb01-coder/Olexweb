@@ -118,7 +118,7 @@ export default function PageView({ page, preview = false }) {
 
   return (<div ref={root} className={'pv pv-' + type}>
     <style dangerouslySetInnerHTML={{ __html: CSS }} />
-    <div className="pv-topbar"><div className="pv-w"><header className="pv-bar"><a className="pv-mark" href="/"><span><i /></span>Olaitan Adebayo</a>
+    <div className="pv-topbar"><div className="pv-w"><header className="pv-bar"><a className="pv-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olaitan Adebayo</a>
       <span className="pv-live">{type === 'webinar' ? <><span className="pv-dot" />LIVE SESSION</> : type === 'event' ? <><Ico n="pin" />IN PERSON</> : <><Ico n="head" />AUDIO</>}</span></header></div></div>
 
     <section className="pv-hero"><div className="pv-w">
@@ -156,7 +156,7 @@ html:has(.pv){scroll-behavior:smooth;background:#f2efe9}
 .pv *{box-sizing:border-box}.pv :where(a){color:inherit}.pv h1,.pv h2,.pv h3,.pv p{margin:0}.pv-w{max-width:1000px;margin:0 auto;padding:0 20px}
 .pv-ico{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .pv-bar{display:flex;align-items:center;justify-content:space-between;height:62px;padding-top:env(safe-area-inset-top,0px)}.pv-mark{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;text-decoration:none}
-.pv-mark span{width:26px;height:26px;border-radius:8px;background:var(--ink);display:grid;place-items:center}.pv-mark i{width:9px;height:9px;border-radius:2px;background:var(--g);transform:rotate(45deg)}
+.pv-mark img{width:21px;height:24px;object-fit:contain;flex:none}
 .pv-live{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--ink);color:var(--paper);font-weight:700;font-size:12.5px;letter-spacing:.06em}.pv-live .pv-ico{width:15px;height:15px;color:var(--g)}
 .pv-dot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--g);flex:none}.pv-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--g);animation:pvPing 1.8s var(--ease) infinite}
 @keyframes pvPing{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.2);opacity:0}}
@@ -216,6 +216,6 @@ html:has(.pv){scroll-behavior:smooth;background:#f2efe9}
 .pv-event .pv-heroCta{background:var(--g);color:var(--gi)}.pv-event .pv-topbar{background:var(--ink);color:var(--paper)}
 .pv-event .pv-when{background:rgba(242,239,233,.06);perspective:600px}.pv-event .pv-date{transform-origin:top;animation:pvFlip .9s var(--ease) .8s both}@keyframes pvFlip{0%{transform:rotateX(-92deg)}100%{transform:none}}
 .pv-event .pv-hl::before{background:var(--g)}.pv-event .pv-hl{color:var(--paper)}
-.pv-event .pv-mark span{background:var(--g)}.pv-event .pv-mark i{background:var(--ink)}.pv-event .pv-live{background:var(--g);color:var(--gi)}.pv-event .pv-live .pv-ico{color:var(--gi)}
+.pv-event .pv-live{background:var(--g);color:var(--gi)}.pv-event .pv-live .pv-ico{color:var(--gi)}
 @media(prefers-reduced-motion:reduce){.pv *,.pv *::before,.pv *::after{animation:none!important;transition:none!important}.pv-kick b,.pv-ln>span,.pv-lede,.pv-when,.pv-fact,.pv-heroCta,.pv-seats{opacity:1!important;transform:none!important}.pv-hl::before{transform:none!important}}
 `

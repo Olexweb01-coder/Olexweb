@@ -15,7 +15,7 @@ export default function DirLibrary({ entries, kind = null, heading = null }) {
     && (!n || [e.name, e.one, e.category, ...(e.tags || [])].join(' ').toLowerCase().includes(n))) }, [entries, q, cat, price])
   return (<div className="dx">
     <style dangerouslySetInnerHTML={{ __html: DIR_CSS + CSS }} />
-    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools" aria-current={kind ? undefined : 'page'}>Directory</a><a href="/aoc">Free course</a></nav></header>
+    <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olexweb</a><nav className="dx-nav"><a href="/tools" aria-current={kind ? undefined : 'page'}>Directory</a><a href="/aoc">Free course</a></nav></header>
       <section className="dl-hero"><span className="dx-eb">The Olexweb Directory</span>
         {heading ? <h1 className="dx-h1 dl-h1k">{heading[0]}</h1>
           : <h1 className="dx-h1"><span className="dx-ln"><span>Useful tech,</span></span><span className="dx-ln"><span style={{ animationDelay: '.1s' }}>explained <span className="dl-hl">clearly.</span></span></span></h1>}
