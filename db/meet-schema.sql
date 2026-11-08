@@ -65,3 +65,6 @@ create index if not exists meet_codes_ip on meet_codes (ip_hash, created_at desc
 -- failed password attempts (to slow down guessing)
 create table if not exists meet_login_fails (id bigserial primary key, email text not null, ip_hash text, at timestamptz not null default now());
 create index if not exists meet_login_fails_email on meet_login_fails (lower(email), at desc);
+
+-- co-hosts (by their identity in the meeting): they can mute, let speak, remove, record and take AI notes
+alter table meetings add column if not exists cohosts jsonb not null default '[]'::jsonb;

@@ -14,7 +14,7 @@ export const MEET_ROUTES = { transcribe: '/api/meet/notes', notes: '/api/meet/no
 async function transcribePart(p, code, routes) {
   const ext = /mp4/.test(p.mime) ? 'm4a' : 'webm'
   for (let attempt = 0; attempt < 2; attempt++) {
-    const fd = new FormData(); fd.append('audio', new File([p.blob], `part-${p.part + 1}.${ext}`, { type: p.mime })); fd.append('code', code)
+    const fd = new FormData(); fd.append('audio', new File([p.blob], `part-${p.part + 1}.${ext}`, { type: p.mime })); fd.append('code', code); if (routes.who && routes.who.seat) { fd.append('as', routes.who.as); fd.append('seat', routes.who.seat) }
     let r = null
     try { r = await fetch(routes.transcribe, { method: 'POST', credentials: 'same-origin', body: fd }) } catch {}
     if (r && r.ok) { const j = await asJson(r); return String(j.text || '').trim() }
@@ -45,7 +45,7 @@ export async function makeNotes(code, onStep = () => {}, routes = ADMIN) {
     return (recs.length > 1 ? `[Recording ${i + 1}]\n` : '') + text
   }).join('\n\n').trim()
   onStep('Writing the notes…')
-  const r = await fetch(routes.notes, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'notes', code, transcript }) })
+  const r = await fetch(routes.notes, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'notes', code, transcript, ...(routes.who || {}) }) })
   const j = await asJson(r)
   if (!r.ok) throw new Error(j.error || 'The notes couldn’t be written. Try again.')
   await dropNotesAudio(code).catch(() => {})

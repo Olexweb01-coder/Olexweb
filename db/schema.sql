@@ -651,3 +651,6 @@ alter table sales_settings add column if not exists last_find jsonb;
 alter table yt_settings add column if not exists long_style text not null default 'tale';    -- 'tale' (a real story) or 'day' (the old website day)
 alter table yt_settings add column if not exists tale_cursor int not null default 0;          -- whose turn: genre (scam, hustle, mystery) and setting (UK, US)
 alter table dir_entries add column if not exists tale_id bigint;                             -- a safety alert told as a story once
+
+-- co-hosts (by their identity in the meeting): they can mute, let speak, remove, record and take AI notes
+alter table meetings add column if not exists cohosts jsonb not null default '[]'::jsonb;

@@ -13,20 +13,20 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 const MAX_BYTES = 4 * 1024 * 1024, FREE_PIECES = 12
 const LIMIT = 'Free AI notes cover the first 60 minutes of a meeting. Longer notes will come with paid plans.'
-async function who(request, code) {
+async function who(request, code, co = null) {
   const u = await currentUser().catch(() => null), mu = await currentMeetUser()
-  return mustHost(code, u, mu)                                            // throws for anyone who isn't this meeting's host
+  return mustHost(code, u, mu, co)                                        // throws for anyone who isn't this meeting's host or a co-host
 }
 export async function GET(request) {
-  const code = String(new URL(request.url).searchParams.get('code') || '')
-  return respond(async () => { await who(request, code); return getNotes(code) })
+  const sp = new URL(request.url).searchParams, code = String(sp.get('code') || '')
+  return respond(async () => { await who(request, code, { as: sp.get('as'), seat: sp.get('seat') }); return getNotes(code) })
 }
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   if (String(request.headers.get('content-type') || '').startsWith('multipart/')) {
     let form; try { form = await request.formData() } catch { return refuse('No recording received.', 400) }
     const code = String(form.get('code') || ''), file = form.get('audio')
-    let h; try { h = await who(request, code) } catch (e) { return refuse(e.message, e.status || 403) }
+    let h; try { h = await who(request, code, { as: String(form.get('as') || ''), seat: String(form.get('seat') || '') }) } catch (e) { return refuse(e.message, e.status || 403) }
     if (!voiceReady()) return refuse('AI notes aren’t set up yet.', 503)
     if (!file || typeof file === 'string' || !file.size) return refuse('No recording received.', 400)
     if (file.size > MAX_BYTES) return refuse('That piece of the recording is too big.', 413)
@@ -44,5 +44,5 @@ export async function POST(request) {
   }
   const b = await request.json().catch(() => null)
   if (!b || b.action !== 'notes') return refuse('Request refused.', 400)
-  return respond(async () => { await who(request, b.code); return makeNotes(b.code, String(b.transcript || '').slice(0, 300_000)) })
+  return respond(async () => { await who(request, b.code, { as: b.as, seat: b.seat }); return makeNotes(b.code, String(b.transcript || '').slice(0, 300_000)) })
 }

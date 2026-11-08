@@ -86,15 +86,15 @@ export { keepWords }
 
 // AI notes in the Meet app: make them from this device's recording (or the AI note taker), then read, copy, download.
 // Runs on meet.olexweb.com itself, because that's where the recording's audio is kept (each address has its own storage).
-export function NotesPanel({ code, title, make, onClose }) {
+export function NotesPanel({ code, title, make, who, onClose }) {
   const [n, setN] = useState(null), [step, setStep] = useState(''), [err, setErr] = useState('')
   useEffect(() => {
     let live = true
     ;(async () => {
       const lib = await import('./notes')
       try {
-        if (make) { const r = await lib.makeNotes(code, (s) => live && setStep(s), lib.MEET_ROUTES); if (live) setN({ notes: r.notes, by: r.by, at: new Date().toISOString(), transcript: r.transcript, title }) }
-        else { const r = await fetch('/api/meet/notes?code=' + encodeURIComponent(code), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'No notes yet.'); if (live) setN(j) }
+        if (make) { const r = await lib.makeNotes(code, (s) => live && setStep(s), who && who.seat ? { ...lib.MEET_ROUTES, who } : lib.MEET_ROUTES); if (live) setN({ notes: r.notes, by: r.by, at: new Date().toISOString(), transcript: r.transcript, title }) }
+        else { const r = await fetch('/api/meet/notes?code=' + encodeURIComponent(code) + (who && who.seat ? '&as=' + encodeURIComponent(who.as) + '&seat=' + encodeURIComponent(who.seat) : ''), { credentials: 'same-origin', cache: 'no-store' }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'No notes yet.'); if (live) setN(j) }
       } catch (e) { if (live) setErr(e.message || 'The notes couldn’t be made. Try again.') }
     })()
     return () => { live = false }
