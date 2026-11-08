@@ -82,7 +82,7 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(); cx = br.new_context(viewport={'width': 1280, 'height': 900})
     cx.add_cookies([{'name': '__Host-olex_sess', 'value': OWNER, 'domain': 'localhost', 'path': '/', 'secure': True, 'httpOnly': True, 'sameSite': 'Strict'}])
     P = cx.new_page(); errs = []; P.on('pageerror', lambda e: errs.append(str(e)[:90]))
-    P.goto(APP + '/admin/sales'); P.wait_for_selector('.sl-tabs', timeout=10000)
+    P.goto(APP + '/admin/sales#outbox'); P.wait_for_selector('.sl-tabs', timeout=10000)   # the detailed screen (Simple is the default since Install 18)
     check(P.locator('.side-nav a:has-text("Sales")').count() == 1, 'Sales is in the sidebar')
     P.click('.sl-sub button:has-text("Sent and done")'); P.wait_for_selector('.sl-m', timeout=8000)
     check(P.locator('.sl-m').count() >= 2 and P.locator('.sl-sigs span:has-text("Slow on phones")').count() >= 1, 'sent emails show with the evidence they were based on')

@@ -705,3 +705,18 @@ content. Add it after the audit is approved, since the audit describes one chann
   olexweb.com/alerts (etc.). Descriptions: "Safety alert, <subject> (<post url>)"; a news Short says "Read it: <post url>".
 - Guide links in YouTube descriptions and Facebook captions use the post's own path (/tools, /updates, /guides, /alerts).
 - Tests: fWIDE.mjs (11); phaseWIDE.sh = phaseDIR2 + fWIDE.
+
+## Install 18: the sales agent, phase 1 (playbook, price levels, France, official documents, simple screen)
+- lib/sales/playbook.js: positioning (every build motion-based, scroll-stopping, never static), proof, countries GB/US/FR
+  (NEVER DE/AT), currencies (GBP 0.8, EUR 0.92), tiers (starter x1, growth x2.5, premium x6), offers (fix, landing $100,
+  booking, site, redesign, admin, signature/platform premium-only, care monthly). priceOf(key, tier, currency).
+- lib/sales/tier.js: scoreTier from the trade, plc, CUE_* signals on their site (locations, hiring, team, investors; EN+FR)
+  and reply hints (budget/figure count once). Premium >=5, growth >=2. A company's tier only goes up. planCompany saves
+  sales_companies.plan + .tier; called after profiling and on every real reply.
+- France: emails written in French (vous) with FR_PS (replies in English, French or English fine); French opt-out footer
+  and "non merci" detection; Paris office hours; French search words; serper hl=fr.
+- lib/sales/docs.js + /doc/<token> (noindex, DocPage.jsx, Save as PDF): rate cards (RC-YYYY-####) and invoices
+  (INV-YYYY-####, needs bank details in sales_settings.bank). A price question in a reply gets the rate card link.
+- components/admin/SalesSimple.jsx: Simple view of Sales (stages, waiting, worth your time, documents, switches, bank).
+- db: sales_docs; sales_companies.plan/tier; sales_settings.countries/bank; country check GB/US/FR.
+- Tests: tests/sales/agent.py (25). Run: /home/claude/yt-test/salesrun.sh agent.py

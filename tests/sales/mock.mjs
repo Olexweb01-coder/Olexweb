@@ -11,6 +11,10 @@ const SITES = {
   'modern-clinic.test': { '/': page('<h1>Modern Clinic</h1><a href="https://calendly.com/x">Book online</a><a href="mailto:team@modern-clinic.test">e</a>') },
   'nomx-cafe.test': { '/': page('<h1>Cafe</h1><a href="mailto:hi@nomx-cafe.test">e</a>', { viewport: false }) },
   'nohttps-ledger.test': { '/': page('<h1>Ledger Accountants</h1><p>Write to enquiries@nohttps-ledger.test</p>') },
+  // Install 18: a French salon (old footer, mentions its 3 salons) and a large UK law firm (offices in two cities, a team of 40)
+  'paris-salon.test': { '/': page('<h1>Salon Lumière</h1><p>Nos 3 salons à Paris. Écrivez-nous : bonjour@paris-salon.test</p>', { year: 2020 }) },
+  'lyon-cafe.test': { '/': page('<h1>Café des Arts</h1><p>Contact : bonjour@lyon-cafe.test</p>', { viewport: false }) },
+  'bigfirm-law.test': { '/': page('<h1>Harper and Cole Solicitors</h1><p>Offices in London and Manchester. A team of 40 lawyers.</p><p>Email enquiries@bigfirm-law.test</p>', { viewport: false }) },
 }
 const PSI = { 'slow-dentist.test': 28, 'old-salon.test': 61, 'modern-clinic.test': 93, 'nomx-cafe.test': 70, 'nohttps-ledger.test': 74 }
 const GOOD = (q) => ({ subject: 'bright smiles website on phones', body: `Hi,\n\nI was looking at the Bright Smiles site on my phone and it took a long time to load, and there's no way to book online. People searching on their phones often give up and call the next dentist instead. Would a quick idea on fixing both be useful?` })

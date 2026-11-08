@@ -598,3 +598,14 @@ alter table dir_settings alter column per_day set default 5;
 update dir_settings set per_day = 5 where per_day = 12;                                      -- the old default: now about 5 a day
 -- Install 17: wider stories. The Directory's tech updates, how-tos and safety alerts become chapters of the long story too.
 alter table dir_entries add column if not exists story_id int;   -- the long story (yt_scripts.id) that used this post
+-- Install 18: the sales agent, phase 1. France joins the UK and US (Germany and Austria never: their law needs consent even
+-- for business emails); the agent's read of each business (price level, offer, price, angle, language); official documents.
+alter table sales_companies drop constraint if exists sales_companies_country_check;
+alter table sales_companies add constraint sales_companies_country_check check (country in ('GB', 'US', 'FR'));
+alter table sales_companies add column if not exists plan jsonb;           -- the agent's read (tier.js planCompany)
+alter table sales_companies add column if not exists tier text;            -- starter | growth | premium (only ever goes up)
+alter table sales_settings add column if not exists countries text not null default 'GB,US,FR';   -- where it looks and emails
+alter table sales_settings add column if not exists bank jsonb;            -- printed on invoices (payment straight to the bank)
+create table if not exists sales_docs (id bigserial primary key, created_at timestamptz not null default now(), kind text not null check (kind in ('ratecard', 'invoice')),
+  number text not null, token text not null unique, company_id bigint references sales_companies(id) on delete set null, data jsonb not null,
+  status text not null default 'issued', viewed_at timestamptz);

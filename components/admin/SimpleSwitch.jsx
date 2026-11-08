@@ -6,7 +6,10 @@ import { useState, useEffect } from 'react'
 export default function SimpleSwitch({ k, simple, detailed }) {
   const [view, setView] = useState('simple')
   const pick = (v) => { setView(v); try { localStorage.setItem('olex-view-' + k, v) } catch {}; window.scrollTo(0, 0) }
-  useEffect(() => { try { if (localStorage.getItem('olex-view-' + k) === 'detailed') setView('detailed') } catch {} }, [k])
+  useEffect(() => {                                    // a link to a part of the detailed screen (…#replies) opens it there
+    if (window.location.hash.length > 1) { setView('detailed'); return }
+    try { if (localStorage.getItem('olex-view-' + k) === 'detailed') setView('detailed') } catch {}
+  }, [k])
   useEffect(() => {                                    // "Show the details" inside a simple view asks for the detailed one
     const on = (e) => pick(e.detail === 'detailed' ? 'detailed' : 'simple'); window.addEventListener('olex-view', on); return () => window.removeEventListener('olex-view', on)
   }, [k]) // eslint-disable-line react-hooks/exhaustive-deps

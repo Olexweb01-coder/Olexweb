@@ -7,6 +7,7 @@ import * as Sales from '@/lib/sales'
 import { profileCompany } from '@/lib/sales/profile'
 import { draftFirst, checkDraft } from '@/lib/sales/write'
 import { SourceError } from '@/lib/sales/sources'
+import * as Docs from '@/lib/sales/docs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 const STATUSES = ['new', 'qualified', 'drafted', 'contacted', 'no_email', 'uk_unconfirmed', 'skipped', 'write_failed', 'error', 'replied', 'booked', 'opted_out']
@@ -24,6 +25,15 @@ export async function POST(request) {
 async function handle(b) {
       switch (b.action) {
         case 'overview': return Sales.overview()
+        // Install 18: the simple screen and official documents
+        case 'simple': return Sales.simpleData()
+        case 'agent': await q('update sales_settings set enabled = $1, paused_reason = case when $1 then null else paused_reason end where id = 1', [b.on === true]); return { ok: true }
+        case 'auto-send': await q('update sales_settings set require_approval = $1 where id = 1', [b.on !== true]); return { ok: true }
+        case 'countries': { const list = (Array.isArray(b.list) ? b.list : []).filter((c) => ['GB', 'US', 'FR'].includes(c)); if (!list.length) throw new Refused('Keep at least one country on.'); await q('update sales_settings set countries = $1 where id = 1', [list.join(',')]); return { ok: true } }
+        case 'doc-ratecard': return await Docs.makeRateCard({ country: String(b.country || 'US'), currency: b.currency, tier: String(b.tier || 'starter'), client: b.client || null })
+        case 'doc-invoice': try { return await Docs.makeInvoice(b) } catch (e) { if (e instanceof Docs.DocError) throw new Refused(e.message); throw e }
+        case 'bank': try { return await Docs.saveBank(b) } catch (e) { if (e instanceof Docs.DocError) throw new Refused(e.message); throw e }
+        case 'docs': return { docs: await Docs.recentDocs(30) }
         case 'kinds': return { kinds: Object.entries(Sales.KINDS).map(([id, k]) => ({ id, label: k.label })) }
         case 'find': return Sales.find(b)
         case 'test-sources': return Sales.testSources()
