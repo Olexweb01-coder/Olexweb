@@ -5,11 +5,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from './ui'
 
 const TABS = [['outbox', 'Outbox'], ['replies', 'Replies'], ['companies', 'Companies'], ['find', 'Find'], ['settings', 'Settings']]
-const STEP = { 1: 'First email', 2: 'Follow-up 1', 3: 'Follow-up 2', 9: 'Answer to their reply' }
-const INTENT = { interested: 'Interested', question: 'Question', not_now: 'Not now', wrong_person: 'Wrong person', other: 'Reply', opt_out: 'Opted out (done)', auto_reply: 'Out of office', bounce: 'Bounced' }
+const STEP = { 1: 'First email', 2: 'Follow-up 1', 3: 'Follow-up 2', 9: 'Answer to their reply', 10: 'Nudge', 11: 'Last nudge', 12: 'Introduction (they pointed us here)', 20: 'Check-in', 21: 'Check-in 2', 22: 'Last check-in' }
+const MOVE = { answer: 'The agent answered', book: 'The agent sent your booking link', later: 'Not now: the agent will check in later', referral: 'They pointed to someone else: the agent wrote to them', handover: 'Handed to you', stop: 'They said no: no more emails' }
+const INTENT = { interested: 'Interested', question: 'Question', price: 'Asked the price', wants_call: 'Wants a call', objection: 'Has a doubt', not_interested: 'Said no', not_now: 'Not now', wrong_person: 'Wrong person', other: 'Reply', opt_out: 'Opted out (done)', auto_reply: 'Out of office', bounce: 'Bounced' }
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const STATUS = { new: 'Waiting to be checked', qualified: 'Ready to email', drafted: 'Email drafted', contacted: 'Emailed', no_email: 'No published email', uk_unconfirmed: 'UK: not confirmed as a limited company',
-  skipped: 'Skipped', write_failed: 'Draft failed', error: 'Couldn’t check', replied: 'Replied', booked: 'Call booked', opted_out: 'Opted out', bounced: 'Bounced' }
+  skipped: 'Skipped', write_failed: 'Draft failed', error: 'Couldn’t check', replied: 'Talking', booked: 'Call booked', opted_out: 'Opted out', bounced: 'Bounced', nurture: 'Later (kept warm)', lost: 'Closed (said no or went quiet)' }
 const SIG = { NO_WEBSITE: 'No website', SITE_DOWN: 'Site down', SLOW_MOBILE: 'Slow on phones', NOT_MOBILE: 'Not mobile-friendly', NO_HTTPS: 'No padlock', NO_BOOKING: 'No online booking', OLD_COPYRIGHT: 'Looks out of date', PLATFORM: 'Platform' }
 async function call(body) {
   const r = await fetch('/admin/api/sales', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -46,8 +47,9 @@ function Outbox({ reload }) {
     <div className="seg sl-sub"><button type="button" aria-pressed={which === 'waiting'} onClick={() => setWhich('waiting')}>To approve</button><button type="button" aria-pressed={which === 'sent'} onClick={() => setWhich('sent')}>Sent and done</button></div>
     {!items ? <p className="mg-dim">Loading…</p> : !items.length ? <p className="mg-dim">{which === 'waiting' ? 'Nothing to approve. New drafts appear as Olex Sales checks the businesses you find.' : 'Nothing sent yet.'}</p> :
       <ul className="sl-out">{items.map((m) => <li key={m.id} className={'sl-m sl-' + m.status}>
-        <div className="sl-mh"><span className="sl-step">{STEP[m.step] || 'Email'}</span><b>{m.company}</b><span className="mg-dim">{m.city ? m.city + ', ' : ''}{m.country === 'GB' ? 'UK' : 'US'} · to {m.email}{m.website ? <> · <a href={m.website} target="_blank" rel="noreferrer">their site</a></> : null}</span></div>
+        <div className="sl-mh"><span className="sl-step">{STEP[m.step] || 'Email'}</span><b>{m.company}</b><span className="mg-dim">{m.city ? m.city + ', ' : ''}{{ GB: 'UK', US: 'US', FR: 'France' }[m.country] || m.country} · to {m.email}{m.website ? <> · <a href={m.website} target="_blank" rel="noreferrer">their site</a></> : null}</span></div>
         <Sigs list={m.signals} />
+        {m.held_reason && m.status === 'waiting' ? <p className="sl-for-you">{m.held_reason}. The agent wrote a suggested reply: edit it, then approve, or answer them yourself.</p> : null}
         {edit && edit.id === m.id ? <div className="sl-edit"><input className="input" value={edit.subject} onChange={(e) => setEdit({ ...edit, subject: e.target.value })} aria-label="Subject" />
           <textarea className="input" rows={8} value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} aria-label="Email" />
           <div className="mg-acts"><button className="btn btn-green" onClick={() => save(false)}>Save</button><button className="btn btn-line" onClick={() => setEdit(null)}>Cancel</button></div></div>
@@ -69,7 +71,7 @@ function Replies() {
       <ul className="sl-out">{rows.map((r) => <li key={r.id} className={'sl-m' + (r.handled ? ' sl-done' : '')}>
         <div className="sl-mh"><span className={'sl-step sl-i-' + r.intent}>{INTENT[r.intent] || r.intent}</span><b>{r.company || r.from_email}</b><span className="mg-dim">{r.from_email} · {new Date(r.received_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })}</span></div>
         {r.summary ? <p className="sl-subj">{r.summary}</p> : null}{r.body && r.intent !== 'bounce' ? <pre className="sl-body">{r.body}</pre> : null}
-        {['interested', 'question'].includes(r.intent) && !r.handled ? <p className="mg-dim">An answer with your booking link is waiting in the Outbox.</p> : null}
+        {r.move ? <p className="mg-dim">{MOVE[r.move] || r.move}{r.move !== 'stop' && r.move !== 'handover' ? '' : '.'}</p> : ['interested', 'question'].includes(r.intent) && !r.handled ? <p className="mg-dim">An answer with your booking link is waiting in the Outbox.</p> : null}
         {!r.handled ? <div className="mg-acts"><button className="btn btn-line" onClick={async () => { await call({ action: 'reply-done', id: r.id }); load() }}>Done</button></div> : null}
       </li>)}</ul>}
   </section>)
@@ -160,5 +162,5 @@ const CSS = `.sl{display:grid;gap:14px;max-width:980px}.sl-lead{margin:0;color:v
 .sl-check{display:flex!important;gap:8px;align-items:center;grid-column:1/-1}
 .sl-test{margin-top:14px;display:grid;gap:8px}.sl-test ul{margin:0;padding-left:18px;color:var(--dim);line-height:1.7}
 .sl-keys{list-style:none;padding:0;margin:0 0 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.sl-keys li{display:grid;gap:2px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:14px}.sl-keys li.on{border-color:rgba(143,227,106,.4)}.sl-keys li.on::after{content:"✓";color:var(--green)}
-.sl-h{font-size:16px;margin:20px 0 8px}.sl-step{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--green)}.sl-i-opt_out,.sl-i-bounce,.sl-i-auto_reply{color:var(--dim)!important}.sl-done{opacity:.6}
+.sl-h{font-size:16px;margin:20px 0 8px}.sl-step{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--green)}.sl-i-opt_out,.sl-i-bounce,.sl-i-auto_reply{color:var(--dim)!important}.sl-done{opacity:.6}.sl-for-you{margin:0;padding:10px 12px;border-radius:12px;background:rgba(239,122,106,.12);border:1px solid rgba(239,122,106,.4);font-size:14px}
 .sl-paused{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:rgba(240,179,94,.12);color:#f0b35e;margin-bottom:14px}.sl-hours{display:grid;gap:8px}.sl-days{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.sl-day{display:flex;gap:4px;align-items:center;font-size:14px}.sl-dnc{display:flex;gap:8px;margin-bottom:10px}.sl-dnc .input{flex:1}`

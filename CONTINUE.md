@@ -720,3 +720,21 @@ content. Add it after the audit is approved, since the audit describes one chann
 - components/admin/SalesSimple.jsx: Simple view of Sales (stages, waiting, worth your time, documents, switches, bank).
 - db: sales_docs; sales_companies.plan/tier; sales_settings.countries/bank; country check GB/US/FR.
 - Tests: tests/sales/agent.py (25). Run: /home/claude/yt-test/salesrun.sh agent.py
+
+## Install 19: the sales agent, phase 2 (runs the conversation, keeps leads warm, books, briefs)
+- lib/sales/converse.js: respond() replaces the old sort + draftAnswer. Reads the whole thread (threadOf), the plan and the
+  playbook; the AI picks one move: answer, book, later, referral, handover, stop. Plain code overrides: START_PAY (starting,
+  invoice, deposit, contract) and SENSITIVE (complaints, legal, data) -> handover; a booked client -> handover; 5 answers
+  without a call (MAX_TURNS) -> handover. checkAnswer: 12–150 words, no links but BOOKING_LINK, no prices/amounts, no promised
+  dates, no "!", no bot phrases, English only, no sign-off. 3 tries, then handover and the bad draft is thrown away.
+  Prices: code adds "it’s <plan price>" + the rate card link when they ask. Answers send 9–38 min later when auto-send is on
+  (confidence >= 0.6, not a handover); handover drafts always wait (held_reason "For you: ...").
+- Steps: 9 answer, 10/11 nudges (3 days, then 4; then nurture 45 days), 12 introduction (referral, own domain only),
+  20–22 "later" check-ins (45 days apart, max 3, then lost). send.js: 12 and 20+ count toward the daily cap; only 9 skips
+  office hours; each kind stops when the conversation moves on.
+- book.js: matches a booking to a business by email when there's no link; cancels every pending email; brief_at = null.
+- lib/sales/brief.js makeBrief: facts by code, wants/worries/ask/show/close by AI; /admin/sales/brief/[id] (SalesBrief.jsx).
+  salesRun writes one missing brief per run; API actions brief, handover-done.
+- Simple screen: Needs you (handovers), Your calls (with brief), Later stage. db: handover, nurture_count, lost_reason,
+  brief, brief_at on sales_companies; move on sales_replies.
+- Tests: tests/sales/converse.py (31). All sales: sales.py 41, part2.py 36, agent.py 25.

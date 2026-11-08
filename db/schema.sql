@@ -609,3 +609,11 @@ alter table sales_settings add column if not exists bank jsonb;            -- pr
 create table if not exists sales_docs (id bigserial primary key, created_at timestamptz not null default now(), kind text not null check (kind in ('ratecard', 'invoice')),
   number text not null, token text not null unique, company_id bigint references sales_companies(id) on delete set null, data jsonb not null,
   status text not null default 'issued', viewed_at timestamptz);
+-- Install 19: the agent runs the conversation (converse.js), keeps leads warm and briefs Olaitan before each call (brief.js)
+alter table sales_companies add column if not exists handover jsonb;          -- {why, summary, at}: this one needs Olaitan (cleared when he marks it done or they book)
+alter table sales_companies add column if not exists nurture_count int not null default 0;   -- "later" check-ins sent (at most 3)
+alter table sales_companies add column if not exists lost_reason text;
+alter table sales_companies add column if not exists brief jsonb;             -- the pre-call brief
+alter table sales_companies add column if not exists brief_at timestamptz;
+alter table sales_replies add column if not exists move text;                 -- what the agent did: answer, book, later, referral, handover, stop
+create index if not exists sales_companies_touch on sales_companies (status, next_touch_after);

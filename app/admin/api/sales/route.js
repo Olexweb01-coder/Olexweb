@@ -10,7 +10,7 @@ import { SourceError } from '@/lib/sales/sources'
 import * as Docs from '@/lib/sales/docs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-const STATUSES = ['new', 'qualified', 'drafted', 'contacted', 'no_email', 'uk_unconfirmed', 'skipped', 'write_failed', 'error', 'replied', 'booked', 'opted_out']
+const STATUSES = ['new', 'qualified', 'drafted', 'contacted', 'no_email', 'uk_unconfirmed', 'skipped', 'write_failed', 'error', 'replied', 'booked', 'opted_out', 'nurture', 'lost']
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const u = await currentUser().catch(() => null)
@@ -27,6 +27,9 @@ async function handle(b) {
         case 'overview': return Sales.overview()
         // Install 18: the simple screen and official documents
         case 'simple': return Sales.simpleData()
+        // Install 19: the pre-call brief, and "I've dealt with this one" for a handover
+        case 'brief': { const id = Number(b.id); if (!Number.isInteger(id)) throw new Refused('Which business?'); const { makeBrief } = await import('@/lib/sales/brief'); const brief = await makeBrief(id); if (!brief) throw new Refused('That business wasn’t found.'); return { brief } }
+        case 'handover-done': { const id = Number(b.id); if (!Number.isInteger(id)) throw new Refused('Which business?'); await q('update sales_companies set handover = null where id = $1', [id]); await q('update sales_replies set handled = true where company_id = $1', [id]); return { ok: true } }
         case 'agent': await q('update sales_settings set enabled = $1, paused_reason = case when $1 then null else paused_reason end where id = 1', [b.on === true]); return { ok: true }
         case 'auto-send': await q('update sales_settings set require_approval = $1 where id = 1', [b.on !== true]); return { ok: true }
         case 'countries': { const list = (Array.isArray(b.list) ? b.list : []).filter((c) => ['GB', 'US', 'FR'].includes(c)); if (!list.length) throw new Refused('Keep at least one country on.'); await q('update sales_settings set countries = $1 where id = 1', [list.join(',')]); return { ok: true } }
@@ -48,7 +51,7 @@ async function handle(b) {
         case 'profile': return { status: await profileCompany(Number(b.id)) }
         case 'draft': { const id = await draftFirst(Number(b.id)); if (!id) throw new Refused('No email could be drafted (see the company’s reason).'); return { id } }
         case 'skip': await q("update sales_companies set status = 'skipped', profile_error = 'Skipped by you' where id = $1", [Number(b.id)]); return { ok: true }
-        case 'outbox': return { items: (await q(`select o.id, o.step, o.subject, o.body, o.status, o.error, o.sent_at, o.created_at, c.name as company, c.country, c.city, c.website, k.email,
+        case 'outbox': return { items: (await q(`select o.id, o.step, o.subject, o.body, o.status, o.error, o.held_reason, o.sent_at, o.created_at, c.name as company, c.country, c.city, c.website, k.email,
             (select json_agg(json_build_object('code', s.code, 'evidence', s.evidence)) from sales_signals s where s.company_id = c.id) as signals
             from sales_outbox o join sales_companies c on c.id = o.company_id join sales_contacts k on k.id = o.contact_id
             where o.status = any($1) order by o.id desc limit 100`, [b.which === 'sent' ? ['sent', 'failed', 'cancelled', 'rejected'] : ['waiting', 'approved', 'held']])).rows }

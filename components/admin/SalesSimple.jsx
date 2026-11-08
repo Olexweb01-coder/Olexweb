@@ -10,7 +10,8 @@ import { showDetails } from './SimpleSwitch'
 
 const FLAG = { GB: 'UK', US: 'US', FR: 'France' }
 const CUR = { GB: 'GBP', US: 'USD', FR: 'EUR' }
-const STATUS = { qualified: 'Ready to email', drafted: 'Email written', contacted: 'Emailed', replied: 'Replied', booked: 'Call booked' }
+const STATUS = { qualified: 'Ready to email', drafted: 'Email written', contacted: 'Emailed', replied: 'Talking', booked: 'Call booked', nurture: 'Later (kept warm)' }
+const when = (d) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(d))
 
 async function post(body) {
   const r = await fetch('/admin/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) })
@@ -42,7 +43,27 @@ export default function SalesSimple({ data }) {
       <div className="ss-stages">{D.stages.map((s) => <div key={s.key} className="sm-chip"><b>{s.n}</b>{s.label}</div>)}</div>
     </section>
 
-    {D.replies ? <a className="ys-link sm-need-soft" href="/admin/sales#replies" onClick={showDetails}><span><b>{D.replies} repl{D.replies === 1 ? 'y' : 'ies'} to look at</b>Someone answered: see what they said and the answer drafted for you</span><em aria-hidden="true">→</em></a> : null}
+    {(D.needs || []).length ? <section className="sm-card ss-needs" aria-label="Needs you">
+      <h2>Needs you</h2>
+      <p className="sm-note">The agent handles conversations by itself. These ones are yours: starting a project, payment, or something it shouldn’t answer alone.</p>
+      {D.needs.map((n) => <div key={n.id} className="ss-need">
+        <b>{n.name}</b><span>{n.handover.why}</span>
+        {n.said ? <q className="ss-dim">{String(n.said).slice(0, 220)}{String(n.said).length > 220 ? '…' : ''}</q> : null}
+        <div className="ss-row">
+          {n.draft ? <a className="btn btn-green" href="/admin/sales#outbox" onClick={showDetails}>See its suggested reply</a> : <a className="btn btn-green" href="/admin/sales#replies" onClick={showDetails}>See the conversation</a>}
+          <button className="btn btn-line" disabled={!!busy} onClick={() => act('h' + n.id, { action: 'handover-done', id: n.id }, 'Done. The agent takes it from here.')}>{busy === 'h' + n.id ? 'Saving…' : 'I’ve dealt with it'}</button>
+        </div></div>)}
+    </section> : null}
+
+    {(D.calls || []).length ? <section className="sm-card" aria-label="Your calls">
+      <h2>Your calls</h2>
+      {D.calls.map((c) => <div key={c.meeting_code} className="ss-call">
+        <div><b>{c.company}</b><span>{when(c.starts_at)} · Lagos time · with {c.name}</span></div>
+        <a className={'btn ' + (c.brief ? 'btn-green' : 'btn-line')} href={'/admin/sales/brief/' + c.id}>{c.brief ? 'Read the brief' : 'Brief (being written)'}</a>
+      </div>)}
+    </section> : null}
+
+    {D.replies ? <a className="ys-link sm-need-soft" href="/admin/sales#replies" onClick={showDetails}><span><b>{D.replies} repl{D.replies === 1 ? 'y' : 'ies'} to look at</b>Someone answered: see what they said and what the agent did</span><em aria-hidden="true">→</em></a> : null}
     {D.waiting && !D.autoSend ? <a className="ys-link sm-need-soft" href="/admin/sales#outbox" onClick={showDetails}><span><b>{D.waiting} email{D.waiting === 1 ? '' : 's'} waiting for your OK</b>Written and checked; they go out when you approve</span><em aria-hidden="true">→</em></a> : null}
 
     <div className="sm-grid"><div>
@@ -83,7 +104,7 @@ export default function SalesSimple({ data }) {
 
       <section className="sm-card" aria-label="Switches">
         <h2>Switches</h2>
-        <div className="sm-sw"><div><b>The agent</b><span>Finds businesses, reads their sites, writes and follows up, reads replies.</span></div>
+        <div className="sm-sw"><div><b>The agent</b><span>Finds businesses, reads their sites, writes, answers replies, follows up, keeps leads warm and books your calls.</span></div>
           <button className={'sm-tog' + (D.enabled ? '' : ' off')} role="switch" aria-checked={D.enabled} aria-label="The agent" disabled={!!busy} onClick={() => act('agent', { action: 'agent', on: !D.enabled }, D.enabled ? 'The agent is off.' : 'The agent is on.')}><i /><em>{D.enabled ? 'ON' : 'OFF'}</em></button></div>
         <div className="sm-sw"><div><b>Send without asking me</b><span>{D.autoSend ? 'Emails that pass every check go out by themselves.' : 'Each email waits for your OK first.'}</span></div>
           <button className={'sm-tog' + (D.autoSend ? '' : ' off')} role="switch" aria-checked={D.autoSend} aria-label="Send without asking me" disabled={!!busy} onClick={() => act('auto', { action: 'auto-send', on: !D.autoSend }, D.autoSend ? 'Emails wait for your OK again.' : 'Emails now go out by themselves.')}><i /><em>{D.autoSend ? 'ON' : 'OFF'}</em></button></div>
@@ -109,6 +130,9 @@ export default function SalesSimple({ data }) {
 }
 const CSS = `
 .ss-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}@media(min-width:700px){.ss-stages{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.ss-needs{border-color:rgba(239,122,106,.5);background:linear-gradient(150deg,rgba(239,122,106,.14),rgba(239,122,106,.03))}
+.ss-need{display:grid;gap:4px;padding:12px 0;border-top:1px solid var(--line);font-size:14.5px}.ss-need q{quotes:none;font-style:italic}.ss-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ss-call{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}.sm-card h2+.ss-call{border-top:0;padding-top:0}.ss-call div{display:grid;gap:2px;min-width:0}.ss-call span{font-size:14px;color:var(--dim)}
 .ss-lead{display:grid;gap:3px;padding:12px 0;border-top:1px solid var(--line);font-size:14px;color:var(--paper)}.sm-card h2+.ss-lead{border-top:0;padding-top:0}
 .ss-lh{display:flex;gap:8px;align-items:center;justify-content:space-between}.ss-lh b{font-size:16px;overflow-wrap:anywhere}.ss-dim{color:var(--dim);font-size:13.5px}
 .ss-tier{font-size:11.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--raise2);color:var(--dim);flex:none}
