@@ -87,7 +87,7 @@ export default function AutomationSimple({ data, onDetailed }) {
       <section className="sm-card" aria-label="What kind of videos">
         <h2>What kind of videos?</h2>
         <button className={'sm-pick' + (story ? ' on' : '')} disabled={!!busy || story} onClick={() => yt('style', { action: 'short-style', style: 'story' }, 'Story videos are on: a long story every day, and Shorts cut from it.')}>
-          <span className="sm-radio" aria-hidden="true" /><span><b>Story videos {story ? '· on' : ''}</b>Every day: one long story (his whole day, 5–8 minutes, a different site saving him each chapter), plus up to 3 Shorts cut from it. Facebook gets its own version.</span></button>
+          <span className="sm-radio" aria-hidden="true" /><span><b>Story videos {story ? '· on' : ''}</b>Every day: one long story (his whole day, 5–8 minutes, a different rescue each chapter: a website, a tech update, a how-to or a scam he spots in time), plus up to 3 Shorts cut from it. Facebook gets its own version.</span></button>
         <button className={'sm-pick' + (!story ? ' on' : '')} disabled={!!busy || !story} onClick={() => yt('style', { action: 'short-style', style: 'classic' }, 'Back to classic Shorts.')}>
           <span className="sm-radio" aria-hidden="true" /><span><b>Classic Shorts {!story ? '· on' : ''}</b>One “Secret websites” Short at a time, and a long video on the days you choose.</span></button>
         {story ? <p className="sm-note">The long story goes up at {S.sagaTime} every day. {S.sagaToday ? 'Today’s is already written.' : ''}</p> : null}

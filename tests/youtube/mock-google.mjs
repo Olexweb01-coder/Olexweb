@@ -204,7 +204,7 @@ http.createServer(async (req, res) => {
     if (/^Write chapter \d+ of \d+ of his day/.test(prompt)) {                             // a long-story chapter (install 13)
       const name = prompt.match(/saves him in this chapter: (.+?) \(/)[1], repair = /YOUR PREVIOUS CHAPTER failed/.test(prompt)
       S.chapterCalls = (S.chapterCalls || []).concat([name + (repair ? ' (repair)' : '')])
-      const page = (prompt.match(/THE SITE'S OWN PAGE[^\n]*\n([\s\S]*?)\n\n"beats"/) || [])[1] || ''
+      const page = (prompt.match(/(?:THE SITE'S OWN PAGE|THE SOURCE)[^\n]*\n([\s\S]*?)\n\n"beats"/) || [])[1] || ''
       const quote = (page.split('. ')[1] || page).split('.')[0].trim()
       const beats = [
         { scene: 'yell', emotion: 'panic', text: 'No! Not now!' }, { scene: 'timejump', emotion: 'calm', text: '' },

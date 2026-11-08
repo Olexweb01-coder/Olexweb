@@ -596,3 +596,5 @@ alter table dir_settings add column if not exists gathered_at timestamptz;      
 alter table dir_settings add column if not exists google jsonb;                              -- last "tell Google" result
 alter table dir_settings alter column per_day set default 5;
 update dir_settings set per_day = 5 where per_day = 12;                                      -- the old default: now about 5 a day
+-- Install 17: wider stories. The Directory's tech updates, how-tos and safety alerts become chapters of the long story too.
+alter table dir_entries add column if not exists story_id int;   -- the long story (yt_scripts.id) that used this post

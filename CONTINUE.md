@@ -693,3 +693,15 @@ content. Add it after the audit is approved, since the audit describes one chann
   publish-now.
 - Tests: fDIR2.mjs (28); phaseDIR2.sh = phaseSIMPLE + fDIR2. mock-google: /dirfeed/news|safe, /news/<article>, judge + post
   writer ("copy" article copies word for word and must be caught), /v21.0/777/feed. fenv: DIR_FEEDS, news.test host.
+
+## Install 17 (8 Nov 2026): wider stories
+- The long story mixes the Directory's own posts with websites (saga.js newsPool: live update/guide/alert posts not yet told,
+  updates ≤ 5 days, others ≤ 30; one of each kind first, an alert first): up to 2 per story, more when websites run short;
+  "3 sites for one goal" stays websites only. Each post used gets a yt_ideas row ('post:<kind>:<slug>', status made, score 0,
+  source 'Olexweb Directory'; dir_entries.idea_id set) so its chapter and Short work like a site; dir_entries.story_id marks it
+  told. The chapter writer has a rescue per kind (RESCUE_TEXT: update = he discovers the change; guide = the trick; alert = the
+  scam IS the disaster and he spots it in time) and a "subject" he says in the reveal (the site name for the named check). The
+  source is the post's own checked text (summary, points, steps, quotes). The factory films our post page; the pill says
+  olexweb.com/alerts (etc.). Descriptions: "Safety alert, <subject> (<post url>)"; a news Short says "Read it: <post url>".
+- Guide links in YouTube descriptions and Facebook captions use the post's own path (/tools, /updates, /guides, /alerts).
+- Tests: fWIDE.mjs (11); phaseWIDE.sh = phaseDIR2 + fWIDE.
