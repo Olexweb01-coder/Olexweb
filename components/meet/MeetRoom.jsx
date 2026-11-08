@@ -92,6 +92,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const [noiseOk, setNoiseOk] = useState(false)                             // decided in the browser (the server can't know), so the page matches
   useEffect(() => { const v = savedFx(); setFx(v); fxRef.current = v; setNoiseOk(canCleanNoise()); canBlur().then(setBlurOk) }, [])
   const lastReact = useRef(0), closing = useRef(false)
+  const selfMic = useRef(0)                                      // when this person last switched their own mic (so a host mute is told apart)
   const saverRef = useRef(false), endedRef = useRef(false), panelRef = useRef(null), spoke = useRef(new Map()), levelEls = useRef(new Map())
 
   useEffect(() => { saverRef.current = saver }, [saver])
@@ -173,7 +174,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     const holdVideo = (pub) => { if (saverRef.current && pub && pub.source === cam && pub.kind === 'video') pub.setSubscribed(false) }
     room
       .on(E.ParticipantConnected, bump).on(E.ParticipantDisconnected, bump).on(E.TrackSubscribed, (t, pub) => { holdVideo(pub); bump() }).on(E.TrackUnsubscribed, bump)
-      .on(E.TrackPublished, (pub) => { holdVideo(pub); bump() }).on(E.TrackUnpublished, bump).on(E.TrackMuted, bump).on(E.TrackUnmuted, bump)
+      .on(E.TrackPublished, (pub) => { holdVideo(pub); bump() }).on(E.TrackUnpublished, bump).on(E.TrackUnmuted, bump)
+      .on(E.TrackMuted, (pub, p) => {                                     // muted by the host (not by their own tap): the mic button turns off and they're told
+        if (p === room.localParticipant && pub && pub.source === lk.Track.Source.Microphone && Date.now() - selfMic.current > 2000) { setMicOn(false); toast('The host muted your microphone. Tap the mic to speak again.') }
+        bump()
+      })
       .on(E.LocalTrackPublished, bump).on(E.LocalTrackUnpublished, bump).on(E.ParticipantNameChanged, bump)
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
@@ -222,7 +227,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         lp.setAttributes({ away: '' }).catch(() => {})
         const pub = lp.getTrackPublication(lk.Track.Source.Microphone), t = pub && pub.track && pub.track.mediaStreamTrack
         if (micWasOn && (!t || t.readyState === 'ended' || t.muted)) {             // iOS stopped it: start it again
-          try { await lp.setMicrophoneEnabled(false); await lp.setMicrophoneEnabled(true); setMicOn(true) } catch { setMicOn(false); toast('Tap the mic to turn it back on.') }
+          try { selfMic.current = Date.now(); await lp.setMicrophoneEnabled(false); await lp.setMicrophoneEnabled(true); setMicOn(true) } catch { setMicOn(false); toast('Tap the mic to turn it back on.') }
         }
       }
       document.addEventListener('visibilitychange', seen); awayOff.current = () => document.removeEventListener('visibilitychange', seen)
@@ -268,6 +273,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   async function toggleMic() {
     if (!room) return
     const on = !me.isMicrophoneEnabled
+    selfMic.current = Date.now()
     try { await me.setMicrophoneEnabled(on); setMicOn(on) } catch (e) { toast(deviceError(e, 'microphone')) } bump()
   }
   async function toggleCam() {
@@ -304,7 +310,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   }
   async function hostDo(action, p) {
     if (action === 'remove' && !window.confirm(`Remove ${p.name || 'this person'} from the meeting?`)) return
-    try { await post('/api/meet/host', { action, code, identity: p.identity }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : `${p.name} was removed.`) }
+    try { await post('/api/meet/host', { action, code, identity: p.identity }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : action === 'mute' ? `${p.name || 'They'} is muted.` : `${p.name} was removed.`) }
     catch (e) { toast(e.message) }
   }
   async function startRec(audioOnly) {
@@ -647,6 +653,7 @@ function People({ all, me, host, hands, speaksNow, hostDo, lk }) {
         {p.attributes && p.attributes.hand ? <span className="mt-hand-sm" aria-hidden="true">{I.hand}</span> : null}
         {speaks ? <span className={'mt-mic-sm' + (on ? '' : ' mt-off')} aria-label={on ? 'Mic on' : 'Muted'}>{on ? I.mic : I.micOff}</span> : null}
         {host && !isHost ? <span className="mt-acts">
+          {on ? <button className="mt-btn mt-xs" onClick={() => hostDo('mute', p)} aria-label={`Mute ${p.name || 'Guest'}`}>Mute</button> : null}
           {speaks ? <button className="mt-btn mt-xs" onClick={() => hostDo('stop-speak', p)}>Stop speaking</button> : <button className="mt-btn mt-xs mt-go" onClick={() => hostDo('allow-speak', p)}>Let speak</button>}
           <button className="mt-btn mt-xs mt-ghost" onClick={() => hostDo('remove', p)}>Remove</button>
         </span> : null}
