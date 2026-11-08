@@ -647,3 +647,7 @@ alter table sales_settings add column if not exists auto_find boolean not null d
 alter table sales_settings add column if not exists find_cursor int not null default 0;
 alter table sales_settings add column if not exists found_at timestamptz;
 alter table sales_settings add column if not exists last_find jsonb;
+-- Install 22: the long video as a real story (lib/site/tale.js)
+alter table yt_settings add column if not exists long_style text not null default 'tale';    -- 'tale' (a real story) or 'day' (the old website day)
+alter table yt_settings add column if not exists tale_cursor int not null default 0;          -- whose turn: genre (scam, hustle, mystery) and setting (UK, US)
+alter table dir_entries add column if not exists tale_id bigint;                             -- a safety alert told as a story once

@@ -48,7 +48,7 @@ export async function POST(request) {
     if (body.action === 'own-idea') { try { return await addOwnIdea({ url: body.url, name: body.name, note: body.note, channels: body.channels, next: body.next === true }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'write-long') { try { return await writeLong() } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'yt-mode') return await setYoutubeMode(body.mode)   // lib/site/automation.js
-    if (body.action === 'write-saga') { try { return await writeSaga() } catch (e) { throw new Refused(e.message) } }       // today's long story, now
+    if (body.action === 'write-saga') { try { const t = await import('@/lib/site/tale'); const st = await (await import('@/lib/admin/db')).one('select long_style from yt_settings where id = 1'); return st && st.long_style === 'tale' ? await t.writeTale() : await writeSaga() } catch (e) { throw new Refused(e.message) } }   // Install 22: a real story       // today's long story, now
     if (body.action === 'saga-time') { try { return await setSagaTime(String(body.time || '')) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'short-style') { try { return await setStoryStyle(body.style) } catch (e) { throw new Refused(e.message) } }   // new Shorts: story | classic
     if (body.action === 'write-story') {                                     // write one story now (also while new Shorts are classic: a test)

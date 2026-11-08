@@ -780,3 +780,24 @@ content. Add it after the audit is approved, since the audit describes one chann
   required privacy box; required unknown fields or choices -> not sent; checks for thank-you), .github/workflows/forms.yml.
 - Tests: tests/sales/forms.py (24; runs the real worker from a copy linked to this machine's playwright). Older tests turn
   auto_find and forms off at their start. salesrun.sh sets FACTORY_SECRET/GH token (stand-in GitHub).
+
+## Install 22: the long video as a real story; Facebook posts the newest story Shorts; thumbnails
+- yt_settings.long_style 'tale' (default) | 'day' (the old website day / classic long). tale_cursor: genre turns
+  scam -> hustle -> mystery, setting GB/US alternate (CITIES). dir_entries.tale_id (an alert told once).
+- lib/site/tale.js: writeTale (2 tries; brief asks for cold open, flashback, hook, 4–6 chapters with cliffhangers, twist,
+  cast 2–4 with looks, places/shots, phone/screen props, lesson, outro, titles, thumbnail words). shape() validates;
+  scam stories need a live, unused safety alert: tips copied from it by code. checkTale (code): cast, hook, chapters,
+  cliffhangers, twist, length 300–600 s & 700+ words, 24-word lines, <=45% narration, 3+ places, no real brands (BRANDS)
+  or years, titles, lesson for scams. Saved as kind 'saga', script.mode 'tale'. taleDue on long_days, once per 20 h.
+  autopilot: with tale, picked ideas become story Shorts one by one (writeNextScript), long = writeTale.
+- Factory: worker/story/people.mjs (cast drawing, 13 feelings), places.mjs (11 places), tale.mjs (shots wide/two/close/
+  phone/screen, cold open, timejump, intro host, chapter cards, lesson, outro, twist flash; thumb()). render.mjs draws
+  out/thumb.jpg; run.mjs: no capture for tales, YouTube chapters incl. "How to spot it", thumb sent as piece 999.
+  voiceprint.py: a Kokoro voice per character (bf_/bm_ en-gb for UK, af_/am_ en-us for US; older deeper, young brighter),
+  act.py acts each line in the speaker's print, mix.py: tale pauses, effects, genre music (tense/mystery/hope).
+- Site: factory.js THUMB_N 999 (JPEG <= 2 MB), finish stores video.thumb; publish.js setThumb after upload
+  (upload.thumb = 'set' or YouTube's refusal: custom thumbnails need a phone-verified channel).
+- meta.js Facebook queue: story Shorts first, newest day first, parts in order, own FB version first; classic Shorts
+  older than 7 days never.
+- Tests: yt-test/fTALE.mjs (phaseTALE.sh); frun.sh sets long_style 'day' so older phases keep testing the old paths.
+  Sample story: yt-test/tale-sample.json.
