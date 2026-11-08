@@ -16,7 +16,7 @@ def pub(path, body=None, method=None):
         with urllib.request.urlopen(r) as x: return x.status, json.loads(x.read())
     except urllib.error.HTTPError as e: return e.code, json.loads(e.read() or b'{}')
 sql("delete from sales_bookings; delete from sales_replies; delete from sales_outbox; delete from sales_contacts; delete from sales_signals; delete from sales_companies; delete from sales_dnc; delete from meetings where title like 'Call with %'")
-sql("update sales_settings set enabled = true, require_approval = true, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', imap_uid = 0, paused_reason = null, call_hours = '{\"days\":[1,2,3,4,5],\"from\":\"14:00\",\"to\":\"18:00\"}'")
+sql("update sales_settings set auto_find = false, forms_enabled = false, enabled = true, require_approval = true, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', imap_uid = 0, paused_reason = null, call_hours = '{\"days\":[1,2,3,4,5],\"from\":\"14:00\",\"to\":\"18:00\"}'")
 ctl({'reset': True, 'ai': 'good'}); urllib.request.urlopen(urllib.request.Request('http://localhost:4568/control', data=b'{"reset": true}', headers={'Content-Type': 'application/json'}))
 def contacted(name, email, days_ago=1, msgid=None):     # a business already emailed (step 1 sent)
     cid = sql(f"insert into sales_companies (name, domain, country, city, category, source, source_ref, status, score) values ('{name}', '{email.split('@')[1]}', 'US', 'Austin TX', 'Dentists', 'manual', '{name}', 'contacted', 8) returning id").split('\n')[0]

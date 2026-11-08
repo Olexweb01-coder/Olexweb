@@ -26,7 +26,7 @@ def last_out(i): return row(f"select * from sales_outbox where company_id = {i} 
 def move(i): return sql(f"select move from sales_replies where company_id = {i} order by id desc limit 1")
 
 sql("delete from sales_docs; delete from sales_bookings; delete from sales_replies; delete from sales_outbox; delete from sales_contacts; delete from sales_signals; delete from sales_companies; delete from sales_dnc; delete from meetings where title like 'Call with %'")
-sql("update sales_settings set enabled = true, require_approval = false, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', imap_uid = 0, paused_reason = null, countries = 'GB,US,FR', call_hours = '{\"days\":[1,2,3,4,5],\"from\":\"14:00\",\"to\":\"18:00\"}'")
+sql("update sales_settings set auto_find = false, forms_enabled = false, enabled = true, require_approval = false, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', imap_uid = 0, paused_reason = null, countries = 'GB,US,FR', call_hours = '{\"days\":[1,2,3,4,5],\"from\":\"14:00\",\"to\":\"18:00\"}'")
 ctl({'reset': True, 'ai': 'good'})
 def contacted(name, email, msgid=None, days_ago=2):
     cid = sql(f"insert into sales_companies (name, domain, country, city, category, source, source_ref, status, score) values ('{name}', '{email.split('@')[1]}', 'US', 'Austin TX', 'Dentists', 'manual', '{name}', 'contacted', 8) returning id").split('\n')[0]

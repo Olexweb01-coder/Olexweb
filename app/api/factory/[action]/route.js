@@ -9,10 +9,18 @@ export const maxDuration = 60
 const no = (status, error) => NextResponse.json({ error }, { status, headers: { 'Cache-Control': 'no-store' } })
 export async function POST(request, { params }) {
   const action = params.action
-  if (!['job', 'report', 'upload', 'finish'].includes(action)) return no(404, 'Not found.')
+  if (!['job', 'report', 'upload', 'finish', 'forms', 'form-result'].includes(action)) return no(404, 'Not found.')
   const buf = Buffer.from(await request.arrayBuffer())
   if (buf.length > 4.4 * 1024 * 1024) return no(413, 'Too large.')
   if (!verify(request, buf)) return no(401, 'Not allowed.')
+  if (action === 'forms' || action === 'form-result') {                          // Install 21: contact-form jobs (lib/sales/forms.js)
+    let body = {}; try { body = buf.length ? JSON.parse(buf.toString('utf8')) : {} } catch { return no(400, 'Bad request.') }
+    try {
+      const F = await import('@/lib/sales/forms')
+      if (action === 'forms') return NextResponse.json(await F.claimFormJobs(Math.min(10, Number(body.max) || 6)), { headers: { 'Cache-Control': 'no-store' } })
+      return (await F.formResult(body)) ? NextResponse.json({ ok: true }) : no(409, 'That form job isn’t being sent.')
+    } catch (e) { console.error('factory forms call failed', e); return no(500, 'Something went wrong.') }
+  }
   const sp = new URL(request.url).searchParams, id = Number(sp.get('id'))
   if (!Number.isInteger(id) || id < 1) return no(400, 'Bad request.')
   try {

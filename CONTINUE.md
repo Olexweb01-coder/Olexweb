@@ -756,3 +756,27 @@ content. Add it after the audit is approved, since the audit describes one chann
 - The button hides itself from automated browsers (navigator.webdriver: the factory filming pages, bots); tests set
   localStorage olex-chat-show = 1.
 - Tests: tests/sales/chat.py (31). Chain phaseWIDE: same result with and without the chat (night-time failures only).
+
+## Install 21: contact forms, agency partners, finding businesses by itself
+- profile.js: finds the contact page (CONTACT), notes a form (formIn: <form> with <textarea>; site builders = "maybe",
+  the factory checks), never one with a robot check (CAPTCHA -> form_note). sales_companies.form_url/form_note/channel.
+  No email but a form (and forms_enabled) -> qualified with channel 'form'. Same UK/never-countries rules as email.
+- Agencies: KINDS.agency (partner: true, label "Agencies (partners)"); AGENCY signal from AGENCY_WORDS on their site
+  (else skipped); offerFor -> 'partner' (playbook: flat partner price from $80, partnerOnly, not on rate cards);
+  write.js PARTNER_SYSTEM pitch (white-label, they keep the client and margin).
+- write.js: a form message gets a code-written tail (name, olexweb.com, "Just reply to this address: <GMAIL_USER>",
+  opt-out line; FR versions). outbox.channel 'form', contact_id null (column now nullable); no email follow-ups after it.
+- lib/sales/forms.js: claimFormJobs (office hours, cap 10 +5/week up to forms_cap 40, DNC, NEVER, marks 'sending'),
+  formResult (sent / failed / retry once on load errors; health pause when >70% of the last 10–20 fail),
+  maybeStartForms (dispatches factory workflow forms.yml, at most every 90 min). Factory API: /api/factory/forms and
+  /api/factory/form-result (signed, no id).
+- inbox.js formReplyMatch: a reply to a form message is matched by sender domain or "Re: <subject>" (60 days); the sender
+  becomes the contact; the agent answers by email.
+- index.js autoFind: when < 40 leads are new/qualified/drafted, at most every 3 hours: nextSearch rotates countries ->
+  kinds (agency only if partners on) -> TOWNS; GB uses Companies House if keyed, else Serper, else OpenStreetMap.
+  sales_settings: forms_enabled, forms_cap, forms_dispatched_at, forms_paused_reason, partners_enabled, auto_find,
+  find_cursor, found_at, last_find. Simple screen: three new switches.
+- Factory (olexweb-factory): worker/forms.mjs (fills by label/name/placeholder; never invents a phone; ticks only a
+  required privacy box; required unknown fields or choices -> not sent; checks for thank-you), .github/workflows/forms.yml.
+- Tests: tests/sales/forms.py (24; runs the real worker from a copy linked to this machine's playwright). Older tests turn
+  auto_find and forms off at their start. salesrun.sh sets FACTORY_SECRET/GH token (stand-in GitHub).

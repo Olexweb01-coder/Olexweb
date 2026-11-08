@@ -16,7 +16,7 @@ def page(path):
     except urllib.error.HTTPError as e: return e.code, ''
 def company(name): return json.loads(sql(f"select row_to_json(x) from (select c.*, (select string_agg(code, ',' order by code) from sales_signals s where s.company_id = c.id) as sigs from sales_companies c where name = '{name}') x"))
 sql("delete from sales_docs; delete from sales_replies; delete from sales_outbox; delete from sales_contacts; delete from sales_signals; delete from sales_companies; delete from sales_dnc")
-sql("update sales_settings set enabled = true, require_approval = false, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', countries = 'GB,US,FR', bank = null, paused_reason = null, imap_uid = 0")
+sql("update sales_settings set auto_find = false, forms_enabled = false, enabled = true, require_approval = false, daily_cap = 20, start_date = '2026-01-01', postal_address = '12 Example Street, Lagos', countries = 'GB,US,FR', bank = null, paused_reason = null, imap_uid = 0")
 ctl({'reset': True, 'ai': 'good'})
 
 print('Where it looks')

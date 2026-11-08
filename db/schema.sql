@@ -628,3 +628,22 @@ create table if not exists site_chat_messages (id bigserial primary key, chat_id
   who text not null check (who in ('visitor', 'agent', 'olaitan')), text text not null);
 create index if not exists site_chat_messages_chat on site_chat_messages (chat_id, id);
 alter table leads add column if not exists chat_id bigint;
+-- Install 21: contact forms (filled by the factory's browser) and agency partners
+alter table sales_outbox alter column contact_id drop not null;               -- a contact-form message has no email contact (until they reply)
+alter table sales_outbox add column if not exists channel text not null default 'email';   -- 'email' or 'form'
+alter table sales_outbox add column if not exists claimed_at timestamptz;       -- a form job handed to the factory
+alter table sales_outbox add column if not exists tries int not null default 0;
+alter table sales_outbox drop constraint if exists sales_outbox_status_check;
+alter table sales_outbox add constraint sales_outbox_status_check check (status in ('waiting', 'approved', 'sending', 'sent', 'rejected', 'held', 'failed', 'cancelled'));
+alter table sales_companies add column if not exists form_url text;              -- the page with their contact form
+alter table sales_companies add column if not exists form_note text;             -- why the form can't be used (a robot check…)
+alter table sales_companies add column if not exists channel text;               -- how the agent reaches them: 'email' or 'form'
+alter table sales_settings add column if not exists forms_enabled boolean not null default true;
+alter table sales_settings add column if not exists forms_cap int not null default 40;               -- the most contact forms a day, once warmed up
+alter table sales_settings add column if not exists forms_dispatched_at timestamptz;
+alter table sales_settings add column if not exists forms_paused_reason text;
+alter table sales_settings add column if not exists partners_enabled boolean not null default true;
+alter table sales_settings add column if not exists auto_find boolean not null default true;          -- Install 21: the agent finds businesses by itself
+alter table sales_settings add column if not exists find_cursor int not null default 0;
+alter table sales_settings add column if not exists found_at timestamptz;
+alter table sales_settings add column if not exists last_find jsonb;

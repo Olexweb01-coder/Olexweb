@@ -11,7 +11,7 @@ def ctl(body): urllib.request.urlopen(urllib.request.Request('http://localhost:4
 def mlog(kind=None): l = json.loads(urllib.request.urlopen('http://localhost:4570/log').read()); return [x for x in l if not kind or x['kind'] == kind]
 def cron(): urllib.request.urlopen(urllib.request.Request(APP + '/api/assistant/cron?run=due', headers={'authorization': 'Bearer ' + SECRET}), timeout=120).read()
 def company(name): return json.loads(sql(f"select row_to_json(x) from (select c.*, (select string_agg(code, ',' order by code) from sales_signals s where s.company_id = c.id) as sigs, (select string_agg(email || ':' || email_status, ',') from sales_contacts k where k.company_id = c.id) as emails from sales_companies c where name = '{name}') x"))
-sql("delete from sales_outbox; delete from sales_contacts; delete from sales_signals; delete from sales_companies; delete from sales_dnc; update sales_settings set enabled = false, postal_address = null, start_date = null, daily_cap = 20, require_approval = true")
+sql("delete from sales_outbox; delete from sales_contacts; delete from sales_signals; delete from sales_companies; delete from sales_dnc; update sales_settings set auto_find = false, forms_enabled = false, enabled = false, postal_address = null, start_date = null, daily_cap = 20, require_approval = true")
 ctl({'reset': True, 'ai': 'good'})
 
 print('Finding businesses')
