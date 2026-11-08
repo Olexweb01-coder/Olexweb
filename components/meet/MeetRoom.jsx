@@ -193,7 +193,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       .on(E.LocalTrackPublished, bump).on(E.LocalTrackUnpublished, bump).on(E.ParticipantNameChanged, bump)
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
-        if ((info.host || cohostRef.current) && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(`${p.name || 'Someone'} raised a hand.`)
+        if ((info.host || cohostRef.current || isBoss(p)) && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(isHostId(p.identity) ? 'The host raised a hand.' : `${p.name || 'Someone'}${isCoId(p) ? ' (co-host)' : ''} raised a hand.`)   // the host's and co-hosts' hands: everyone is told
         if (p === room.localParticipant) checkCo(p)
         if (p !== room.localParticipant && isBoss(p) && 'rec' in changed) { const w = isHostId(p.identity) ? 'The host' : `${p.name || 'A co-host'} (co-host)`; toast(changed.rec === 'paused' ? `${w} paused the recording.` : changed.rec ? (prevRec.current === 'paused' ? `${w} resumed recording.` : `${w} started recording this meeting.`) : `${w} stopped recording.`) }
         if (isBoss(p) && 'rec' in changed) prevRec.current = changed.rec
@@ -303,7 +303,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   async function toggleHand() {
     if (!room) return
     const up = !(me.attributes && me.attributes.hand)
-    try { await me.setAttributes({ hand: up ? String(Date.now()) : '' }); if (up) toast('Your hand is up. The host can see it.') } catch { toast('That didn’t work. Try again.') } bump()
+    try { await me.setAttributes({ hand: up ? String(Date.now()) : '' }); if (up) toast(boss ? 'Your hand is up. Everyone can see it.' : 'Your hand is up. The host can see it.') } catch { toast('That didn’t work. Try again.') } bump()
   }
   function applySaver(on) {
     const r = roomRef.current; if (!r || !lkRef.current) return
@@ -496,7 +496,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         <button className={'mt-c' + (me.isCameraEnabled ? '' : ' mt-off')} aria-pressed={me.isCameraEnabled} onClick={toggleCam}>{me.isCameraEnabled ? I.cam : I.camOff}<span>{me.isCameraEnabled ? 'Stop video' : 'Start video'}</span></button>
         {canShare ? <button className={'mt-c mt-wide' + (me.isScreenShareEnabled ? ' mt-on' : '')} aria-pressed={me.isScreenShareEnabled} onClick={toggleShare}>{I.share}<span>{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</span></button> : null}
       </> : null}
-      {!boss ? <button className={'mt-c' + (hand ? ' mt-on' : '')} aria-pressed={hand} onClick={toggleHand}>{I.hand}<span>{hand ? 'Lower hand' : 'Raise hand'}</span></button> : null}
+      <button className={'mt-c' + (boss ? ' mt-wide' : '') + (hand ? ' mt-on' : '')} aria-pressed={hand} onClick={toggleHand}>{I.hand}<span>{hand ? 'Lower hand' : 'Raise hand'}</span></button>
       <span className="mt-popwrap">
         <button className={'mt-c' + (pop === 'react' ? ' mt-on' : '')} aria-expanded={pop === 'react'} onClick={() => setPop((x) => (x === 'react' ? null : 'react'))}>{I.smile}<span>React</span></button>
         {pop === 'react' ? <span className="mt-pop mt-reacts" role="group" aria-label="Send a reaction">{REACTIONS.map((e) => <button key={e} onClick={() => react(e)} aria-label={'Send ' + e}>{e}</button>)}</span> : null}
@@ -505,7 +505,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       {boss && canRecord() ? <button className={'mt-c mt-wide' + (noting ? ' mt-on' : '')} aria-pressed={noting} onClick={toggleNotes}>{I.notes}<span>{noting ? 'Stop notes' : 'AI notes'}</span></button> : null}
       {boss && rec ? <button className={'mt-c' + (rec.pausedAt ? ' mt-on' : '')} aria-pressed={!!rec.pausedAt} onClick={pauseRec}>{rec.pausedAt ? I.rec : I.pause}<span>{rec.pausedAt ? 'Resume' : 'Pause'}</span></button> : null}
       <button className={'mt-c' + (panel === 'chat' ? ' mt-on' : '')} aria-pressed={panel === 'chat'} onClick={() => setPanel((x) => (x === 'chat' ? null : 'chat'))}>{I.chat}<span>Chat</span>{unread ? <i className="mt-badge" aria-label={unread + ' new'}>{unread > 9 ? '9+' : unread}</i> : null}</button>
-      <button className={'mt-c' + (panel === 'people' ? ' mt-on' : '')} aria-pressed={panel === 'people'} onClick={() => setPanel((x) => (x === 'people' ? null : 'people'))}>{I.people}<span>People</span>{host && hands.length ? <i className="mt-badge">{hands.length}</i> : null}</button>
+      <button className={'mt-c' + (panel === 'people' ? ' mt-on' : '')} aria-pressed={panel === 'people'} onClick={() => setPanel((x) => (x === 'people' ? null : 'people'))}>{I.people}<span>People</span>{boss && hands.length ? <i className="mt-badge">{hands.length}</i> : null}</button>
       <button className={'mt-c mt-wide' + (saver ? ' mt-on' : '')} aria-pressed={saver} onClick={toggleSaver}>{I.leaf}<span>Data saver</span></button>
       <span className="mt-popwrap">
         <button className={'mt-c' + (pop === 'more' ? ' mt-on' : '')} aria-expanded={pop === 'more'} onClick={() => setPop((x) => (x === 'more' ? null : 'more'))}>{I.dots}<span>More</span></button>
@@ -515,6 +515,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
           {miniOk ? <button role="menuitem" onClick={openMini}>{I.mini}Mini window</button> : null}
           {noiseOk ? <button role="menuitemcheckbox" aria-checked={fx.noise} onClick={() => { setPop(null); toggleFx('noise') }}>{I.wave}Noise cancellation{fx.noise ? ': on' : ''}</button> : null}
           {blurOk ? <button role="menuitemcheckbox" aria-checked={fx.blur} onClick={() => { setPop(null); toggleFx('blur') }}>{I.blur}Blur background{fx.blur ? ': on' : ''}</button> : null}
+          {boss ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={hand} onClick={() => { setPop(null); toggleHand() }}>{I.hand}{hand ? 'Lower hand' : 'Raise hand'}</button> : null}
           {boss && canRecord() ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={noting} onClick={() => { setPop(null); toggleNotes() }}>{I.notes}{noting ? 'Stop AI notes' : 'AI notes'}</button> : null}
           {!host ? <button role="menuitem" onClick={() => { setPop(null); setReporting(true) }}>{I.close}Report this meeting</button> : null}
         </span> : null}
