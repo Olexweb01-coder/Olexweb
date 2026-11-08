@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 
 const dim = { color: 'var(--dim)' }
+const KP = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts' }
+const pathOf = (e) => '/' + (KP[e.kind] || 'tools') + '/' + e.slug
 const ago = (d) => { const m = Math.round((Date.now() - new Date(d).getTime()) / 60e3); return m < 2 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago' }
 
 export default function AdminDirectory({ data }) {
@@ -29,7 +31,7 @@ export default function AdminDirectory({ data }) {
     {tab === 'overview' ? <>
       <div className="dd-nums"><div><b>{live.length}</b><span>pages live</span></div><div><b>{views}</b><span>views</span></div><div><b>{leads}</b><span>leads (taps on your offer)</span></div><div><b>{data.waiting}</b><span>good sites waiting to be written</span></div></div>
       <section className="dd-card"><h2>Views, last 14 days</h2>{data.week.length ? <div className="dd-chart" role="img" aria-label="Views per day">{data.week.map((w) => <div key={w.day} title={`${w.day}: ${w.views} views, ${w.leads} leads`}><i style={{ height: Math.max(3, (w.views / max) * 100) + '%' }} /><span>{w.day.slice(8)}</span></div>)}</div> : <p style={dim}>Views appear here as people find the pages.</p>}</section>
-      <section className="dd-card"><h2>Best pages</h2>{[...live].sort((a, b) => b.views - a.views).slice(0, 8).map((e) => <a key={e.id} className="dd-row" href={'/tools/' + e.slug} target="_blank" rel="noopener"><b>{e.name}</b><span>{e.views} views · {e.leads} leads</span></a>)}{!live.length ? <p style={dim}>Nothing live yet. Tap “Write the next pages now”.</p> : null}</section>
+      <section className="dd-card"><h2>Best pages</h2>{[...live].sort((a, b) => b.views - a.views).slice(0, 8).map((e) => <a key={e.id} className="dd-row" href={pathOf(e)} target="_blank" rel="noopener"><b>{e.name}</b><span>{e.views} views · {e.leads} leads</span></a>)}{!live.length ? <p style={dim}>Nothing live yet. Tap “Write the next pages now”.</p> : null}</section>
       {(data.older || []).length ? <section className="dd-card"><h2>Add guide links to older Shorts</h2>
         <p style={{ margin: '0 0 10px', fontSize: 13.5, ...dim }}>New Shorts get their guide link automatically. For these, already on YouTube, paste the line at the top of the description (YouTube only lets your admin edit descriptions with a wider permission, which would affect your audit).</p>
         {data.older.map((v) => { const line = `Full guide (free): https://olexweb.com/tools/${v.slug}`; return <div key={v.id} className="dd-item"><div className="dd-ih"><b>{v.name}</b></div><code style={{ fontSize: 13, color: 'var(--green)' }}>{line}</code>
@@ -45,7 +47,7 @@ export default function AdminDirectory({ data }) {
         <div className="dd-ih"><div><b>{e.name}</b><span className={'dd-st ' + e.status}>{e.status === 'live' ? 'Live' : e.status === 'blocked' ? 'Blocked (unsafe)' : 'Needs review'}</span>{e.quality && e.quality.score != null ? <span className="dd-q">Quality {e.quality.score}</span> : null}</div>
           <span style={{ fontSize: 13, ...dim }}>{e.views} views · {e.leads} leads · {e.published_at ? 'published ' + ago(e.published_at) : 'written ' + ago(e.created_at)}</span></div>
         {e.quality && (e.quality.problems || []).length ? <ul className="dd-why">{e.quality.problems.map((p, i) => <li key={i}>{p}</li>)}</ul> : null}
-        <div className="dd-acts">{e.status === 'live' ? <a className="btn btn-line" href={'/tools/' + e.slug} target="_blank" rel="noopener">View ↗</a> : null}
+        <div className="dd-acts">{e.status === 'live' ? <a className="btn btn-line" href={pathOf(e)} target="_blank" rel="noopener">View ↗</a> : null}
           {e.status === 'live' ? <button className="btn btn-line" disabled={!!busy} onClick={() => call({ action: 'unpublish', id: e.id }, 'Taken offline.')}>Unpublish</button>
             : e.quality && e.quality.ok ? <button className="btn btn-green" disabled={!!busy} onClick={() => call({ action: 'publish', id: e.id }, 'Published.')}>Publish</button> : null}
           <button className="btn btn-line" disabled={!!busy} onClick={() => call({ action: 'rewrite', id: e.id }, (j) => j.live ? 'Rewritten and published.' : j.ok ? 'Rewritten.' : 'Rewritten, still needs review.')}>{busy === 'rewrite' + e.id ? 'Rewriting…' : 'Rewrite'}</button>

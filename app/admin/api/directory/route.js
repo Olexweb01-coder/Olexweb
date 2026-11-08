@@ -21,6 +21,8 @@ export async function POST(request) {
         case 'delete': return await D.removeEntry(id())
         case 'settings': return await D.saveSettings(b)
         case 'linked': return await D.markLinked(id())
+        case 'simple-settings': return await D.saveSimpleSettings(b)        // Install 16: the simple screen's controls
+        case 'publish-now': { const r = await D.publishNow(); if (!r) throw new D.DirError('Nothing is ready to publish yet. The next one is being written.'); return r }
         default: throw new D.DirError('Unknown action.')
       }
     } catch (e) { if (e instanceof D.DirError) throw new Refused(e.message); throw e }

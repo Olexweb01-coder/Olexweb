@@ -670,3 +670,26 @@ content. Add it after the audit is approved, since the audit describes one chann
 - AutomationSimple exports SIMPLE_CSS (shared). Tests: fSIMPLE.mjs 12.
 - Note: fAU's "an hour later, Part 2 fills the other time" fails when the chain runs just after midnight Lagos (its times are
   now−125 min and now−5 min, which cross the day); it passes at other hours.
+
+## Install 16 (8 Nov 2026): the Directory as a daily goldmine
+- Four kinds in dir_entries.kind: tool (as before, /tools/<slug>), update (/updates), guide (/guides), alert (/alerts). News side in
+  lib/site/dirnews.js: SOURCES (DIR_FEEDS overrides: TechCabal, Techpoint Africa, Google, The Verge, TechCrunch, 9to5Google,
+  9to5Mac, How-To Geek, MakeUseOf, Malwarebytes, BleepingComputer); gatherFinds() every 3 h (fresh only: updates 2 days, alerts 7,
+  guides 21; deduped by URL and title), one judging call → dir_finds (kept ≥ 65, skipped stored so never judged again);
+  writePost() reads the article (or the feed's full text), writes in our own words, editorial.checkPost (≥ 3 exact quotes of
+  ≤ 30 words, no 10-word run copied from the article, steps, banned words) → 'ready', else 'draft'/'blocked'.
+- Scheduling (directory.js): dir_settings.slots (08:00,11:00,14:00,17:00,20:00 Lagos) and per_day (default 5; old 12 → 5);
+  PLAN by time of day (update, tool, guide/alert, tool, update); prepareNext writes one at a time when the run is idle (a strong
+  alert first; stops after many failed checks in a day); publishDue puts the right ready post live at its time (at most 3 h
+  late; a strong alert jumps the queue), IndexNow + Search Console sitemap submit (gsc.submitSitemap; needs the service account
+  as a "Full" user, else the reason is shown); shareBest posts the day's best on the Facebook Page once a day (meta.sharePostLink,
+  dir_settings.fb_last claimed first); ready updates older than 3 days are put aside. directoryTick runs on every frequent run.
+  The manual "Write the next pages now" still writes tools and publishes at once. publishNow for "Publish one now".
+- Public: DirPost (points, why it matters, steps, facts credited to the source, FAQ), DirShare (WhatsApp first), share pictures
+  (opengraph-image per kind, app/_dir/og.js), JSON-LD (NewsArticle / HowTo), /updates /guides /alerts lists, /tools shows every
+  kind with "New today", sitemap and /feed.xml (RSS) list everything.
+- Admin → Directory: DirectorySimple (posting N a day, today's times, ready by kind, Publish one now, most read, 3/4/5 a day,
+  kinds on/off, Facebook sharing, Google/Bing status, posting by itself) / Detailed = AdminDirectory. API: simple-settings,
+  publish-now.
+- Tests: fDIR2.mjs (28); phaseDIR2.sh = phaseSIMPLE + fDIR2. mock-google: /dirfeed/news|safe, /news/<article>, judge + post
+  writer ("copy" article copies word for word and must be caught), /v21.0/777/feed. fenv: DIR_FEEDS, news.test host.

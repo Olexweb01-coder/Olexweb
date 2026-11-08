@@ -2,6 +2,7 @@
 // One Directory page: checked facts (each with the site's own words), your Short, how to start, verdict, alternatives, one next step.
 import { useEffect, useRef, useState } from 'react'
 import { DIR_CSS, PRICE } from './dirStyles'
+import DirShare from './DirShare'
 
 const I = { arrow: <path d="M5 12h13M13 6.5 18.5 12 13 17.5" />, out: <><path d="M14 4h6v6M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></>,
   check: <path d="m5 12.5 4.2 4L19 7" />, warn: <><path d="M12 4 21 19H3Z" /><path d="M12 10v4M12 16.8v.2" /></>, quote: <path d="M9 8H6a2 2 0 0 0-2 2v3h4v4H4M20 8h-3a2 2 0 0 0-2 2v3h4v4h-4" />, play: <path d="M8 5.5v13l10-6.5Z" /> }
@@ -19,7 +20,7 @@ export default function DirEntry({ e }) {
   }, [e.slug])
   const price = (c.pricing && c.pricing.status) || 'unknown', host = (() => { try { return new URL(e.url).hostname.replace(/^www\./, '') } catch { return e.url } })()
   return (<div ref={root} className="dx">
-    <style dangerouslySetInnerHTML={{ __html: DIR_CSS + CSS }} />
+    <style dangerouslySetInnerHTML={{ __html: DIR_CSS + ENTRY_CSS }} />
     <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/"><span><i /></span>Olexweb</a><nav className="dx-nav"><a href="/tools">Directory</a><a href={e.offer.href} onClick={() => beacon(e.slug, true)}>Free resources</a></nav></header>
       <nav className="de-crumb" aria-label="Breadcrumb"><a href="/tools">Directory</a><span>/</span>{e.category ? <span>{e.category}</span> : null}{e.category ? <span>/</span> : null}<span aria-current="page">{name}</span></nav>
       <section className="de-hero">
@@ -28,6 +29,7 @@ export default function DirEntry({ e }) {
         {rest.length ? <p className="de-sub">{rest.join(':').trim()}</p> : null}
         <p className="dx-lede">{c.summary}</p>
         <div className="de-acts"><a className="dx-btn" href={e.url} target="_blank" rel="noopener nofollow">Open {host}<Ico n="out" /></a><a className="dx-btn dx-g" href="#start">How to start<Ico n="arrow" /></a></div>
+        <DirShare path={'/tools/' + e.slug} title={c.title || name} />
       </section>
       <div className="de-grid">
         <main className="de-main">
@@ -51,7 +53,7 @@ export default function DirEntry({ e }) {
     </div>
   </div>)
 }
-const CSS = `
+export const ENTRY_CSS = `
 .de-crumb{display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--dim);margin-top:6px}.de-crumb a{text-decoration:none}
 .de-hero{padding:22px 0 26px}.de-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.de-sub{font-size:clamp(18px,3.6vw,24px);font-weight:700;margin-top:10px;max-width:34ch}
 .de-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;opacity:0;animation:dxIn .6s var(--ease) .7s forwards}

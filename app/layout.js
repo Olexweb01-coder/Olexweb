@@ -17,6 +17,7 @@ export const metadata = {
   applicationName: 'Olexweb',
   manifest: '/site.webmanifest',
   formatDetection: { telephone: false },
+  alternates: { types: { 'application/rss+xml': [{ url: '/feed.xml', title: 'Olexweb: tools, tech updates, how-tos and safety alerts' }] } },   // Install 16
 }
 export const viewport = { themeColor: '#0a0b0a', colorScheme: 'dark', width: 'device-width', initialScale: 1, viewportFit: 'cover' }
 

@@ -3,6 +3,12 @@ import http from 'node:http'
 import { createHash } from 'node:crypto'
 const PORT = 4555, log = []
 const S = { codes: {}, challenges: {}, revokedRefresh: false, revokeCalls: 0, issued: new Set(), noRefresh: false, noChannel: false }
+const ARTICLES = {                                     // the Directory's mock news articles (install 16): each long enough, with quotable sentences
+  drafts: { title: 'WhatsApp adds message drafts for everyone', text: ['WhatsApp is rolling out message drafts to everyone on Android and iPhone.', 'When you leave a chat without sending, your unfinished message now stays in the box with a Draft label.', 'The feature works in both personal and group chats.', 'You do not need to turn anything on, just update the app from the Play Store or App Store.', 'Drafts also show at the top of your chat list so you can find them quickly later on.', 'The company said the change is reaching all users over the next few weeks, starting this week in several countries.', 'People who switch between many conversations at work are expected to benefit most from the change.'] },
+  space: { title: 'How to free up space on an Android phone', text: ['Open Settings and tap Storage to see what is using space on your phone.', 'Photos and videos usually take the most room, so back them up before deleting anything.', 'Clearing the cache of large apps can free several gigabytes without losing your data.', 'Uninstall apps you have not opened in months to recover more space quickly.', 'Files by Google can find duplicate files and large downloads you no longer need.', 'Moving media to a memory card is another option if your phone has a card slot available.', 'Restart the phone afterwards so the system can tidy up temporary files properly.'] },
+  scam: { title: 'Fake delivery text scam is going round', text: ['Scammers are sending text messages that claim a parcel could not be delivered.', 'The message asks you to tap a link and pay a small fee to rebook the delivery.', 'The link leads to a fake page that steals your card details and bank login.', 'Real delivery companies do not ask for payment through a random text link.', 'If you already entered your card details, call your bank immediately and block the card.', 'You can report the message to your mobile network and then delete it from your phone.', 'Always check a delivery directly on the official website or app of the company instead.'] },
+  copy: { title: 'Copycat news about phone batteries', text: ['Phone batteries last longer when you avoid charging them to full every single night.', 'Keeping the charge between twenty and eighty percent reduces wear on the battery cells.', 'Heat is the biggest enemy of batteries, so avoid charging the phone under your pillow.', 'Many phones now include an optimised charging setting that learns your daily routine.', 'Turning that setting on can noticeably extend the life of your battery over a year.', 'Replacing an old battery is often cheaper than buying a whole new phone outright.', 'Use the charger that came with your phone or a trusted brand for safe charging.'] },
+}
 const VIDS = [
   ['af5r1bfqzH8', 'Secret websites you should know (Part 8)', 'PT31S', 74, '2026-04-28T15:00:00Z'],
   ['1anYrUfp7CI', 'Secret websites you should know (Part 7)', 'PT29S', 105, '2026-04-27T15:00:00Z'],
@@ -79,6 +85,23 @@ http.createServer(async (req, res) => {
   if (u.pathname === '/src/top') return send(res, 200, { hits: [ { title: 'Chrome ships native CSS masonry layout', url: at('masonry'), points: 1500 } ] })
   if (u.pathname === '/src/github') return send(res, 200, { items: [ { name: 'shotcut-ai', full_name: 'dev/shotcut-ai', description: 'Turn any screenshot into editable layers', html_url: at('shotcut'), homepage: '', stargazers_count: 9400 } ] })
 
+  // ---- the Directory's news sources (install 16) ----
+  if (u.pathname === '/dirfeed/news' || u.pathname === '/dirfeed/safe') {
+    const now = new Date().toUTCString(), old = new Date(Date.now() - 9 * 86400e3).toUTCString()
+    const item = (t, path, d = now) => `<item><title>${t}</title><link>http://news.test:4555/news/${path}</link><pubDate>${d}</pubDate><description>${t}. More inside.</description></item>`
+    const items = u.pathname === '/dirfeed/news'
+      ? [item('WhatsApp adds message drafts for everyone', 'drafts'), item('Startup raises $10 million for delivery robots', 'raise'), item('How to free up space on an Android phone', 'space'), item('Copycat news about phone batteries', 'copy'), item('Old news about a phone launch', 'oldnews', old)]
+      : [item('Fake delivery text scam is going round', 'scam')]
+    return send(res, 200, `<?xml version="1.0"?><rss><channel><title>${u.pathname.endsWith('news') ? 'TechNews' : 'SafeNet'}</title>${items.join('')}</channel></rss>`, { 'Content-Type': 'application/rss+xml' })
+  }
+  if (u.pathname.startsWith('/news/')) {
+    const a = ARTICLES[u.pathname.slice(6)]; if (!a) return send(res, 404, 'no')
+    return send(res, 200, `<!doctype html><html><head><title>${a.title}</title></head><body><article><h1>${a.title}</h1>${a.text.map((x) => `<p>${x}</p>`).join('')}</article></body></html>`, { 'Content-Type': 'text/html' })
+  }
+  if (u.pathname === '/v21.0/777/feed' && req.method === 'POST') {          // a link post on the Page
+    let raw = ''; for await (const ch of req) raw += ch; const p = new URLSearchParams(raw)
+    S.fbFeed = (S.fbFeed || []).concat([{ link: p.get('link'), message: p.get('message') }]); return send(res, 200, { id: '777_' + S.fbFeed.length })
+  }
   if (u.pathname === '/feed/curated') {
     const a = (n, t) => `&lt;a href="${at(n)}"&gt;${t}&lt;/a&gt;`
     return send(res, 200, `<?xml version="1.0"?><rss><channel><title>Mock Picks</title>
@@ -113,6 +136,25 @@ http.createServer(async (req, res) => {
       const given = /14 Nov/.test(prompt), out = { title: 'Build With AI', kicker: 'Free webinar', tagline: 'Watch an idea become a live website in one hour.', intro: 'A practical session.', learnTitle: 'What you’ll see',
         learn: ['Planning with AI', 'Building live', 'Publishing it', 'Your questions'], whoFor: 'Students and freelancers.', cta: 'Save my seat', preview: 'A free live session.', hostBio: 'Olaitan builds with AI.',
         faq: [{ q: 'Is it free?', a: 'Yes.' }], when: given ? '2026-11-14T19:00' : '', minutes: given ? 60 : 0, platform: given ? 'Google Meet' : '[add the platform]', venue: '', address: '' }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (/^For each item, decide its kind/.test(prompt)) {                    // the Directory's judge (install 16)
+      S.dirJudged = (S.dirJudged || 0) + 1
+      const items = [...prompt.matchAll(/^(\d+)\. \[(.+?)\] (.+?) ::/gm)].map((m) => {
+        const t = m[3]; return { i: Number(m[1]), kind: /raises/i.test(t) ? 'skip' : /^How to/i.test(t) ? 'guide' : /scam/i.test(t) ? 'alert' : 'update', score: /raises/i.test(t) ? 20 : /scam/i.test(t) ? 90 : 82, why: 'Useful to everyday people.' } })
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ items }) }] } }] })
+    }
+    if (/^Write an Olexweb Directory post/.test(prompt)) {                     // a Directory post (install 16): facts quoted from the mock article
+      const key = Object.keys(ARTICLES).find((k) => prompt.includes('/news/' + k)), a = ARTICLES[key], copy = key === 'copy'
+      S.dirPosts = (S.dirPosts || []).concat([key])
+      const pad = (x, n) => (x + ' It is short, clear and checked against the source for you.').slice(0, n)
+      const out = { title: a.title.slice(0, 66), metaDescription: pad(a.title + ': what it means for you, who it affects and the simple steps to take today.', 140),
+        oneLiner: 'What it is, why it matters, and what to do next.', summary: copy ? a.text[0] + ' ' + a.text[1] : 'This is a change worth knowing about for anyone who relies on a phone every day. Here is what it means in plain words, who it affects, and the few steps to take now.',
+        points: ['It is available now for most people.', 'It takes a minute to check.', 'Nothing to pay for this.', 'It works on most phones.'],
+        whyItMatters: 'Most people in Nigeria and across Africa do their work, chats and banking on one phone, so small changes like this save time and trouble every day.',
+        whatToDo: ['Open the app and check you have the latest version.', 'Look for the new option in the menu.', 'Try it once so you know where it is.'],
+        facts: a.text.slice(0, 3).map((x) => ({ claim: 'From the article.', quote: x.replace(/\.$/, '') })), faq: [{ q: 'Is this free?', a: 'The article does not mention any cost.' }, { q: 'Do I need to do anything?', a: 'Check that your app is up to date.' }],
+        tags: ['phones', 'apps', 'tips'], thin: false, unsafe: false }
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
     }
     if (prompt.includes('Write the Olexweb Directory page')) {      // Directory: DirTool = honest; FibTool = invents a quote (must be caught)

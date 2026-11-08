@@ -573,3 +573,26 @@ alter table meta_posts add column if not exists views int;                     -
 alter table meta_posts add column if not exists views_at timestamptz;
 alter table meta_settings add column if not exists insights text;              -- 'ok' | 'denied': whether Meta lets us read Reel views
 alter table meta_settings add column if not exists insights_at timestamptz;    -- when that was last tried
+-- Install 16: the Directory becomes a daily goldmine: tools, tech updates, how-tos and safety alerts, about 5 a day at set
+-- times, every fact checked against its source; told to Google the same day; the day's best shared on Facebook.
+alter table dir_entries add column if not exists kind text not null default 'tool';        -- tool | update | guide | alert
+alter table dir_entries add column if not exists source_name text;                          -- the article it's based on (not tools)
+alter table dir_entries add column if not exists find_id int;                               -- dir_finds row it came from (not tools)
+alter table dir_entries add column if not exists slot text;                                 -- 'YYYY-MM-DD HH:MM' it went live in (Lagos)
+alter table dir_entries add column if not exists score int;                                 -- how useful the find was judged (0–100)
+alter table dir_entries drop constraint if exists dir_entries_status_check;
+alter table dir_entries add constraint dir_entries_status_check check (status in ('draft', 'ready', 'live', 'blocked'));
+create unique index if not exists dir_entries_find on dir_entries (find_id) where find_id is not null;
+create index if not exists dir_entries_kind on dir_entries (kind, status, published_at desc);
+create table if not exists dir_finds (id serial primary key, key text not null unique, kind text not null, title text not null, url text not null,
+  source text not null, summary text, body text, published_at timestamptz, score int, why text, status text not null default 'new',   -- new | used | skipped
+  created_at timestamptz not null default now());
+create index if not exists dir_finds_new on dir_finds (status, kind, score desc);
+alter table dir_settings add column if not exists slots text not null default '08:00,11:00,14:00,17:00,20:00';   -- when posts go live (Lagos)
+alter table dir_settings add column if not exists kinds text not null default 'tool,update,guide,alert';         -- which kinds are on
+alter table dir_settings add column if not exists fb_share boolean not null default true;   -- the day's best post on the Facebook Page
+alter table dir_settings add column if not exists fb_last date;                              -- the day it last shared (Lagos)
+alter table dir_settings add column if not exists gathered_at timestamptz;                   -- news sources last read
+alter table dir_settings add column if not exists google jsonb;                              -- last "tell Google" result
+alter table dir_settings alter column per_day set default 5;
+update dir_settings set per_day = 5 where per_day = 12;                                      -- the old default: now about 5 a day
