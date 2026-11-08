@@ -738,3 +738,21 @@ content. Add it after the audit is approved, since the audit describes one chann
 - Simple screen: Needs you (handovers), Your calls (with brief), Later stage. db: handover, nurture_count, lost_reason,
   brief, brief_at on sales_companies; move on sales_replies.
 - Tests: tests/sales/converse.py (31). All sales: sales.py 41, part2.py 36, agent.py 25.
+
+## Install 20: the chat on olexweb.com (sales agent, phase 3a)
+- lib/site/chat.js + /api/chat (GET = signed stamp; POST start/send/poll, same-origin only). Tables site_chats,
+  site_chat_messages; leads.chat_id. The assistant says it is Olaitan's assistant. AI returns {reply, move, offer,
+  wantsPrice, lead, summary}; checkReply (code): 3–130 words, only BOOKING_LINK/PORTFOLIO_LINK, no prices/amounts, no
+  promises, no HTML; 2 tries, then a safe code-written answer with the booking link. Prices by code from the playbook in the
+  visitor's currency (x-vercel-ip-country: GB £, euro countries €, else $), tier from scoreTier (only up).
+  Handover by code: START_PAY, SENSITIVE, asking for Olaitan -> status handover + notify. Email/phone only if the visitor
+  typed it; then a lead (source "Website chat"). Limits: 6 chats/day per network, 60 msgs/hour, 40 per chat, 1,000 chars,
+  1.2 s between messages, honeypot "website".
+- components/site/ChatWidget.jsx in app/layout.js (hidden on /admin, /doc, /studio, /meet, /aoc, meet.* host). Token in
+  localStorage "olex-chat"; ?chat=<token> reopens (from Olaitan's email); polls every 8 s while open. StartChoice has a third
+  option that fires window event "olex-chat-open".
+- Admin → Leads: "Needs you", the whole chat, and "Send reply" (appears in their chat as Olaitan; emailed if we have it).
+  book.js marks a chat booked by email.
+- The button hides itself from automated browsers (navigator.webdriver: the factory filming pages, bots); tests set
+  localStorage olex-chat-show = 1.
+- Tests: tests/sales/chat.py (31). Chain phaseWIDE: same result with and without the chat (night-time failures only).

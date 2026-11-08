@@ -1,5 +1,6 @@
 import StartChoice from '@/components/site/StartChoice'
 import LeadClicks from '@/components/site/LeadClicks'
+import ChatWidget from '@/components/site/ChatWidget'
 // Root layout shared by both versions: fonts and site-wide settings only. No styles here:
 // the new site brings its own, and the studio's live in app/(studio)/layout.js.
 import { Manrope } from 'next/font/google'
@@ -25,7 +26,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={[manrope.variable, hubot.variable, mona.variable].join(' ')} data-time="day" style={{ backgroundColor: '#0a0b0a' }} suppressHydrationWarning>
       {/* the page scripts set classes here before React takes over (the opening, the About name animation); that is expected */}
-      <body suppressHydrationWarning>{children}<LeadClicks /><StartChoice /></body>
+      <body suppressHydrationWarning>{children}<LeadClicks /><StartChoice /><ChatWidget /></body>
     </html>
   )
 }

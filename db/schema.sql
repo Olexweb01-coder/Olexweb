@@ -617,3 +617,14 @@ alter table sales_companies add column if not exists brief jsonb;             --
 alter table sales_companies add column if not exists brief_at timestamptz;
 alter table sales_replies add column if not exists move text;                 -- what the agent did: answer, book, later, referral, handover, stop
 create index if not exists sales_companies_touch on sales_companies (status, next_touch_after);
+-- Install 20: the chat on olexweb.com (lib/site/chat.js)
+create table if not exists site_chats (id bigserial primary key, token text not null unique, created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  ip_hash text not null default '', page text not null default '', country text, status text not null default 'open' check (status in ('open', 'handover', 'booked', 'closed')),
+  name text, email text, phone text, business text, need text, budget text, timeline text, summary text, tier text, handover jsonb, price_shown_at timestamptz,
+  visitor_msgs int not null default 0, lead_id int references leads(id) on delete set null);
+create index if not exists site_chats_ip on site_chats (ip_hash, created_at);
+create index if not exists site_chats_email on site_chats (lower(email));
+create table if not exists site_chat_messages (id bigserial primary key, chat_id bigint not null references site_chats(id) on delete cascade, at timestamptz not null default now(),
+  who text not null check (who in ('visitor', 'agent', 'olaitan')), text text not null);
+create index if not exists site_chat_messages_chat on site_chat_messages (chat_id, id);
+alter table leads add column if not exists chat_id bigint;

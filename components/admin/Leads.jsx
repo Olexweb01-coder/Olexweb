@@ -1,6 +1,7 @@
 'use client'
-// The Leads inbox: enquiries from olexweb.com/start, with status, notes and a quick reply; and WhatsApp taps by page.
-import { useState } from 'react'
+// The Leads inbox: enquiries from olexweb.com/start and the website chat (Install 20: the whole chat, and a reply that appears
+// in their chat and goes to their email), with status, notes and a quick reply; and WhatsApp taps by page.
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 
@@ -46,6 +47,7 @@ function Lead({ l, onDone }) {
   async function save(patch, msg) { setBusy(true); const x = await call({ action: 'update', id: l.id, ...patch }); setBusy(false); if (x.error) toast(x.error); else { toast(msg); onDone() } }
   async function remove() { if (!window.confirm(`Delete the enquiry from ${l.name}? This can’t be undone.`)) return; const x = await call({ action: 'delete', id: l.id }); if (x.error) toast(x.error); else { toast('Deleted.'); onDone() } }
   return (<article className="review" style={{ marginBottom: 12 }}>
+    {l.chat_why ? <p className="note" style={{ margin: '0 0 8px', padding: '10px 12px', borderRadius: 12, background: 'rgba(239,122,106,.12)', border: '1px solid rgba(239,122,106,.4)', color: 'inherit' }}>Needs you: {l.chat_why}</p> : null}
     <div className="who"><span><b>{l.name}</b><span>{l.business ? l.business + ' · ' : ''}{l.contact}</span></span><span className={'pill ' + (l.status === 'new' ? 'live' : l.status === 'won' ? 'res' : '')}>{(STATES.find((s) => s[0] === l.status) || [])[1]}</span></div>
     <p style={{ margin: '10px 0', whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{l.need}</p>
     <p className="note" style={{ margin: '0 0 10px' }}>{when(l.created_at)}{l.budget ? ' · Budget: ' + l.budget : ''}{l.timeline ? ' · ' + l.timeline : ''}{l.source ? ' · Came from ' + l.source : ''}{l.page ? ' · Page ' + l.page : ''}</p>
@@ -54,7 +56,32 @@ function Lead({ l, onDone }) {
       <select className="input" value={l.status} disabled={busy} onChange={(e) => save({ status: e.target.value }, 'Status saved.')} aria-label="Status" style={{ width: 'auto' }}>{STATES.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
       <button type="button" className="btn btn-line" onClick={remove}>Delete</button>
     </div>
+    {l.chat_id ? <ChatThread l={l} onDone={onDone} /> : null}
     <div className="field" style={{ marginTop: 10 }}><label htmlFor={'n' + l.id}>Notes</label><textarea id={'n' + l.id} className="input" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000} style={{ minHeight: 70 }} />
       {notes !== (l.notes || '') ? <button type="button" className="btn btn-line" style={{ marginTop: 8 }} disabled={busy} onClick={() => save({ notes }, 'Notes saved.')}>Save notes</button> : null}</div>
   </article>)
+}
+
+// Install 20: the website chat behind a lead, and Olaitan's reply into it
+function ChatThread({ l, onDone }) {
+  const [open, setOpen] = useState(!!l.chat_why), [chat, setChat] = useState(null), [text, setText] = useState(''), [busy, setBusy] = useState(false)
+  async function load() { const x = await call({ action: 'chat', id: l.id }); if (x.error) toast(x.error); else setChat(x.chat) }
+  useEffect(() => { if (open && !chat) load() }, [open, chat])   // eslint-disable-line react-hooks/exhaustive-deps
+  async function send() {
+    setBusy(true); const x = await call({ action: 'chat-reply', id: l.id, text }); setBusy(false)
+    if (x.error) return toast(x.error)
+    toast(x.emailed ? 'Sent: in their chat and to their email.' : 'Sent to their chat.'); setText(''); setChat(null); onDone()
+  }
+  const who = { visitor: l.name.split(' ')[0] || 'Them', agent: 'Assistant', olaitan: 'You' }
+  return (<div style={{ marginTop: 6 }}>
+    <button type="button" className="btn btn-line" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? 'Hide the chat' : 'Read the chat'}</button>
+    {open ? <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+      {!chat ? <p className="note">Loading…</p> : chat.messages.map((m) => <div key={m.id} style={{ justifySelf: m.who === 'visitor' ? 'start' : 'end', maxWidth: '88%', padding: '10px 12px', borderRadius: 14,
+        background: m.who === 'visitor' ? 'var(--raise2)' : m.who === 'olaitan' ? 'rgba(143,227,106,.22)' : 'rgba(143,227,106,.08)' }}>
+        <small style={{ color: 'var(--dim)', fontWeight: 700 }}>{who[m.who]} · {when(m.at)}</small><div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 14.5, marginTop: 2 }}>{m.text}</div></div>)}
+      {chat ? <div className="field"><label htmlFor={'cr' + l.id}>Reply in their chat{l.contact.includes('@') ? ' (also emailed to them)' : ''}</label>
+        <textarea id={'cr' + l.id} className="input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} style={{ minHeight: 80 }} />
+        <button type="button" className="btn btn-green" style={{ marginTop: 8 }} disabled={busy || text.trim().length < 2} onClick={send}>{busy ? 'Sending…' : 'Send reply'}</button></div> : null}
+    </div> : null}
+  </div>)
 }

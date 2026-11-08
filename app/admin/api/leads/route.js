@@ -12,6 +12,8 @@ export async function POST(request) {
   const id = Number(b.id); if (!Number.isInteger(id) || id < 1) return refuse('Unknown enquiry.', 400)
   return respond(async () => {
     if (b.action === 'update') { const r = await updateLead(id, b); await audit(u.id, 'lead_updated', { id, status: b.status }, clientIp()); return r }
+    if (b.action === 'chat') { const { chatForLead } = await import('@/lib/site/chat'); return { chat: await chatForLead(id) } }                 // Install 20
+    if (b.action === 'chat-reply') { const { replyAsOlaitan } = await import('@/lib/site/chat'); const r = await replyAsOlaitan(id, b.text); await audit(u.id, 'chat_reply', { id }, clientIp()); return r }
     if (b.action === 'delete') { const r = await deleteLead(id); await audit(u.id, 'lead_deleted', { id }, clientIp()); return r }
     throw new Refused('Unknown action.')
   })

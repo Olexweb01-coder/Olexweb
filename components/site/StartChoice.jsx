@@ -1,5 +1,5 @@
 'use client'
-// "Start my project": a choice between WhatsApp (the same pre-written message) and the short form.
+// "Start my project": a choice between WhatsApp (the same pre-written message), the short form, and (Install 20) the chat.
 // Only buttons that say "Start my project" open it; every other WhatsApp link opens WhatsApp directly.
 // Without JavaScript, the button simply opens WhatsApp as before.
 import { useEffect, useRef, useState } from 'react'
@@ -40,13 +40,16 @@ export default function StartChoice() {
     <div className="sc" role="dialog" aria-modal="true" aria-labelledby="scT" ref={panel}>
       <button type="button" className="sc-x" aria-label="Close" onClick={close}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
       <h2 id="scT">How would you like to start?</h2>
-      <p className="sc-sub">Both reach Olaitan directly. You’ll get a reply within a day.</p>
+      <p className="sc-sub">WhatsApp and the form reach Olaitan directly. You’ll get a reply within a day.</p>
       <a className="sc-opt sc-wa" data-choice="" href={open.wa} onClick={() => setTimeout(close, 300)}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3Z" /></svg>
         <span><b>Message on WhatsApp</b><small>Chat now. Your first message is already written.</small></span></a>
       <a className="sc-opt sc-form" href={'/start?from=' + encodeURIComponent(open.from)}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 4h8M6 4h12a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM8 10h8M8 14h8M8 18h5" /></svg>
         <span><b>Fill a short form</b><small>Share your project details. It takes about two minutes.</small></span></a>
+      <button type="button" className="sc-opt sc-chat" onClick={() => { setOpen(null); window.dispatchEvent(new Event('olex-chat-open')) }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5Z" /><path d="M8 9.5h8M8 12.5h5" /></svg>
+        <span><b>Ask a quick question</b><small>Chat here. Answers in seconds, about prices, timing or anything else.</small></span></button>
     </div>
   </div>)
 }
@@ -57,7 +60,7 @@ const CSS = `
 .sc-sub{margin:0 0 4px;color:var(--paper-dim,rgba(242,239,233,.66));font-size:15px;line-height:1.5}
 .sc-x{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(242,239,233,.16);background:transparent;color:inherit;display:grid;place-items:center;cursor:pointer}
 .sc-opt{display:flex;align-items:center;gap:14px;padding:16px;border-radius:18px;text-decoration:none;color:inherit;border:1px solid rgba(242,239,233,.14);background:rgba(242,239,233,.03);transition:border-color .2s,background .2s}
-.sc-opt svg{width:26px;height:26px;flex:none}
+.sc-chat{font:inherit;text-align:left;cursor:pointer;width:100%}.sc-opt svg{width:26px;height:26px;flex:none}
 .sc-opt span{display:flex;flex-direction:column;gap:3px}.sc-opt b{font-size:16.5px}.sc-opt small{font-size:13.5px;color:var(--paper-dim,rgba(242,239,233,.66));line-height:1.4}
 .sc-wa{background:var(--green,#8fe36a);border-color:var(--green,#8fe36a);color:#0b0c0b}.sc-wa small{color:rgba(11,12,11,.72)}
 .sc-opt:hover{border-color:var(--green,#8fe36a)}.sc-form:hover{background:rgba(143,227,106,.06)}

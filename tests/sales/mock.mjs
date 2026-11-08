@@ -28,6 +28,21 @@ http.createServer((req, res) => {
     if (/:generateContent$/.test(p)) {
       const req = JSON.parse(body), sys = JSON.stringify(req.systemInstruction || ''), text = req.contents[0].parts.map((x) => x.text).join(' ')
       const reply = (o) => { log.push({ kind: 'ai', role: o.role, prompt: text.slice(0, 600), system: sys.slice(0, 3000) }); return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(o.json) }] } }] }) }
+      // Install 20: the website chat
+      if (sys.includes('assistant on olexweb.com')) {
+        const lines = text.split('\n').filter((l) => l.startsWith('VISITOR: ')), last = (lines[lines.length - 1] || '').slice(9)
+        const em = (last.match(/[\w.+-]+@[\w-]+\.[\w.]+/) || [])[0] || null
+        const base = { move: 'answer', offer: null, wantsPrice: false, lead: { name: null, email: null, phone: null, business: null, need: null, budget: null, timeline: null }, summary: 'A visitor asking about a website' }
+        if (ai === 'chatBad') return reply({ role: 'chat', json: { ...base, reply: 'Sure!! It is $300 and I guarantee it within 3 days. See https://cheap-sites.com' } })
+        const j = em ? { ...base, move: 'book', reply: 'Thanks Kemi, got it. Olaitan will email you. Pick a time for a free call here:\nBOOKING_LINK', lead: { ...base.lead, name: 'Kemi Ade', email: em, business: 'Hair salon', need: 'A website with online booking' }, summary: 'Kemi runs a hair salon and wants online booking' }
+          : /ignore (all|your|previous)/i.test(last) ? { ...base, move: 'offtopic', reply: 'I can only help with Olexweb and your project. What does your business do?' }
+          : /are you a bot/i.test(last) ? { ...base, reply: 'I’m Olaitan’s assistant. Olaitan himself does the calls and builds every project. What are you working on?' }
+          : /invoice|pay/i.test(last) ? { ...base, reply: 'That’s great news. Olaitan handles that part himself.' }
+          : /how much|price|cost/i.test(last) ? { ...base, offer: 'booking', wantsPrice: true, reply: 'Good question. For a salon, online booking is usually the part that pays for itself.' }
+          : /salon/i.test(last) ? { ...base, offer: 'booking', reply: 'Nice. Do your clients book by phone today, or can they book online?', lead: { ...base.lead, business: 'Hair salon' }, summary: 'Runs a hair salon' }
+          : { ...base, reply: 'Happy to help. What does your business do, and what should the website do for you?' }
+        return reply({ role: 'chat', json: j })
+      }
       // Install 19: the conversation agent, nudges, introductions and the pre-call brief
       if (sys.includes('You are the email side of')) {
         const last = (text.split('Their newest reply (answer this):')[1] || text)
