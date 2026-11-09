@@ -74,9 +74,18 @@ export default function SalesSimple({ data }) {
           <div className="ss-lh"><b>{l.name}</b><span className={'ss-tier ss-' + l.plan.tier}>{l.plan.tierLabel}</span></div>
           <span>{FLAG[l.country]} · {STATUS[l.status] || l.status} · {l.plan.offerName}, {l.plan.price}</span>
           {l.plan.angle ? <span className="ss-dim">{l.plan.angle}</span> : null}
-          <span className="ss-dim">Why this level: {(l.plan.reasons || []).join(', ')}</span></div>)
+          <span className="ss-dim">Why this level: {(l.plan.reasons || []).join(', ')}</span>
+          {l.preview ? <a className="ss-mock" href={'/preview/' + l.preview.token} target="_blank" rel="noopener noreferrer">See their mock-up ↗{l.preview.views ? <em>opened {l.preview.views}×</em> : l.preview.shared ? <em className="ss-dimem">sent, not opened yet</em> : null}</a> : null}</div>)
           : <p className="sm-note">No businesses researched yet. Turn the agent on and add where to look (Detailed → Find).</p>}
       </section>
+
+      {D.previews ? <section className="sm-card" aria-label="Mock-ups">
+        <h2>Mock-ups</h2>
+        <p className="sm-note">Before the first email, the agent makes each business a mock-up of a new homepage from their own site. {D.previews.inFirst ? 'Its link goes in the first email.' : 'The email offers it; the link goes when they say yes.'} You get a notification the first time someone opens theirs.</p>
+        <div className="ss-mstats"><div className="sm-chip"><b>{D.previews.made}</b>Made</div><div className="sm-chip"><b>{D.previews.sent}</b>Sent</div><div className="sm-chip"><b>{D.previews.opened}</b>Opened</div></div>
+        {D.previews.opens.length ? D.previews.opens.map((o) => <a key={o.id} className="ss-open" href={'/preview/' + o.token} target="_blank" rel="noopener noreferrer"><b>{o.name}</b><span>Opened {o.views}×{o.clicks ? `, tapped “Talk to Olaitan” ${o.clicks}×` : ''} · last {when(o.last_view_at)}</span></a>)
+          : <p className="sm-note">Nobody has opened one yet.</p>}
+      </section> : null}
 
       <section className="sm-card" aria-label="Documents">
         <h2>Official documents</h2>
@@ -116,6 +125,10 @@ export default function SalesSimple({ data }) {
             : !D.forms.ready ? 'Waiting for your outreach Gmail (their replies come there).'
             : `When there’s no email, the message goes through their “Contact us” form. Today ${D.forms.today} of ${D.forms.cap}; the limit grows by 5 a week, up to 40.`}</span></div>
           <button className={'sm-tog' + (D.forms.enabled ? '' : ' off')} role="switch" aria-checked={D.forms.enabled} aria-label="Contact forms" disabled={!!busy} onClick={() => act('forms', { action: 'forms', on: !D.forms.enabled }, D.forms.enabled ? 'Contact forms are off.' : 'Contact forms are on.')}><i /><em>{D.forms.enabled ? 'ON' : 'OFF'}</em></button></div> : null}
+        {D.previews ? <div className="sm-sw"><div><b>Personal mock-ups</b><span>{D.previews.enabled ? 'Each business gets a mock-up of a new homepage, made from their own site, before the first email.' : 'Off: first emails offer a quick idea or a call instead.'}</span></div>
+          <button className={'sm-tog' + (D.previews.enabled ? '' : ' off')} role="switch" aria-checked={D.previews.enabled} aria-label="Personal mock-ups" disabled={!!busy} onClick={() => act('pv', { action: 'previews', on: !D.previews.enabled }, D.previews.enabled ? 'Mock-ups off.' : 'Mock-ups on.')}><i /><em>{D.previews.enabled ? 'ON' : 'OFF'}</em></button></div> : null}
+        {D.previews && D.previews.enabled ? <div className="sm-sw"><div><b>Mock-up link in the first email</b><span>{D.previews.inFirst ? 'The link is in the first email.' : 'Safer for a new email account: the first email has no link and offers the mock-up; the agent sends the link when they say yes.'}</span></div>
+          <button className={'sm-tog' + (D.previews.inFirst ? '' : ' off')} role="switch" aria-checked={D.previews.inFirst} aria-label="Mock-up link in the first email" disabled={!!busy} onClick={() => act('pvf', { action: 'preview-first', on: !D.previews.inFirst }, D.previews.inFirst ? 'The link now goes when they say yes.' : 'The link now goes in the first email.')}><i /><em>{D.previews.inFirst ? 'ON' : 'OFF'}</em></button></div> : null}
         {D.partners ? <div className="sm-sw"><div><b>Agency partners</b><span>{D.partners.enabled ? `Agencies that sell websites get a partner offer: you build their clients’ sites under their name. ${D.partners.found} found${D.partners.reached ? `, ${D.partners.reached} reached` : ''}.` : 'Off: agencies are skipped.'}</span></div>
           <button className={'sm-tog' + (D.partners.enabled ? '' : ' off')} role="switch" aria-checked={D.partners.enabled} aria-label="Agency partners" disabled={!!busy} onClick={() => act('partners', { action: 'partners', on: !D.partners.enabled }, D.partners.enabled ? 'Agency partners are off.' : 'Agency partners are on.')}><i /><em>{D.partners.enabled ? 'ON' : 'OFF'}</em></button></div> : null}
         {['GB', 'US', 'FR'].map((c) => <div key={c} className="sm-sw"><div><b>{FLAG[c]}</b><span>{{ GB: 'Limited companies only (UK law). Prices in pounds.', US: 'With an opt-out line and your address (US law). Prices in dollars.', FR: 'Emails in French; your replies in English. Prices in euros.' }[c]}</span></div>
@@ -149,5 +162,8 @@ const CSS = `
 .ss-growth{color:var(--warn);background:rgba(240,179,94,.14)}.ss-premium{color:var(--green);background:rgba(143,227,106,.14)}
 .ss-doc{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}.sm-card h2+.ss-doc{border-top:0;padding-top:0}.ss-doc>b{font-size:16px}
 .ss-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ss-f{display:grid;gap:4px;font-size:13px;color:var(--dim);min-width:0}.ss-f .input{width:100%;min-width:0}
+.ss-mock{display:inline-flex;gap:8px;align-items:center;width:fit-content;margin-top:4px;font-size:13.5px;font-weight:700;color:var(--green);text-decoration:none}.ss-mock em{font-style:normal;font-weight:600;color:var(--paper);background:rgba(143,227,106,.14);padding:2px 8px;border-radius:99px}.ss-mock em.ss-dimem{color:var(--dim);background:var(--raise2)}
+.ss-mstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 8px}
+.ss-open{display:grid;gap:2px;padding:10px 0;border-top:1px solid var(--line);text-decoration:none;color:var(--paper);font-size:14px}.ss-open span{color:var(--dim);font-size:13px}
 .ss-docs{display:flex;flex-wrap:wrap;gap:8px}.ss-docs a{font-size:13px;color:var(--dim);padding:6px 10px;border-radius:999px;border:1px solid var(--line);text-decoration:none}
 `

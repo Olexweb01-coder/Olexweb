@@ -654,3 +654,9 @@ alter table dir_entries add column if not exists tale_id bigint;                
 
 -- co-hosts (by their identity in the meeting): they can mute, let speak, remove, record and take AI notes
 alter table meetings add column if not exists cohosts jsonb not null default '[]'::jsonb;
+-- Olex Sales: personal previews (a mock-up of a new homepage for each business, at /preview/<token>)
+create table if not exists sales_previews (company_id bigint primary key references sales_companies(id) on delete cascade, token text not null unique,
+  created_at timestamptz not null default now(), data jsonb not null, views int not null default 0, first_view_at timestamptz, last_view_at timestamptz,
+  clicks int not null default 0, shared_at timestamptz);
+alter table sales_settings add column if not exists previews_enabled boolean not null default true;      -- make a mock-up before the first email
+alter table sales_settings add column if not exists preview_in_first boolean not null default false;     -- off: the first email offers it, the link goes when they say yes

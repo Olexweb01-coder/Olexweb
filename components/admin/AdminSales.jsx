@@ -81,6 +81,7 @@ function Companies({ reload }) {
   const [status, setStatus] = useState('qualified'), [rows, setRows] = useState(null), [busy, setBusy] = useState(0)
   const load = useCallback(async () => { try { setRows((await call({ action: 'companies', status: status || null })).companies) } catch (e) { toast(e.message) } }, [status])
   useEffect(() => { load() }, [load])
+  async function mock(c) { setBusy(c.id); try { await call({ action: 'preview', id: c.id, again: !!c.preview }); toast(c.preview ? 'Mock-up remade (same link).' : 'Mock-up made.'); load() } catch (e) { toast(e.message) } setBusy(0) }
   async function act(action, id, ok) { setBusy(id); try { await call({ action, id }); toast(ok); load(); reload() } catch (e) { toast(e.message) } setBusy(0) }
   return (<section className="mg-box">
     <label className="sl-filter"><span className="mg-lab">Show</span><select className="input" value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Everything</option>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
@@ -88,9 +89,11 @@ function Companies({ reload }) {
       <div className="mg-main"><b>{c.name}</b><span className="mg-dim">{c.category} · {c.city ? c.city + ', ' : ''}{c.country === 'GB' ? 'UK' : 'US'} · {STATUS[c.status] || c.status}{c.score ? ` · score ${c.score}/10` : ''}</span>
         {c.website ? <a className="mg-dim" href={c.website} target="_blank" rel="noreferrer">{c.domain}</a> : null}
         <Sigs list={c.signals} />{c.contacts ? <span className="mg-dim">{c.contacts.map((k) => `${k.email} (${k.status})`).join(', ')}</span> : null}
-        {c.profile_error ? <span className="sl-warn">{c.profile_error}</span> : null}</div>
+        {c.profile_error ? <span className="sl-warn">{c.profile_error}</span> : null}
+        {c.preview ? <a className="mg-dim" href={'/preview/' + c.preview.token} target="_blank" rel="noopener noreferrer">Their mock-up ↗{c.preview.views ? ` (opened ${c.preview.views}×)` : ''}</a> : null}</div>
       <div className="mg-acts">{['new', 'error', 'skipped', 'no_email', 'uk_unconfirmed', 'write_failed'].includes(c.status) ? <button className="btn btn-line" disabled={busy === c.id} onClick={() => act('profile', c.id, 'Checked again.')}>Check again</button> : null}
         {c.status === 'qualified' ? <button className="btn btn-green" disabled={busy === c.id} onClick={() => act('draft', c.id, 'Drafted. It’s in the Outbox.')}>Draft email</button> : null}
+        {['qualified', 'drafted', 'contacted', 'replied', 'nurture', 'booked'].includes(c.status) && !(c.signals || []).some((x) => x.code === 'AGENCY') ? <button className="btn btn-line" disabled={busy === c.id} onClick={() => mock(c)}>{c.preview ? 'Remake mock-up' : 'Make mock-up'}</button> : null}
         {!['skipped', 'contacted', 'replied', 'booked'].includes(c.status) ? <button className="btn btn-line" onClick={() => act('skip', c.id, 'Skipped.')}>Skip</button> : null}</div>
     </li>)}</ul>}
   </section>)

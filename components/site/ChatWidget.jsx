@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 const KEY = 'olex-chat'
-const HIDE = /^\/(admin|doc|studio|meet|aoc|olex-runner)(\/|$)/
+const HIDE = /^\/(admin|doc|studio|meet|aoc|olex-runner|preview)(\/|$)/
 const CHIPS = ['I need a website', 'How much is a website?', 'How does it work?', 'Show me your work']
 const get = () => { try { return localStorage.getItem(KEY) } catch { return null } }
 const put = (v) => { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY) } catch {} }

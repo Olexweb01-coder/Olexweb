@@ -34,6 +34,10 @@ async function handle(b) {
         // Install 21: contact forms and agency partners
         case 'forms': await q('update sales_settings set forms_enabled = $1, forms_paused_reason = case when $1 then null else forms_paused_reason end where id = 1', [b.on === true]); return { ok: true }
         case 'auto-find': await q('update sales_settings set auto_find = $1, found_at = null where id = 1', [b.on === true]); return { ok: true }
+        // personal previews: on/off, the link in the first email or only when they say yes, and make or remake one
+        case 'previews': await q('update sales_settings set previews_enabled = $1 where id = 1', [b.on === true]); return { ok: true }
+        case 'preview-first': await q('update sales_settings set preview_in_first = $1 where id = 1', [b.on === true]); return { ok: true }
+        case 'preview': { const id = Number(b.id); if (!Number.isInteger(id)) throw new Refused('Which business?'); const { makePreview } = await import('@/lib/sales/preview'); const p = await makePreview(id, { again: b.again === true }); if (!p) throw new Refused('No mock-up for this one (agencies get the partner pitch instead).'); return p }
         case 'partners': await q('update sales_settings set partners_enabled = $1 where id = 1', [b.on === true]); return { ok: true }
         case 'auto-send': await q('update sales_settings set require_approval = $1 where id = 1', [b.on !== true]); return { ok: true }
         case 'countries': { const list = (Array.isArray(b.list) ? b.list : []).filter((c) => ['GB', 'US', 'FR'].includes(c)); if (!list.length) throw new Refused('Keep at least one country on.'); await q('update sales_settings set countries = $1 where id = 1', [list.join(',')]); return { ok: true } }
@@ -48,7 +52,8 @@ async function handle(b) {
           const st = STATUSES.includes(b.status) ? b.status : null
           const rows = (await q(`select c.id, c.name, c.website, c.domain, c.country, c.city, c.category, c.source, c.status, c.score, c.profile_error, c.company_type, c.phone,
             (select json_agg(json_build_object('code', s.code, 'evidence', s.evidence)) from sales_signals s where s.company_id = c.id) as signals,
-            (select json_agg(json_build_object('email', k.email, 'status', k.email_status)) from sales_contacts k where k.company_id = c.id) as contacts
+            (select json_agg(json_build_object('email', k.email, 'status', k.email_status)) from sales_contacts k where k.company_id = c.id) as contacts,
+            (select json_build_object('token', p.token, 'views', p.views) from sales_previews p where p.company_id = c.id) as preview
             from sales_companies c where ($1::text is null or c.status = $1) order by c.score desc nulls last, c.id desc limit 200`, [st])).rows
           return { companies: rows }
         }
@@ -62,7 +67,7 @@ async function handle(b) {
         case 'approve': await q("update sales_outbox set status = 'approved' where id = $1 and status in ('waiting', 'held')", [Number(b.id)]); return { ok: true }
         case 'reject': await q("update sales_outbox set status = 'rejected' where id = $1 and status in ('waiting', 'held', 'approved')", [Number(b.id)]); return { ok: true }
         case 'edit': {
-          const sig = String(b.body || '').split('\n\n').slice(0, -1).join('\n\n') || b.body
+          const sig = String(b.body || '').replace(/\n\n(The mock-up|La maquette): https?:\/\/\S+/g, '').split('\n\n').slice(0, -1).join('\n\n') || b.body   // the mock-up link line is added by code
           const problems = checkDraft({ subject: b.subject, body: sig.trim() })
           if (problems.length && !b.force) throw new Refused('This email breaks a rule: ' + problems.join('; ') + '. Save anyway?')
           await q("update sales_outbox set subject = $2, body = $3 where id = $1 and status in ('waiting', 'held', 'approved')", [Number(b.id), String(b.subject).slice(0, 120), String(b.body).slice(0, 3000)]); return { ok: true }
