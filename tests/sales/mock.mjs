@@ -29,11 +29,12 @@ const SITES = {
 const PSI = { 'slow-dentist.test': 28, 'old-salon.test': 61, 'modern-clinic.test': 93, 'nomx-cafe.test': 70, 'nohttps-ledger.test': 74 }
 const GOOD = (q) => ({ subject: 'bright smiles website on phones', body: `Hi,\n\nI was looking at the Bright Smiles site on my phone and it took a long time to load, and there's no way to book online. People searching on their phones often give up and call the next dentist instead. Would a quick idea on fixing both be useful?` })
 const BAD = { subject: 'Re: quick question', body: 'I hope this finds you well! Check https://olexweb.com for more. We leverage cutting-edge synergy.' }
+let mapsBusy = false                                                   // a busy map-listings server (for the retry test)
 http.createServer((req, res) => {
   let body = ''; req.on('data', (c) => (body += c)); req.on('end', () => {
     const u = new URL(req.url, 'http://x'), p = u.pathname
     if (p === '/log') return send(res, 200, log)
-    if (p === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; aiCalls = 0; inbox = [] } if (j.inbox) for (const m of j.inbox) inbox.push({ uid: ++uid, references: [], auto: false, ...m }); if (j.ai) { ai = j.ai; aiCalls = 0 } return send(res, 200, { ok: true }) }
+    if (p === '/control') { const j = JSON.parse(body || '{}'); if (j.reset) { log = []; aiCalls = 0; inbox = [] } if (j.inbox) for (const m of j.inbox) inbox.push({ uid: ++uid, references: [], auto: false, ...m }); if (j.ai) { ai = j.ai; aiCalls = 0 } if ('mapsBusy' in j) mapsBusy = !!j.mapsBusy; return send(res, 200, { ok: true }) }
     if (p === '/v1beta/models') return send(res, 200, { models: [{ name: 'models/gemini-9-flash', supportedGenerationMethods: ['generateContent'] }] })
     if (/:generateContent$/.test(p)) {
       const req = JSON.parse(body), sys = JSON.stringify(req.systemInstruction || ''), text = req.contents[0].parts.map((x) => x.text).join(' ')
@@ -84,6 +85,7 @@ http.createServer((req, res) => {
       { company_name: 'LEDGER ACCOUNTANTS LIMITED', company_number: '01234567', company_type: 'ltd', company_status: 'active', registered_office_address: { locality: 'Leeds' } },
       { company_name: 'SMITH PARTNERS', company_number: 'SO000111', company_type: 'limited-partnership', company_status: 'active', registered_office_address: { locality: 'Leeds' } }] }) }
     if (p.startsWith('/ch/search/companies')) { const q = (u.searchParams.get('q') || '').toLowerCase(); log.push({ kind: 'ch-confirm', q }); return send(res, 200, { items: q.includes('ledger') ? [{ title: 'LEDGER ACCOUNTANTS LIMITED', company_number: '01234567', company_type: 'ltd', company_status: 'active', address_snippet: 'Leeds' }] : [] }) }
+    if (p === '/serper/places' && mapsBusy) { log.push({ kind: 'serper-busy' }); return send(res, 503, {}) }
     if (p === '/serper/places') { const j = JSON.parse(body); log.push({ kind: 'serper-places', q: j.q, gl: j.gl }); return send(res, 200, { places: [
       { title: 'Bright Smiles Dental', website: 'https://slow-dentist.test/', phoneNumber: '+1 512-555-0101', cid: 'c1' },
       { title: 'Old Salon', website: 'https://old-salon.test', cid: 'c2' }, { title: 'Modern Clinic', website: 'https://modern-clinic.test/', cid: 'c3' },
