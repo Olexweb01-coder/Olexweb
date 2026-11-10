@@ -660,3 +660,5 @@ create table if not exists sales_previews (company_id bigint primary key referen
   clicks int not null default 0, shared_at timestamptz);
 alter table sales_settings add column if not exists previews_enabled boolean not null default true;      -- make a mock-up before the first email
 alter table sales_settings add column if not exists preview_in_first boolean not null default false;     -- off: the first email offers it, the link goes when they say yes
+-- Install 23: the explainer Shorts (Poor vs Rich, You build it) for YouTube and Facebook; on by default (off = the story Shorts and long story as before)
+alter table yt_settings add column if not exists explain_style boolean not null default true;

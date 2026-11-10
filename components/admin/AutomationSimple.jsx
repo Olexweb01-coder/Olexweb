@@ -47,7 +47,7 @@ export default function AutomationSimple({ data, onDetailed }) {
   // 4. switches
   const auto = Y.mode === 'autopilot', fbOn = !!(F && F.connected && F.enabled && !F.paused)
   const smart = !!((A.youtube && A.youtube.enabled) || (A.facebook && A.facebook.enabled))
-  const story = S.style === 'story'
+  const explain = !!S.explain, story = !explain && S.style === 'story'
 
   return (<div className="sm">
     <section className={'sm-hero sm-' + data.state} aria-label="Status">
@@ -86,10 +86,14 @@ export default function AutomationSimple({ data, onDetailed }) {
 
       <section className="sm-card" aria-label="What kind of videos">
         <h2>What kind of videos?</h2>
+        <button className={'sm-pick' + (explain ? ' on' : '')} disabled={!!busy || explain} onClick={() => yt('style', { action: 'explain-style' }, 'Explainer Shorts are on.')}>
+          <span className="sm-radio" aria-hidden="true" /><span><b>Explainer Shorts {explain ? '· on' : ''}</b>One Short a day for YouTube and Facebook: “How Poor vs Rich People Run the Same …” (a new business each day: what a good website does for it), and on Wednesdays a “You build it” explainer while there’s a new one. The long story pauses.</span></button>
+        {explain ? <div className="sm-row"><button className="sm-btn sm-line" disabled={!!busy} onClick={() => yt('wex', { action: 'write-explain', format: 'versus' }, (j) => `Written: ${j.title.replace(' #shorts', '')}. The factory makes it next.`)}>{busy === 'wex' ? 'Writing…' : 'Make a Poor vs Rich Short now'}</button>
+          <button className="sm-btn sm-line" disabled={!!busy} onClick={() => yt('wbx', { action: 'write-explain', format: 'build' }, (j) => `Written: ${j.title.replace(' #shorts', '')}. The factory makes it next.`)}>{busy === 'wbx' ? 'Writing…' : 'Make a “You build it” Short now'}</button></div> : null}
         <button className={'sm-pick' + (story ? ' on' : '')} disabled={!!busy || story} onClick={() => yt('style', { action: 'short-style', style: 'story' }, 'Story videos are on: a long story every day, and Shorts cut from it.')}>
           <span className="sm-radio" aria-hidden="true" /><span><b>Story videos {story ? '· on' : ''}</b>Every day: one long story (his whole day, 5–8 minutes, a different rescue each chapter: a website, a tech update, a how-to or a scam he spots in time), plus up to 3 Shorts cut from it. Facebook gets its own version.</span></button>
-        <button className={'sm-pick' + (!story ? ' on' : '')} disabled={!!busy || !story} onClick={() => yt('style', { action: 'short-style', style: 'classic' }, 'Back to classic Shorts.')}>
-          <span className="sm-radio" aria-hidden="true" /><span><b>Classic Shorts {!story ? '· on' : ''}</b>One “Secret websites” Short at a time, and a long video on the days you choose.</span></button>
+        <button className={'sm-pick' + (!story && !explain ? ' on' : '')} disabled={!!busy || (!story && !explain)} onClick={() => yt('style', { action: 'short-style', style: 'classic' }, 'Back to classic Shorts.')}>
+          <span className="sm-radio" aria-hidden="true" /><span><b>Classic Shorts {!story && !explain ? '· on' : ''}</b>One “Secret websites” Short at a time, and a long video on the days you choose.</span></button>
         {story ? <p className="sm-note">The long story goes up at {S.sagaTime} every day. {S.sagaToday ? 'Today’s is already written.' : ''}</p> : null}
         {story && !S.sagaToday ? <button className="sm-btn sm-line" disabled={!!busy} onClick={() => yt('saga', { action: 'write-saga' }, (j) => `Written: ${j.chapters} chapters, plus ${(j.shorts || []).length} Shorts cut from it. The factory makes it next.`)}>{busy === 'saga' ? 'Writing… (2–4 minutes)' : 'Make today’s long story now'}</button> : null}
       </section>

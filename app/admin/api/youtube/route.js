@@ -50,6 +50,8 @@ export async function POST(request) {
     if (body.action === 'yt-mode') return await setYoutubeMode(body.mode)   // lib/site/automation.js
     if (body.action === 'write-saga') { try { const t = await import('@/lib/site/tale'); const st = await (await import('@/lib/admin/db')).one('select long_style from yt_settings where id = 1'); return st && st.long_style === 'tale' ? await t.writeTale() : await writeSaga() } catch (e) { throw new Refused(e.message) } }   // Install 22: a real story       // today's long story, now
     if (body.action === 'saga-time') { try { return await setSagaTime(String(body.time || '')) } catch (e) { throw new Refused(e.message) } }
+    if (body.action === 'explain-style') { await q('update yt_settings set explain_style = true where id = 1'); return { ok: true } }   // Install 23: Poor vs Rich and You build it
+    if (body.action === 'write-explain') { try { const { writeExplain } = await import('@/lib/site/explain'); return await writeExplain({ format: ['versus', 'build'].includes(body.format) ? body.format : undefined }) } catch (e) { throw new Refused(e.message) } }
     if (body.action === 'short-style') { try { return await setStoryStyle(body.style) } catch (e) { throw new Refused(e.message) } }   // new Shorts: story | classic
     if (body.action === 'write-story') {                                     // write one story now (also while new Shorts are classic: a test)
       if (body.id != null && !Number.isInteger(body.id)) throw new Refused('Request refused.')
