@@ -115,4 +115,9 @@ with sync_playwright() as pw:
     p6.screenshot(path='/tmp/fb-phone.png', full_page=True); pg.set_viewport_size({'width': 1366, 'height': 900}); pg.goto(APP + '/tools/graceville-fast-bible'); pg.wait_for_timeout(1200); pg.screenshot(path='/tmp/fb-laptop.png', full_page=True)
     check(not errs, 'no page errors', errs)
     br.close()
+if os.environ.get('BLOB_READ_WRITE_TOKEN'):
+    print('Kept in Vercel Blob')
+    st = json.loads(urllib.request.urlopen('http://localhost:4591/_state').read())
+    check(st['files'] >= 6 and st['paths'][0].startswith('app/graceville-fast-bible/'), 'the pieces are in the private Blob store', st)
+    check(st['deletes'] >= 10, 'the old version’s pieces were removed from it', st['deletes'])
 print(f'\n{passed} passed, {failed} failed'); sys.exit(1 if failed else 0)

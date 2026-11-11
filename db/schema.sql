@@ -672,3 +672,4 @@ create table if not exists app_access (id bigserial primary key, app text not nu
   downloads int not null default 0, last_download_at timestamptz, ip text);
 create index if not exists app_access_email on app_access (app, lower(email));
 alter table app_releases add column if not exists got int[] not null default '{}';     -- which pieces have arrived (so an upload can carry on after a refresh)
+alter table app_releases add column if not exists refs text[] not null default '{}';  -- where each piece is kept (a Vercel Blob URL, or a bucket key)
