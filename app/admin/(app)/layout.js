@@ -27,6 +27,7 @@ export default async function AppLayout({ children }) {
     owner && ['/admin/directory', 'link', 'Directory'],
     ['/admin/projects', 'work', 'Projects'],
     owner && ['/admin/downloads', 'download', 'Downloads', c.downloads],
+    owner && process.env.US_APP_URL && ['/admin/love', 'heart', 'Our Space'],
     ['/admin/reviews', 'reviews', 'Reviews', c.waiting],
     owner && ['/admin/leads', 'leads', 'Leads', c.leads],
     can(u, 'ventures') && ['/admin/ventures', 'ventures', 'Ventures'],
