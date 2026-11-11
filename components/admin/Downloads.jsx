@@ -68,7 +68,7 @@ export default function DownloadsBoard({ initial }) {
         </div>
         {fail ? <p className="dl-fail" role="alert">{fail}</p> : null}
         {a.uploading && !up ? <p className="note" style={{ margin: 0 }}>Paused upload: <b>{a.uploading.filename}</b> · {a.uploading.got} of {a.uploading.pieces} pieces are up. Choose the same file and tap Upload to carry on.</p> : null}
-        {picked && !up ? <p className="note" style={{ margin: 0 }}>Chosen: <b>{picked.name}</b> · {mb(picked.size)} · goes up in {Math.ceil(picked.size / 4194304)} pieces. On a good connection that’s about {secs(picked.size / 1.5e6)}; on mobile data it can take a few times longer. Keep this page open while it uploads.</p> : null}
+        {picked && !up ? <p className="note" style={{ margin: 0 }}>Chosen: <b>{picked.name}</b> · {mb(picked.size)} · goes up in {Math.ceil(picked.size / 1048576)} pieces. On a good connection that’s about {secs(picked.size / 1.5e6)}; on mobile data it can take a few times longer. Keep this page open while it uploads.</p> : null}
         {up && up.app === a.slug ? <div className="dl-bar" role="progressbar" aria-valuenow={Math.round(100 * up.done / up.total)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: (100 * up.done / up.total) + '%' }} /><span>{up.note} · keep this page open</span></div> : null}
         <div className="seg" role="group" aria-label="Show">{TABS.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}{count(k) ? ` (${count(k)})` : ''}</button>)}</div>
         {!list.length ? <div className="empty">{tab === 'waiting' ? 'Nobody is waiting. When someone taps Request download, they appear here and you get a notification.' : 'Nobody here.'}</div>

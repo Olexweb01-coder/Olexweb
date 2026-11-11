@@ -5,7 +5,7 @@ import hashlib, json, os, sys, urllib.request
 exec(open('tests/meet/e2e.py').read().split("OWNER, EDITOR = ")[0])            # helpers: session, req, sql, check, APP
 from playwright.sync_api import sync_playwright
 OWNER, EDITOR = session('owner@test.local'), session('editor@test.local')
-P = 4 * 1024 * 1024
+P = 1024 * 1024
 def admin(body, tok=OWNER): return req('/admin/api/downloads', body, tok)
 def put_piece(rid, n, data, tok=OWNER):
     r = urllib.request.Request(f'{APP}/admin/api/downloads/piece?id={rid}&n={n}', data=data, headers={'Origin': APP, 'Content-Type': 'application/octet-stream', 'Cookie': '__Host-olex_sess=' + tok}, method='POST')
@@ -34,9 +34,9 @@ print('Uploading a version from the admin')
 s, j = admin({'action': 'start', 'app': 'graceville-fast-bible', 'filename': 'virus.js', 'size': 10, 'version': '1'}); check(s == 400, 'only an installer (.exe, .msi, .zip) is accepted', j)
 s, j = admin({'action': 'start', 'app': 'graceville-fast-bible', 'filename': 'x.exe', 'size': 10}, EDITOR); check(s == 403, 'only you (the owner) can upload')
 s, j = admin({'action': 'start', 'app': 'graceville-fast-bible', 'filename': 'Graceville-Fast-Bible-Setup-2026.11.616.exe', 'size': len(B1), 'version': '2026.11.616'})
-check(s == 200 and j['pieces'] == 3, 'a 9 MB installer goes up in 3 pieces (each under the server’s 4.5 MB limit)', j)
+check(s == 200 and j['pieces'] == 10, 'a 9 MB installer goes up in 10 one-megabyte pieces', j)
 st, e = put_piece(j['id'], 0, B1[:100]); check(st == 400, 'a piece of the wrong size is refused', e)
-for n in range(3): put_piece(j['id'], n, B1[n * P:(n + 1) * P])
+for n in range(10): put_piece(j['id'], n, B1[n * P:(n + 1) * P])
 s, f = admin({'action': 'finish', 'id': j['id']}); check(s == 200 and f['release']['version'] == '2026.11.616' and f['release']['size'] == len(B1), 'finished: it’s the live version', f)
 R1 = f['release']
 s, h = get('/api/apps/piece?app=graceville-fast-bible&r=%d&n=0' % R1['id']); check(s == 403, 'nobody can fetch it without approval')
