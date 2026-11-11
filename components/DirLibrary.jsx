@@ -25,6 +25,10 @@ export default function DirLibrary({ entries, kind = null, heading = null }) {
         <div className="dl-filters"><div className="dl-chips">{cats.map((c) => <button key={c} className={cat === c ? 'on' : ''} aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}</div>
           <div className="dl-chips">{[['all', 'Any price'], ['free', 'Free to start'], ['paid', 'Paid']].map(([k, l]) => <button key={k} className={price === k ? 'on' : ''} aria-pressed={price === k} onClick={() => setPrice(k)}>{l}</button>)}</div></div>
       </section>
+      {!kind ? <a className="dl-own" href="/tools/graceville-fast-bible"><span className="dl-own-ic" aria-hidden="true">✦</span><span><small>Made by Olexweb · Private</small><b>Graceville Fast Bible</b><span>Scripture on screen the moment it’s preached. For Graceville’s media team.</span></span><span className="dl-own-go" aria-hidden="true">→</span></a> : null}
+      <style>{`.dl-own{display:flex;gap:16px;align-items:center;margin:4px 0 18px;padding:18px 20px;border-radius:22px;text-decoration:none;color:#f5efe0;background:linear-gradient(120deg,#1c1608,#2a2110 60%,#3a2c10);border:1px solid rgba(212,166,64,.45)}
+.dl-own-ic{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px;background:#d4a640;color:#14110a;font-size:22px}.dl-own small{display:block;color:#d4a640;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11.5px}
+.dl-own b{display:block;font-size:19px;margin:2px 0}.dl-own span span{color:#cfc6b2;font-size:14.5px}.dl-own-go{margin-left:auto;font-size:22px;color:#d4a640}`}</style>
       <p className="dl-count">{list.length} {kind ? KNAME[kind].toLowerCase() + (list.length === 1 ? '' : 's') : list.length === 1 ? 'post' : 'posts'}</p>
       <div className="dl-grid">{list.map((e, i) => { const k = e.kind || 'tool', fresh = e.published_at && new Date(new Date(e.published_at).getTime() + 3600e3).toISOString().slice(0, 10) === today()
         return <a key={k + e.slug} href={'/' + KPATH[k] + '/' + e.slug} className="dx-card dl-card" style={{ animationDelay: Math.min(i, 12) * 0.04 + 's' }}>

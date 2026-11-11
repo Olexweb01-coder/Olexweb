@@ -10,7 +10,8 @@ export default async function AppLayout({ children }) {
   const u = await requireUser()
   const owner = ownerOnly(u)
   const c = await one(`select (select count(*) from testimonials where status = 'waiting')::int as waiting,
-    (select count(*) from leads where status = 'new')::int as leads`)
+    (select count(*) from leads where status = 'new')::int as leads,
+    (select count(*) from app_access where status = 'waiting')::int as downloads`).catch(() => one(`select (select count(*) from testimonials where status = 'waiting')::int as waiting, (select count(*) from leads where status = 'new')::int as leads, 0 as downloads`))
   const chats = owner ? (await q('select id, title, updated_at from assistant_chats order by updated_at desc limit 60')).rows.map((x) => ({ id: x.id, title: x.title })) : []
   // Sections, filtered by what this person may open (each page checks again on the server)
   const nav = [
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }) {
     owner && ['/admin/pages', 'link', 'Pages & links'],
     owner && ['/admin/directory', 'link', 'Directory'],
     ['/admin/projects', 'work', 'Projects'],
+    owner && ['/admin/downloads', 'download', 'Downloads', c.downloads],
     ['/admin/reviews', 'reviews', 'Reviews', c.waiting],
     owner && ['/admin/leads', 'leads', 'Leads', c.leads],
     can(u, 'ventures') && ['/admin/ventures', 'ventures', 'Ventures'],

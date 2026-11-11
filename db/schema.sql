@@ -662,3 +662,12 @@ alter table sales_settings add column if not exists previews_enabled boolean not
 alter table sales_settings add column if not exists preview_in_first boolean not null default false;     -- off: the first email offers it, the link goes when they say yes
 -- Install 23: the explainer Shorts (Poor vs Rich, You build it) for YouTube and Facebook; on by default (off = the story Shorts and long story as before)
 alter table yt_settings add column if not exists explain_style boolean not null default true;
+-- Private apps (Install 24): installers only approved people can download (Graceville Fast Bible first)
+create table if not exists app_releases (id bigserial primary key, app text not null, version text not null, filename text not null, size bigint not null,
+  pieces int not null, received int not null default 0, status text not null default 'uploading' check (status in ('uploading', 'live', 'old')),
+  created_at timestamptz not null default now(), live_at timestamptz);
+create table if not exists app_access (id bigserial primary key, app text not null, name text not null, email text not null, phone text,
+  device_hash text unique, status text not null default 'waiting' check (status in ('waiting', 'approved', 'declined', 'banned')),
+  link_hash text unique, link_expires timestamptz, created_at timestamptz not null default now(), decided_at timestamptz,
+  downloads int not null default 0, last_download_at timestamptz, ip text);
+create index if not exists app_access_email on app_access (app, lower(email));
