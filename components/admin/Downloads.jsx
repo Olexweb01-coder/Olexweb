@@ -16,12 +16,14 @@ const TABS = [['waiting', 'Waiting'], ['approved', 'Approved'], ['banned', 'Bann
 
 export default function DownloadsBoard({ initial }) {
   const [data, setData] = useState(initial), [tab, setTab] = useState('waiting'), [busy, setBusy] = useState(0), [up, setUp] = useState(null)
-  const file = useRef(null), [version, setVersion] = useState('')
+  const file = useRef(null), [version, setVersion] = useState(''), [picked, setPicked] = useState(null)
+  const secs = (n) => n < 60 ? Math.max(1, Math.round(n)) + ' s' : Math.round(n / 60) + ' min'
   async function load() { const j = await call({ action: 'data' }); if (!j.error) setData(j) }
   useEffect(() => { const t = setInterval(load, 15000); return () => clearInterval(t) }, [])
   async function decide(p, action, msg) { setBusy(p.id); const j = await call({ action, id: p.id }); setBusy(0); if (j.error) toast(j.error); else { toast(msg, true); load() } }
   async function upload(app) {
     const f = file.current && file.current.files[0]; if (!f) { toast('Choose the installer first.'); return }
+    const t0 = Date.now()
     setUp({ app, done: 0, total: 1, note: 'Starting…' })
     const s = await call({ action: 'start', app, filename: f.name, size: f.size, version })
     if (s.error) { setUp(null); toast(s.error); return }
@@ -33,11 +35,12 @@ export default function DownloadsBoard({ initial }) {
         if (!ok) await new Promise((res) => setTimeout(res, 1500 * (tryN + 1)))
       }
       if (!ok) { setUp(null); toast(`Piece ${n + 1} of ${s.pieces} didn’t go up (${err || 'try again'}). Upload again.`); return }
-      setUp({ app, done: n + 1, total: s.pieces, note: `${mb(Math.min(f.size, (n + 1) * s.pieceSize))} of ${mb(f.size)}` })
+      const sent = Math.min(f.size, (n + 1) * s.pieceSize), rate = sent / Math.max(0.5, (Date.now() - t0) / 1000)       // bytes a second so far
+      setUp({ app, done: n + 1, total: s.pieces, note: `${Math.round(100 * sent / f.size)}% · ${mb(sent)} of ${mb(f.size)} · ${mb(rate)}/s · about ${secs((f.size - sent) / rate)} left` })
     }
     setUp({ app, done: s.pieces, total: s.pieces, note: 'Checking…' })
     const fin = await call({ action: 'finish', id: s.id }); setUp(null)
-    if (fin.error) toast(fin.error); else { toast('Uploaded. Approved people now get this version.', true); setVersion(''); if (file.current) file.current.value = ''; load() }
+    if (fin.error) toast(fin.error); else { toast('Uploaded. Approved people now get this version.', true); setVersion(''); setPicked(null); if (file.current) file.current.value = ''; load() }
   }
   return (<>
     <div className="top"><h1 className="d">Downloads</h1></div>
@@ -48,11 +51,12 @@ export default function DownloadsBoard({ initial }) {
         <div className="dl-head"><div><b className="d">{a.name}</b><span>{a.release ? `Version ${a.release.version} · ${a.release.filename} · ${mb(a.release.size)} · uploaded ${ago(a.release.live_at)}` : 'No installer uploaded yet: nobody can download until you upload it.'}</span></div>
           <a className="btn btn-line" href={'/tools/' + a.slug} target="_blank" rel="noopener">See the page ↗</a></div>
         <div className="dl-up">
-          <label className="btn btn-line dl-file">Choose installer<input ref={file} type="file" accept=".exe,.msi,.zip" onChange={() => setVersion((v) => v)} /></label>
+          <label className="btn btn-line dl-file">Choose installer<input ref={file} type="file" accept=".exe,.msi,.zip" onChange={(e) => { const f = e.target.files[0]; setPicked(f ? { name: f.name, size: f.size } : null); const v = f && f.name.match(/(\d{4}\.\d{1,2}\.\d+|\d+\.\d+\.\d+)/); if (v && !version) setVersion(v[1]) }} /></label>
           <input className="input" placeholder="Version (optional), e.g. 2026.11.616" value={version} maxLength={40} onChange={(e) => setVersion(e.target.value)} />
           <button className="btn btn-green" disabled={!!up} onClick={() => upload(a.slug)}>{a.release ? 'Upload new version' : 'Upload'}</button>
         </div>
-        {up && up.app === a.slug ? <div className="dl-bar" role="progressbar" aria-valuenow={Math.round(100 * up.done / up.total)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: (100 * up.done / up.total) + '%' }} /><span>{up.note}: keep this page open</span></div> : null}
+        {picked && !up ? <p className="note" style={{ margin: 0 }}>Chosen: <b>{picked.name}</b> · {mb(picked.size)} · goes up in {Math.ceil(picked.size / 4194304)} pieces. On a good connection that’s about {secs(picked.size / 1.5e6)}; on mobile data it can take a few times longer. Keep this page open while it uploads.</p> : null}
+        {up && up.app === a.slug ? <div className="dl-bar" role="progressbar" aria-valuenow={Math.round(100 * up.done / up.total)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: (100 * up.done / up.total) + '%' }} /><span>{up.note} · keep this page open</span></div> : null}
         <div className="seg" role="group" aria-label="Show">{TABS.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l}{count(k) ? ` (${count(k)})` : ''}</button>)}</div>
         {!list.length ? <div className="empty">{tab === 'waiting' ? 'Nobody is waiting. When someone taps Request download, they appear here and you get a notification.' : 'Nobody here.'}</div>
           : list.map((p) => (<article className="dl-row" key={p.id}>
@@ -70,7 +74,7 @@ export default function DownloadsBoard({ initial }) {
     <style>{`.dl-app{margin-top:18px;padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--raise,transparent);display:grid;gap:14px}
 .dl-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}.dl-head b{display:block;font-size:20px}.dl-head span{color:var(--dim);font-size:14px}
 .dl-up{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.dl-up .input{flex:1 1 200px;min-width:0}.dl-file{position:relative;overflow:hidden}.dl-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.dl-bar{position:relative;height:34px;border-radius:12px;background:var(--line);overflow:hidden}.dl-bar i{position:absolute;inset:0 auto 0 0;background:var(--green);opacity:.35;transition:width .3s}.dl-bar span{position:relative;display:block;padding:8px 12px;font-size:13.5px;font-weight:600}
+.dl-bar{position:relative;min-height:34px;border-radius:12px;background:var(--line);overflow:hidden}.dl-bar i{position:absolute;inset:0 auto 0 0;background:var(--green);opacity:.35;transition:width .3s}.dl-bar span{position:relative;display:block;padding:8px 12px;font-size:13.5px;font-weight:600}
 .dl-row{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}.dl-row b{display:block}.dl-row span,.dl-row small{display:block;color:var(--dim);font-size:13.5px}`}</style>
   </>)
 }
