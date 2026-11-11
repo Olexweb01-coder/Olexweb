@@ -43,6 +43,16 @@ s, h = get('/api/apps/piece?app=graceville-fast-bible&r=%d&n=0' % R1['id']); che
 c = urllib.request.Request(APP + '/admin/downloads', headers={'Cookie': '__Host-olex_sess=' + OWNER}); h = urllib.request.urlopen(c).read().decode().replace('<!-- -->', '')
 check('Downloads</h1>' in h and 'Version 2026.11.616' in h and 'Upload new version' in h, 'Admin → Downloads shows the version and the upload button')
 
+print('Carrying on after a refresh')
+B3 = os.urandom(2 * P + 99)
+s, a1 = admin({'action': 'start', 'app': 'graceville-fast-bible', 'filename': 'Resume-Test.exe', 'size': len(B3), 'version': 'r1'}); put_piece(a1['id'], 0, B3[:P])
+s, a2 = admin({'action': 'start', 'app': 'graceville-fast-bible', 'filename': 'Resume-Test.exe', 'size': len(B3), 'version': 'r1'})
+check(a2['id'] == a1['id'] and a2['got'] == [0] and a2['resumed'], 'choosing the same file again carries on from the pieces already up', a2)
+s, d = admin({'action': 'data'}); check(d['apps'][0]['uploading']['got'] == 1, 'Downloads shows the paused upload (1 of 3 pieces)', d['apps'][0]['uploading'])
+s, f3 = admin({'action': 'finish', 'id': a1['id']}); check(s == 400 and 'didn’t arrive (2, 3)' in f3['error'], 'finishing too early says exactly which pieces are missing', f3)
+st, e3 = put_piece(a1['id'], 1, B3[P:P + 10]); check(st == 400 and 'arrived with 10 bytes instead of' in e3['error'], 'a cut-short piece says exactly what arrived', e3)
+sql("delete from app_releases where filename = 'Resume-Test.exe'")
+
 print('Request, wait, approved, it downloads by itself')
 with sync_playwright() as pw:
     br = pw.chromium.launch(); ctx = br.new_context(accept_downloads=True); pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))

@@ -1,14 +1,18 @@
 'use client'
 // olexweb.com/tools: search and browse every Directory post (Install 16: tools, tech updates, how-tos and safety alerts;
 // /updates, /guides and /alerts show one kind each).
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DIR_CSS, PRICE } from './dirStyles'
 
 const KPATH = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts' }
 const KNAME = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert' }
-const KTABS = [['/tools', 'Everything', null], ['/updates', 'Tech updates', 'update'], ['/guides', 'How-tos', 'guide'], ['/alerts', 'Safety alerts', 'alert']]
+const KTABS = [['/tools', 'Everything', null], ['/tools?kind=tool', 'Tools', 'tool'], ['/updates', 'Tech updates', 'update'], ['/guides', 'How-tos', 'guide'], ['/alerts', 'Safety alerts', 'alert']]
 const today = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10)
-export default function DirLibrary({ entries, kind = null, heading = null }) {
+export default function DirLibrary({ entries: all, kind: fixed = null, heading = null }) {
+  // /tools?kind=tool shows only the tools (the footer's Tools link)
+  const [only, setOnly] = useState(null)
+  useEffect(() => { if (!fixed && new URLSearchParams(location.search).get('kind') === 'tool') setOnly('tool') }, [fixed])
+  const kind = fixed || only, entries = useMemo(() => (only ? all.filter((e) => (e.kind || 'tool') === 'tool') : all), [all, only])
   const [q, setQ] = useState(''), [cat, setCat] = useState('All'), [price, setPrice] = useState('all')
   const cats = useMemo(() => ['All', ...[...new Set(entries.map((e) => e.category).filter(Boolean))].slice(0, 14)], [entries])
   const list = useMemo(() => { const n = q.trim().toLowerCase(); return entries.filter((e) => (cat === 'All' || e.category === cat) && (price === 'all' || (price === 'free' ? ['free', 'freemium'].includes(e.price) : e.price === price))
