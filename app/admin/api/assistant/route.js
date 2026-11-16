@@ -5,7 +5,7 @@ import { Refused } from '@/lib/admin/content'
 import { q } from '@/lib/admin/db'
 import { handleMessage, confirm, cancel, chats, chatMessages, deleteChat } from '@/lib/assistant/chat'
 import { refreshResearch } from '@/lib/assistant/research'
-import { writeArticle } from '@/lib/assistant/write'
+import { writeArticle, Repeat } from '@/lib/assistant/write'
 import { dailyRun } from '@/lib/assistant/autopilot'
 import { cancelScheduled } from '@/lib/assistant/schedule'
 import { ensureTools } from '@/lib/assistant/tools'
@@ -34,7 +34,7 @@ export async function POST(request) {
       const item = (await q('select id, topic, why, searches, sources from research_items where id = $1 and used_by is null', [Number(b.researchId)])).rows[0]
       if (!item) throw new Refused('That topic was already used or no longer exists.')
       const s = (await q('select mode from assistant_settings where id = 1')).rows[0]
-      return writeArticle(item, { mode: s.mode })
+      try { return await writeArticle(item, { mode: s.mode }) } catch (e) { if (e instanceof Repeat) throw new Refused(e.message); throw e }
     }
     if (b.action === 'rate') return rate(id(b.messageId), b.rating, b.note)
     if (b.action === 'memory') return { lessons: await listLessons(), stats: await feedbackStats() }

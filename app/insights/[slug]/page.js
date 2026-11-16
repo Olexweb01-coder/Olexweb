@@ -1,5 +1,6 @@
 // An article page, from the database. New articles get a page automatically the first time someone opens them.
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
+import { mergedPost } from '@/lib/site/repeats'
 import { getPosts, getPost, getSocials, getTestimonials, getBlogSettings } from '@/lib/site/data'
 import ArticleSocial from '@/components/site/ArticleSocial'
 import { fmtDate } from '@/lib/site/render'
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Article({ params }) {
-  const a = await getPost(params.slug); if (!a) notFound()
+  const a = await getPost(params.slug)
+  if (!a) { const to = await mergedPost(params.slug); if (to) permanentRedirect(to); notFound() }     // a repeat that was merged sends people to the article that was kept
   const [settings, quotes] = await Promise.all([getBlogSettings(), getTestimonials()])
   const quote = settings.testimonials && quotes.length ? quotes[a.slug.length % quotes.length] : null   // one of the approved testimonials, steady per article
   const SOCIAL = await getSocials(), okUrls = new Set((Array.isArray(a.sources) ? a.sources : []).map((s) => s && s.url))

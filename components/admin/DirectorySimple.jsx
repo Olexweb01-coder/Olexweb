@@ -1,7 +1,7 @@
 'use client'
 // Admin → Directory, the simple view (Install 16): is it posting, today's times and what went out, what's ready, how many
 // people came this week, and a few big controls. The detailed view (AdminDirectory) is one tap away.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import { SIMPLE_CSS } from './AutomationSimple'
@@ -19,6 +19,17 @@ const googleLine = (g) => !g ? 'Bing is told about each new post the moment it g
 
 export default function DirectorySimple({ data }) {
   const router = useRouter(), D = data, S = D.settings, [busy, setBusy] = useState('')
+  // repeats already on the site (blog and Directory): keep the first, take the copy down with a redirect
+  const [rep, setRep] = useState(null)
+  const loadRep = () => fetch('/admin/api/directory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'repeats' }) }).then((r) => r.json()).then((j) => { if (j && j.blog) setRep(j) }).catch(() => {})
+  useEffect(() => { loadRep() }, [])
+  async function merge(p) {
+    setBusy('m' + p.repeat.id)
+    try { const r = await fetch('/admin/api/directory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'merge-repeat', type: p.type, keep: p.keep.id, repeat: p.repeat.id }) }), j = await r.json().catch(() => ({}))
+      if (!r.ok) toast(j.error || 'That didn’t work. Try again.'); else { toast('Done. The copy now sends people to the one you kept.'); loadRep(); router.refresh() } }
+    catch { toast('No connection. Try again.') } finally { setBusy('') }
+  }
+  const pairs = rep ? [...rep.blog, ...rep.dir] : []
   async function call(key, body, ok) {
     setBusy(key)
     try { const r = await fetch('/admin/api/directory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) }), j = await r.json().catch(() => ({}))
@@ -74,6 +85,15 @@ export default function DirectorySimple({ data }) {
         {['tool', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-sw"><div><b>{KS[k]}</b><span>{{ tool: 'Useful websites and AI tools, explained', update: 'What changed in apps people use, and what to do', guide: 'Step-by-step help people can follow today', alert: 'Scams and safety risks going round now' }[k]} · {fmt(D.counts[k] || 0)} live</span></div>
           <button className={'sm-tog' + (S.kinds.includes(k) ? '' : ' off')} role="switch" aria-checked={S.kinds.includes(k)} aria-label={KS[k]} disabled={!!busy} onClick={() => toggleKind(k)}><i /><em>{busy === 'k' + k ? '…' : S.kinds.includes(k) ? 'ON' : 'OFF'}</em></button></div>)}
       </section>
+
+      {rep ? <section className="sm-card" aria-label="Repeats">
+        <h2>Repeats</h2>
+        <p className="sm-note">New posts are now checked against everything already on the site, in the blog and the Directory, so the same story or topic isn’t posted twice. {pairs.length ? 'These were posted before that check. Google ignores copies and trusts the site less for them, so keep one of each:' : 'Nothing on the site repeats another post.'}</p>
+        {pairs.map((p) => <div key={p.type + p.repeat.id} className="sm-rep">
+          <div><span className="sm-tag">{p.type === 'post' ? 'Blog' : 'Directory'}</span><a href={p.keep.url} target="_blank" rel="noopener noreferrer"><b>Keep:</b> {p.keep.title}</a><a href={p.repeat.url} target="_blank" rel="noopener noreferrer"><b>Copy:</b> {p.repeat.title}</a></div>
+          <button className="sm-btn sm-line" disabled={!!busy} onClick={() => merge(p)}>{busy === 'm' + p.repeat.id ? 'Merging…' : 'Take the copy down'}</button></div>)}
+        <style>{`.sm-rep{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}.sm-rep>div{display:grid;gap:4px;min-width:0;flex:1 1 260px}.sm-rep a{color:var(--paper);text-decoration:none;font-size:14px;overflow-wrap:anywhere}.sm-rep a b{color:var(--dim);font-weight:600}.sm-tag{width:fit-content;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--raise2);color:var(--dim)}`}</style>
+      </section> : null}
 
       <section className="sm-card" aria-label="Getting seen">
         <h2>Getting seen</h2>

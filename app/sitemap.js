@@ -15,6 +15,7 @@ export default async function sitemap() {
     ...ventures.map((v) => ({ url: SITE + '/ventures/' + v.slug, lastModified: now, changeFrequency: 'monthly', priority: 0.7 })),
     ...posts.map((a) => ({ url: SITE + '/insights/' + a.slug, lastModified: new Date(a.updated_at || a.published_on), changeFrequency: 'yearly', priority: 0.7 })),
     { url: SITE + '/tools', lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: SITE + '/tools/graceville-fast-bible', lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     ...['updates', 'guides', 'alerts'].map((p) => ({ url: SITE + '/' + p, lastModified: now, changeFrequency: 'daily', priority: 0.8 })),
     ...tools.map((t) => ({ url: SITE + '/' + (KP[t.kind] || 'tools') + '/' + t.slug, lastModified: new Date(t.published_at || now), changeFrequency: t.kind === 'tool' ? 'monthly' : 'weekly', priority: t.kind === 'update' || t.kind === 'alert' ? 0.7 : 0.8 }))]
 }

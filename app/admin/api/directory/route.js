@@ -19,6 +19,8 @@ export async function POST(request) {
         case 'unpublish': return await D.setStatus(id(), 'draft')
         case 'rewrite': return await D.rewrite(id())
         case 'delete': return await D.removeEntry(id())
+        case 'repeats': return await (await import('@/lib/site/repeats')).listRepeats()                 // Install 25: repeats already live, and merging them
+        case 'merge-repeat': return await (await import('@/lib/site/repeats')).mergeRepeat(String(b.type), b.keep, b.repeat)
         case 'settings': return await D.saveSettings(b)
         case 'linked': return await D.markLinked(id())
         case 'simple-settings': return await D.saveSimpleSettings(b)        // Install 16: the simple screen's controls

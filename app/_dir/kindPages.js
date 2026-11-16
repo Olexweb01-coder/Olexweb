@@ -1,5 +1,6 @@
 // The news side of the Directory (Install 16): one post page and one list page per kind (updates, guides, alerts).
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
+import { mergedEntry } from '@/lib/site/repeats'
 import DirPost from '@/components/DirPost'
 import DirLibrary from '@/components/DirLibrary'
 import { entryBySlug, liveEntries, SITE } from '@/lib/site/directory'
@@ -17,7 +18,8 @@ export const postMeta = (kind) => async function generateMetadata({ params }) {
     openGraph: { title: c.title, description: c.metaDescription, url, type: 'article', publishedTime: e.published_at }, twitter: { card: 'summary_large_image', title: c.title, description: c.metaDescription } }
 }
 export const postPage = (kind) => async function Page({ params }) {
-  const e = await entryBySlug(params.slug, kind).catch(() => null); if (!e) notFound()
+  const e = await entryBySlug(params.slug, kind).catch(() => null)
+  if (!e) { const to = await mergedEntry(params.slug); if (to) permanentRedirect(to); notFound() }   // a merged repeat sends people to the post that was kept
   const c = e.content, url = SITE + '/' + PATH[kind] + '/' + e.slug
   const ld = [
     kind === 'guide'

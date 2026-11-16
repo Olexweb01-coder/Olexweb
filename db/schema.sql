@@ -673,3 +673,6 @@ create table if not exists app_access (id bigserial primary key, app text not nu
 create index if not exists app_access_email on app_access (app, lower(email));
 alter table app_releases add column if not exists got int[] not null default '{}';     -- which pieces have arrived (so an upload can carry on after a refresh)
 alter table app_releases add column if not exists refs text[] not null default '{}';  -- where each piece is kept (a Vercel Blob URL, or a bucket key)
+-- Repeats (Install 25): a repeated article or Directory post is taken down and its address sends people (and Google) to the one that's kept
+alter table posts add column if not exists merged_into text;
+alter table dir_entries add column if not exists merged_into text;
