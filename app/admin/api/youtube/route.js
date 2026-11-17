@@ -15,6 +15,7 @@ import { writeLong } from '@/lib/site/longform'
 import { makeMore, setYoutubeMode } from '@/lib/site/automation'
 import { setAgent, review as agentReview } from '@/lib/site/postagent'
 import { setStoryStyle } from '@/lib/site/story'
+import { approveSlot, approveAll, swapSlot, skipSlot, retitleSlot, setPlanOn, writeNext, fillSlots } from '@/lib/site/plan'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -24,6 +25,19 @@ export async function POST(request) {
   if (!ownerOnly(u)) return refuse('Only Olaitan can do this.', 403)
   const body = await readJson(request); if (!body) return refuse('Request refused.', 400)
   return respond(async () => {
+    if (String(body.action || '').startsWith('plan-')) {                   // Install 26: the plan
+      try {
+        if (body.action === 'plan-on') return await setPlanOn(body.on === true)
+        if (body.action === 'plan-approve-all') return await approveAll()
+        if (body.action === 'plan-write-now') { await fillSlots(); return (await writeNext()) || { ok: true, note: 'Every time in the plan already has its video.' } }
+        if (!Number.isInteger(body.id)) throw new Error('Request refused.')
+        if (body.action === 'plan-approve') return await approveSlot(body.id)
+        if (body.action === 'plan-swap') return await swapSlot(body.id)
+        if (body.action === 'plan-skip') return await skipSlot(body.id)
+        if (body.action === 'plan-title') return await retitleSlot(body.id, body.title)
+      } catch (e) { throw new Refused(e.message) }
+      throw new Refused('Request refused.')
+    }
     if (body.action === 'sync') { try { return await syncYouTube() } catch (e) { if (e instanceof YtError) throw new Refused(e.message); throw e } }
     if (body.action === 'disconnect') { if (body.confirm !== 'DISCONNECT') throw new Refused('Type DISCONNECT to confirm.'); await disconnect(u.id, clientIp()); return { ok: true } }
     if (body.action === 'find-ideas') { try { return await findIdeas() } catch (e) { throw new Refused(/already running|busy|limit|AI key/i.test(e.message) ? e.message : 'The search for ideas failed: ' + e.message) } }

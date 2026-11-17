@@ -676,3 +676,14 @@ alter table app_releases add column if not exists refs text[] not null default '
 -- Repeats (Install 25): a repeated article or Directory post is taken down and its address sends people (and Google) to the one that's kept
 alter table posts add column if not exists merged_into text;
 alter table dir_entries add column if not exists merged_into text;
+
+-- ---------- Install 26: the plan. Each channel's own video for every posting time, 3 days ahead; nothing posts unapproved ----------
+create table if not exists plan_slots (id serial primary key,
+  channel text not null check (channel in ('youtube', 'facebook')), day date not null, time text not null,
+  format text not null, script_id int references yt_scripts(id) on delete set null,
+  status text not null default 'planned' check (status in ('planned', 'posted', 'missed', 'skipped')),
+  note text, tries int not null default 0, tried_at timestamptz, posted_at timestamptz, created_at timestamptz not null default now(),
+  unique (channel, day, time));
+create index if not exists plan_slots_open on plan_slots (status, day, time);
+create index if not exists plan_slots_script on plan_slots (script_id) where script_id is not null;
+alter table yt_settings add column if not exists plan_on boolean not null default true;   -- on from this install: the plan replaces the old queue

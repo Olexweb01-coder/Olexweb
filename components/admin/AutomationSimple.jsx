@@ -53,7 +53,7 @@ export default function AutomationSimple({ data, onDetailed }) {
     <section className={'sm-hero sm-' + data.state} aria-label="Status">
       <div className="sm-hrow"><div className="sm-big" aria-hidden="true">{data.state === 'needs' ? '!' : data.state === 'off' ? '–' : data.state === 'low' ? '!' : '✓'}</div>
         <div><b className="sm-t">{title}</b><span className="sm-s">{data.lastRun ? `Checked ${data.lastRun.label}. ` : ''}{t2}</span></div></div>
-      {days != null ? <>
+      {days != null && !(data.plan && data.plan.on) ? <>
         <div className="sm-q">Videos ready for the next days</div>
         <div className="sm-days">{Array.from({ length: 7 }, (_, k) => <div key={k} className={'sm-day' + (k < days ? ' full' : '')}><i>{k === 0 ? 'Today' : DAYS[(dow + k) % 7]}</i><em aria-label={k < days ? 'ready' : 'not yet'}>{k < days ? '●' : '○'}</em></div>)}</div>
         <span className="sm-hint">{days >= 7 ? 'A week or more ready.' : days === 0 ? 'Nothing ready ahead yet.' : `${plural(days, 'day')} ready.`} {P.short ? '' : 'The factory keeps making more.'}</span>
@@ -61,6 +61,7 @@ export default function AutomationSimple({ data, onDetailed }) {
       </> : null}
     </section>
 
+    {data.plan && data.plan.on ? <section className="sm-need" style={data.plan.waiting ? null : { borderColor: 'var(--line)', background: 'none' }}><b>{data.plan.waiting ? `${data.plan.waiting} planned video${data.plan.waiting === 1 ? '' : 's'} wait${data.plan.waiting === 1 ? 's' : ''} for your approval. Nothing posts until you approve it.` : 'The next 3 days are planned: see every video before it goes out.'}</b><a className={'sm-btn ' + (data.plan.waiting ? 'sm-red' : 'sm-line')} href="/admin/automation/plan">Open the plan</a></section> : null}
     {data.needs.map((n, i) => <section key={i} className="sm-need"><b>{n.text}</b><a className="sm-btn sm-red" href={n.href}>Fix it</a></section>)}
 
     <div className="sm-grid"><div>
