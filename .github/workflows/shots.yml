@@ -1,0 +1,33 @@
+# Started by the Olexweb admin when a portfolio project is added from a link (Install 28): opens the site in a real browser
+# and sends back the screenshots. Nothing secret travels in the inputs (runs of a public repo are visible); the worker
+# proves itself with FACTORY_SECRET.
+name: shots
+run-name: portfolio screenshots ${{ inputs.id }}
+on:
+  workflow_dispatch:
+    inputs:
+      id: { description: 'Screenshot job number', required: true }
+      api: { description: 'Admin address', required: true, default: 'https://olexweb.com' }
+concurrency: { group: shots, cancel-in-progress: false }
+permissions: { contents: read }
+jobs:
+  shots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      OLEX_API: ${{ inputs.api }}
+      JOB_ID: ${{ inputs.id }}
+      FACTORY_SECRET: ${{ secrets.FACTORY_SECRET }}
+    steps:
+      - name: Only the Olexweb admin's address is accepted
+        run: |
+          case "$OLEX_API" in https://olexweb.com|https://www.olexweb.com) ;; *) echo "Refusing to talk to $OLEX_API"; exit 1;; esac
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: Install
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+      - name: Take the screenshots
+        run: node worker/shots.mjs              # the job number comes in JOB_ID (never pasted into the command)
