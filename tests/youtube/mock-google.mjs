@@ -1,9 +1,12 @@
+import fs from 'node:fs'
 // Stand-in for Google during tests: OAuth (with real PKCE checking), YouTube Data API v3, YouTube Analytics v2.
 import http from 'node:http'
 import { createHash } from 'node:crypto'
 const PORT = 4555, log = []
 const S = { codes: {}, challenges: {}, revokedRefresh: false, revokeCalls: 0, issued: new Set(), noRefresh: false, noChannel: false }
 const ARTICLES = {                                     // the Directory's mock news articles (install 16): each long enough, with quotable sentences
+  booster: { title: 'Starship booster caught at its launch tower', text: ['A SpaceX Super Heavy booster flew back and was caught at the same launch tower it lifted off from.', 'The giant mechanical arms closed around the booster as it slowed to a hover above the pad.', 'Catching the booster lets SpaceX fly it again within days instead of building a new one.', 'Engineers said the landing was within a few metres of the target on the tower.', 'The next flight will try to catch the upper stage as well, which has never been done.', 'Reusing rockets this way could make launches much cheaper for satellites and missions.'] },
+  email1971: { title: 'History of email', text: ['In 1971 Ray Tomlinson sent the first email between two computers on the ARPANET network.', 'He chose the @ sign to separate the name of the user from the name of the computer.', 'The first message was a test, and he later said he could not remember what it said.', 'Within a few years email made up most of the traffic on the network.', 'Today billions of people send email every day for work, school and family.', 'The same basic idea of an address with the @ sign is still used in every email address.', 'Before that, people could only leave messages for others using the same computer.', 'Sending a message to a different machine across a network was the new part, and it changed how people work.', 'Tomlinson was an engineer at a company called BBN, which helped build the early network.', 'He was later added to the Internet Hall of Fame for his work.'] },
   drafts: { title: 'WhatsApp adds message drafts for everyone', text: ['WhatsApp is rolling out message drafts to everyone on Android and iPhone.', 'When you leave a chat without sending, your unfinished message now stays in the box with a Draft label.', 'The feature works in both personal and group chats.', 'You do not need to turn anything on, just update the app from the Play Store or App Store.', 'Drafts also show at the top of your chat list so you can find them quickly later on.', 'The company said the change is reaching all users over the next few weeks, starting this week in several countries.', 'People who switch between many conversations at work are expected to benefit most from the change.'] },
   space: { title: 'How to free up space on an Android phone', text: ['Open Settings and tap Storage to see what is using space on your phone.', 'Photos and videos usually take the most room, so back them up before deleting anything.', 'Clearing the cache of large apps can free several gigabytes without losing your data.', 'Uninstall apps you have not opened in months to recover more space quickly.', 'Files by Google can find duplicate files and large downloads you no longer need.', 'Moving media to a memory card is another option if your phone has a card slot available.', 'Restart the phone afterwards so the system can tidy up temporary files properly.'] },
   scam: { title: 'Fake delivery text scam is going round', text: ['Scammers are sending text messages that claim a parcel could not be delivered.', 'The message asks you to tap a link and pay a small fee to rebook the delivery.', 'The link leads to a fake page that steals your card details and bank login.', 'Real delivery companies do not ask for payment through a random text link.', 'If you already entered your card details, call your bank immediately and block the card.', 'You can report the message to your mobile network and then delete it from your phone.', 'Always check a delivery directly on the official website or app of the company instead.'] },
@@ -37,6 +40,18 @@ http.createServer(async (req, res) => {
     S.insightCalls = (S.insightCalls || 0) + 1
     if (S.insightsDenied) return send(res, 400, { error: { message: '(#10) Requires read_insights permission', code: 10 } })
     const id = u.pathname.split('/')[2]; return send(res, 200, { data: [{ name: 'blue_reels_play_count', period: 'lifetime', values: [{ value: (S.reelViews && S.reelViews[id]) || Number(S.reelViewsAll) || 100 }] }] })
+  }
+  if ((u.pathname === '/v21.0/777/photos' || u.pathname === '/v21.0/777/feed' || /^\/v21\.0\/777_\d+\/comments$/.test(u.pathname)) && req.method === 'POST') {   // Install 29: the daily story
+    let raw = ''; for await (const ch of req) raw += ch; const f = new URLSearchParams(raw)
+    if (f.get('access_token') !== 'page-token-777') return send(res, 400, { error: { message: 'Invalid OAuth access token.', code: 190 } })
+    if (S.fbBlock) return send(res, 400, { error: { message: 'You’re temporarily blocked from performing this action.', code: 368 } })
+    if (u.pathname.endsWith('/photos')) {
+      const url = f.get('url'), r = await fetch(url).catch(() => null), ok = r && r.status === 200 && /image\/png/.test(r.headers.get('content-type') || ''), bytes = ok ? (await r.arrayBuffer()).byteLength : 0
+      S.fbPhotos = (S.fbPhotos || []).concat([{ url, published: f.get('published'), ok, bytes }]); if (!ok) return send(res, 400, { error: { message: 'Could not fetch the image', code: 324 } })
+      return send(res, 200, { id: 'ph' + S.fbPhotos.length })
+    }
+    if (u.pathname.endsWith('/feed')) { const media = [...f.keys()].filter((k) => k.startsWith('attached_media')).map((k) => JSON.parse(f.get(k)).media_fbid); S.fbFeed = (S.fbFeed || []).concat([{ message: f.get('message'), media }]); return send(res, 200, { id: '777_' + (1000 + S.fbFeed.length) }) }
+    S.fbComments = (S.fbComments || []).concat([{ on: u.pathname.split('/')[2], message: f.get('message') }]); return send(res, 200, { id: 'c' + S.fbComments.length })
   }
   if (u.pathname === '/v21.0/777/video_reels' && req.method === 'POST') {
     let raw = ''; for await (const ch of req) raw += ch; const f = new URLSearchParams(raw)
@@ -94,6 +109,16 @@ http.createServer(async (req, res) => {
       : [item('Fake delivery text scam is going round', 'scam')]
     return send(res, 200, `<?xml version="1.0"?><rss><channel><title>${u.pathname.endsWith('news') ? 'TechNews' : 'SafeNet'}</title>${items.join('')}</channel></rss>`, { 'Content-Type': 'application/rss+xml' })
   }
+  if (u.pathname === '/dirfeed/space') {                                  // Install 27: a big tech moment
+    const now = new Date().toUTCString()
+    return send(res, 200, `<?xml version="1.0"?><rss><channel><title>SpaceNews</title><item><title>SpaceX booster lands back on the pad it launched from</title><link>http://news.test:4555/news/booster</link><pubDate>${now}</pubDate><description>The booster came home. More inside.</description></item></channel></rss>`, { 'Content-Type': 'application/rss+xml' })
+  }
+  if (u.pathname.startsWith('/otd/')) {                                     // Install 27: Wikipedia's "On this day"
+    S.otd = (S.otd || 0) + 1
+    return send(res, 200, { events: [
+      { text: 'Ray Tomlinson sends the first email between two computers on a network.', year: 1971, pages: [{ extract: 'Email history.', content_urls: { desktop: { page: 'http://news.test:4555/news/email1971' } } }] },
+      { text: 'A new king is crowned in a small kingdom.', year: 1802, pages: [{ extract: 'A coronation.', content_urls: { desktop: { page: 'http://news.test:4555/news/king' } } }] }] })
+  }
   if (u.pathname.startsWith('/news/')) {
     const a = ARTICLES[u.pathname.slice(6)]; if (!a) return send(res, 404, 'no')
     return send(res, 200, `<!doctype html><html><head><title>${a.title}</title></head><body><article><h1>${a.title}</h1>${a.text.map((x) => `<p>${x}</p>`).join('')}</article></body></html>`, { 'Content-Type': 'text/html' })
@@ -124,6 +149,16 @@ http.createServer(async (req, res) => {
       fontpair: ['FontPair', 'Find Google Font pairings that work together. Free.'],
       dirtool: ['DirTool: flowcharts from plain words', 'DirTool turns rough notes into clean flowcharts in your browser. Type your steps in plain words and DirTool draws the diagram for you. It is free to use with no sign up required. You can export your diagram as PNG or SVG and share a link with your team. DirTool works on phones, tablets and computers. Paid plans add team folders and custom branding for businesses. Students use DirTool to plan essays and projects, and freelancers use it to explain processes to clients.'],
       fibtool: ['FibTool', 'FibTool turns rough notes into clean flowcharts in your browser. Type your steps in plain words and FibTool draws the diagram for you. It is free to use with no sign up required. You can export your diagram as PNG or SVG and share a link with your team. FibTool works on phones, tablets and computers. Paid plans add team folders and custom branding for businesses. Students use FibTool to plan essays and projects, and freelancers use it to explain processes to clients.'] }
+    if (k === 'bakery' || k === 'bakery/about') {                           // Install 28: a client site Olexweb built
+      const sec = (h, c, t) => `<section style="padding:120px 40px;background:${c}"><h2>${h}</h2><p>${t}</p><img src="/site/pixel.png" width="300" height="200" alt=""></section>`
+      if (k === 'bakery/about') return send(res, 200, '<!doctype html><html><head><title>About · Mama’s Bakery</title></head><body><h1>About Mama’s Bakery</h1><p>Family bakery in Ibadan since 2009. We bake every morning at 5am with local flour.</p></body></html>', { 'Content-Type': 'text/html' })
+      return send(res, 200, `<!doctype html><html><head><title>Mama’s Bakery · fresh bread in Ibadan</title></head><body style="margin:0;font-family:sans-serif">
+        <header><a href="/site/bakery/about">About us</a> <a href="https://elsewhere.example/">Instagram</a></header>
+        <section style="height:900px;background:#f6d7a7"><h1>Fresh bread every morning</h1><p>Mama’s Bakery bakes bread, pastries and celebration cakes in Ibadan.</p><button>Accept cookies</button></section>
+        ${sec('Our menu', '#fff3e0', 'Agege bread ₦1,200. Meat pie ₦800. Chocolate cake from ₦25,000.')}${sec('Order a celebration cake', '#ffe0e6', 'Choose the size and flavour, pick a collection day, and we bake it fresh.')}${sec('Find us', '#e0f2ff', 'Ring Road, Ibadan. Open 7am to 7pm.')}
+        <footer><p>© Mama’s Bakery</p></footer></body></html>`, { 'Content-Type': 'text/html' })
+    }
+    if (k === 'pixel.png') { res.writeHead(200, { 'Content-Type': 'image/png' }); return res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')) }
     const pg = PAGES[k]; if (!pg) return send(res, 404, 'nope', { 'Content-Type': 'text/html' })
     return send(res, 200, `<html><head><title>${pg[0]}</title><meta name="description" content="${pg[1]}"></head><body><h1>${pg[0]}</h1><p>${pg[1]}</p></body></html>`, { 'Content-Type': 'text/html; charset=utf-8' })
   }
@@ -132,16 +167,48 @@ http.createServer(async (req, res) => {
     let raw = ''; for await (const ch of req) raw += ch
     const b = JSON.parse(raw), prompt = b.contents[0].parts[0].text
     S.aiCalls = (S.aiCalls || 0) + 1
+    if (prompt.startsWith('Business: a ') && prompt.includes('Rewrite these')) {     // Install 23: Poor vs Rich lines (vsBad: too long, the code must fall back)
+      S.vsPrompts = (S.vsPrompts || []).concat([prompt])
+      const lines = [...prompt.matchAll(/^\d+\. \[[a-z]+\] (.*)$/gm)].map((m) => m[1].replace('prints five hundred flyers', 'prints a stack of flyers'))
+      if (S.vsBad) lines[3] = 'This line is far far far far far far far far far far far far far far far far too long to say.'
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ lines }) }] } }] })
+    }
+    if (prompt.startsWith('Write ONE original')) {                          // Install 22: a real story for the long video
+      const d = JSON.parse(fs.readFileSync('/home/claude/yt-test/tale-sample.json', 'utf8'))
+      if (S.taleBrand && !S.taleBrandDone) { S.taleBrandDone = true; d.chapters[0].beats.find((b) => b.phone).phone.from = 'Barclays' }   // a real bank: the checks must catch it and ask again
+      S.talePrompts = (S.talePrompts || []).concat([prompt.slice(0, 30000)])
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(d) }] } }] })
+    }
     if (prompt.includes('Draft the landing page')) {          // Pages & links: a draft that keeps facts from the notes only
       const given = /14 Nov/.test(prompt), out = { title: 'Build With AI', kicker: 'Free webinar', tagline: 'Watch an idea become a live website in one hour.', intro: 'A practical session.', learnTitle: 'What you’ll see',
         learn: ['Planning with AI', 'Building live', 'Publishing it', 'Your questions'], whoFor: 'Students and freelancers.', cta: 'Save my seat', preview: 'A free live session.', hostBio: 'Olaitan builds with AI.',
         faq: [{ q: 'Is it free?', a: 'Yes.' }], when: given ? '2026-11-14T19:00' : '', minutes: given ? 60 : 0, platform: given ? 'Google Meet' : '[add the platform]', venue: '', address: '' }
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
     }
+    if (prompt.includes('HOW THESE STORIES WORK')) {                       // Install 29: the daily Facebook story
+      S.storyPrompts = (S.storyPrompts || []).concat([prompt]); const again = prompt.includes('YOUR LAST TRY WAS REJECTED'), tayo = /Tayo’s World/.test(prompt), ep = (prompt.match(/EPISODE (\d+)/) || [])[1]
+      const body = ['Tayo had ₦2,000 left, 9% battery, and a client waiting for a logo by 6pm.', 'The design app on his laptop flashed a red box: “Your free trial has ended. Pay $12 to continue.”', '“Twelve dollars?” he said to the empty room. “In this economy?”', 'He called Chidinma. She laughed so hard her jollof nearly burnt. “Tayo, just use a free one. Stop forming big man.”', 'So he did. He opened a free design site in his browser, dragged his sketch in, and fixed the colours in ten minutes.', 'At 5:48pm he sent the logo. At 5:51pm the client replied: “Perfect. Sending the balance now.”', 'Then his mum called. “Tayo, have you eaten?” He looked at the ₦2,000. “Yes ma. Today, I’m rich.”', 'He laughed, plugged in his phone, and made a list of every app he was paying for without thinking. It was longer than he expected.', 'Tomorrow, Baba Landlord is coming for the rent, and Segun has news he “can’t wait to share”.', 'What’s one app you stopped paying for and never missed?']
+      const post = (again || !tayo ? '' : 'See it here: https://example.com\n\n') + body.join('\n\n')
+      const out = { title: tayo ? 'Tayo and the twelve dollar trial ' + (ep || '') : (/True tech story/.test(prompt) ? 'The booster comes home' : 'The bakery nobody could find'), post,
+        slides: ['Tayo had ₦2,000 left and a logo due by 6pm', '“Your free trial has ended. Pay $12 to continue.”', 'Chidinma: “Just use a free one. Stop forming big man.”', 'A free design site, ten minutes, done.', '5:51pm: “Perfect. Sending the balance now.”'],
+        comment: 'x', summary: 'Tayo dodged a $12 subscription with a free design site and got paid. Baba Landlord and Segun are coming tomorrow.' }
+      if (/True tech story/.test(prompt)) out.post = 'The booster fell out of the sky at a speed no one would believe, and then it stopped.\n\n' + ['A SpaceX Super Heavy booster flew back and was caught at the same launch tower it lifted off from.', 'The giant mechanical arms closed around it as it slowed to a hover.', 'Catching it means SpaceX can fly it again within days instead of building a new one.', 'Engineers said it came down within a few metres of the target.', 'Next, they want to catch the upper stage too, which has never been done.', 'Reusing rockets like this could make every launch much cheaper, for satellites and for missions far from Earth.', 'For years people said rockets were too big and too fast to land, let alone be caught. This one proved them wrong in front of millions watching live.', 'It is the kind of moment people will remember where they were when they saw it.'].join('\n\n') + (again ? '\n\nWould you ever ride on a rocket that had already flown before?' : '\n\nWould you ever ride on a rocket that had already flown 10 times?')
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
+    if (/^Olexweb built this website\./.test(prompt)) {                       // Install 28: a portfolio project from a link
+      S.portfolioPrompt = prompt
+      const heads = [...(prompt.split('HEADINGS ON THE HOME PAGE (exact):')[1] || '').split('\n')[0].matchAll(/“([^”]+)”/g)].map((m) => m[1])
+      const out = { name: /Mama’s Bakery/.test(prompt) ? 'Mama’s Bakery' : 'Some site', kind: 'Client website', role: 'Design, build and launch', text: 'Mama’s Bakery bakes fresh bread and cakes in Ibadan. The site lets customers see the menu with prices and order a cake for collection.',
+        built: ['Menu with prices', 'Cake order form', 'WhatsApp chat button', 'Fast on phones'], result: 'Customers can now order a celebration cake online.', best: [heads[1], heads[2], 'A heading that is not on the page'].filter(Boolean) }
+      return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
+    }
     if (/^For each item, decide its kind/.test(prompt)) {                    // the Directory's judge (install 16)
       S.dirJudged = (S.dirJudged || 0) + 1
       const items = [...prompt.matchAll(/^(\d+)\. \[(.+?)\] (.+?) ::/gm)].map((m) => {
-        const t = m[3]; return { i: Number(m[1]), kind: /raises/i.test(t) ? 'skip' : /^How to/i.test(t) ? 'guide' : /scam/i.test(t) ? 'alert' : 'update', score: /raises/i.test(t) ? 20 : /scam/i.test(t) ? 90 : 82, why: 'Useful to everyday people.' } })
+        const t = m[3]
+        if (/^On this day/.test(t)) return { i: Number(m[1]), kind: /email/i.test(t) ? 'story' : 'skip', topic: 'history', score: /email/i.test(t) ? 86 : 10, why: 'Tech history.' }
+        if (/SpaceX/.test(t)) return { i: Number(m[1]), kind: 'story', topic: 'space', score: 93, why: 'Everyone is talking about it.' }
+        return { i: Number(m[1]), kind: /raises/i.test(t) ? 'skip' : /^How to/i.test(t) ? 'guide' : /scam/i.test(t) ? 'alert' : 'update', ...(/WhatsApp/.test(t) ? { topic: 'apps' } : {}), score: /raises/i.test(t) ? 20 : /scam/i.test(t) ? 90 : 82, why: 'Useful to everyday people.' } })
       return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify({ items }) }] } }] })
     }
     if (/^Write an Olexweb Directory post/.test(prompt)) {                     // a Directory post (install 16): facts quoted from the mock article
@@ -289,7 +356,7 @@ http.createServer(async (req, res) => {
     return send(res, 200, { candidates: [{ content: { parts: [{ text: JSON.stringify(out) }] } }] })
   }
 
-  if (/^\/repos\/[^/]+\/[^/]+\/actions\/workflows\/render\.yml\/dispatches$/.test(u.pathname) && req.method === 'POST') {
+  if (/^\/repos\/[^/]+\/[^/]+\/actions\/workflows\/(render|shots)\.yml\/dispatches$/.test(u.pathname) && req.method === 'POST') {
     let raw = ''; for await (const ch of req) raw += ch
     S.dispatches = (S.dispatches || []).concat([{ path: u.pathname, auth: req.headers.authorization, body: JSON.parse(raw) }])
     if (S.ghDown) return send(res, 401, { message: 'Bad credentials' })
@@ -306,6 +373,12 @@ http.createServer(async (req, res) => {
   }
 
 
+  if (u.pathname === '/upload/youtube/v3/thumbnails/set' && req.method === 'POST') {     // Install 22: custom thumbnails
+    const chunks = []; for await (const ch of req) chunks.push(ch); const buf = Buffer.concat(chunks)
+    S.thumbs = (S.thumbs || []).concat([{ videoId: u.searchParams.get('videoId'), bytes: buf.length, jpeg: buf[0] === 0xff && buf[1] === 0xd8, type: req.headers['content-type'] }])
+    if (S.thumbRefuse) return send(res, 403, { error: { message: 'The authenticated user doesnt have permissions to upload and set custom video thumbnails.' } })
+    return send(res, 200, { items: [{ default: { url: 'https://i.ytimg.com/x.jpg' } }] })
+  }
   if (u.pathname === '/upload/youtube/v3/videos' && req.method === 'POST') {
     let raw = ''; for await (const ch of req) raw += ch
     if (S.quota) return send(res, 403, { error: { code: 403, message: 'The request cannot be completed because you have exceeded your quota.', errors: [{ reason: 'quotaExceeded' }] } })

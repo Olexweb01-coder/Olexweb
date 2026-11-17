@@ -703,3 +703,15 @@ create table if not exists portfolio_shots (id serial primary key,
   shots jsonb not null default '[]', error text, created_by uuid references admin_users(id) on delete set null,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now());
 create index if not exists portfolio_shots_project on portfolio_shots (project_id);
+alter table projects add column if not exists wall text;      -- Install 28: the top of its whole-page screenshot, cut for the homepage wall
+
+-- ---------- Install 29: the daily Facebook story (words and pictures); Facebook videos 3 a week ----------
+create table if not exists fb_stories (id serial primary key, series text not null, episode int, day date not null unique,
+  title text not null, post text not null, slides jsonb not null default '[]', comment text, summary text, source_slug text,
+  status text not null default 'ready' check (status in ('ready', 'posted', 'skipped', 'missed')), note text, post_id text, posted_at timestamptz,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+alter table meta_settings add column if not exists story_on boolean not null default true;
+alter table meta_settings add column if not exists story_time text not null default '20:00';
+alter table meta_settings add column if not exists video_days text;          -- '1,3,5' = Facebook videos on Mon, Wed, Fri (0 = Sunday); empty = every day
+alter table meta_settings add column if not exists v29 boolean not null default false;
+update meta_settings set video_days = '1,3,5', per_day = 1, v29 = true where not v29;   -- once: videos 3 a week on Facebook, the stories every day

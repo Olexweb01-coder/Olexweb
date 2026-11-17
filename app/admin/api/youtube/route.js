@@ -16,6 +16,7 @@ import { makeMore, setYoutubeMode } from '@/lib/site/automation'
 import { setAgent, review as agentReview } from '@/lib/site/postagent'
 import { setStoryStyle } from '@/lib/site/story'
 import { approveSlot, approveAll, swapSlot, skipSlot, retitleSlot, setPlanOn, writeNext, fillSlots } from '@/lib/site/plan'
+import { rewriteStory, stopStory, setStories } from '@/lib/site/fbstory'
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 300
@@ -28,6 +29,9 @@ export async function POST(request) {
     if (String(body.action || '').startsWith('plan-')) {                   // Install 26: the plan
       try {
         if (body.action === 'plan-on') return await setPlanOn(body.on === true)
+        if (body.action === 'plan-story-rewrite') return await rewriteStory(body.id)
+        if (body.action === 'plan-story-stop') return await stopStory(body.id)
+        if (body.action === 'plan-stories') return await setStories({ on: body.on, time: body.time })
         if (body.action === 'plan-approve-all') return await approveAll()
         if (body.action === 'plan-write-now') { await fillSlots(); return (await writeNext()) || { ok: true, note: 'Every time in the plan already has its video.' } }
         if (!Number.isInteger(body.id)) throw new Error('Request refused.')

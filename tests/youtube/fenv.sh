@@ -7,9 +7,13 @@ export STORAGE_ENDPOINT=http://localhost:4560 STORAGE_BUCKET=olex STORAGE_ACCESS
 export OLEX_API=http://localhost:3000
 export YT_UPLOAD_BASE=http://localhost:4555
 export STORAGE_TIMEOUT_MS=1500
-export ASSISTANT_TEST_HOSTS=dirtool.test:4555,fibtool.test:4555,paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555 FACTORY_TEST_HOSTS=paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555
+export ASSISTANT_TEST_HOSTS=bakery.test:4555,news.test:4555,dirtool.test:4555,fibtool.test:4555,paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555 FACTORY_TEST_HOSTS=paletteforge.test:4555,freemovies.test:4555,clicky.test:4555,down.test:4555,masonry.test:4555,shotcut.test:4555,squoosh.test:4555,tldraw.test:4555,invented.test:4555,feeds.test:4555,gradientlab.test:4555,fontpair.test:4555,localhost:4555
 export GEMINI_API_KEY=test-key ASSISTANT_GEMINI_BASE=http://localhost:4555 ASSISTANT_GEMINI_RETRY_MS=10
 
 export INDEXNOW_ENDPOINT=http://localhost:4555/indexnow
 
 export META_APP_ID=meta-app META_APP_SECRET=meta-secret META_CONFIG_ID=cfg-123 META_GRAPH_BASE=http://localhost:4555 META_DIALOG_BASE=http://localhost:4555 META_RUPLOAD_BASE=http://localhost:4555
+export NEXT_FONT_GOOGLE_MOCKED_RESPONSES=/tmp/claude-0/-home-claude/09e7a396-af2f-5e7c-b37b-7b70461f51fa/scratchpad/font-mock.js
+export DIR_FEEDS='[["TechNews","http://news.test:4555/dirfeed/news","update"],["SafeNet","http://news.test:4555/dirfeed/safe","alert"]]'
+export DIR_ONTHISDAY=''   # Install 27: no tech history in the older suites
+if [ -n "$GOLD" ]; then export DIR_FEEDS='[["TechNews","http://news.test:4555/dirfeed/news","update"],["SafeNet","http://news.test:4555/dirfeed/safe","alert"],["SpaceNews","http://news.test:4555/dirfeed/space","story"]]' DIR_ONTHISDAY='http://news.test:4555/otd/'; fi

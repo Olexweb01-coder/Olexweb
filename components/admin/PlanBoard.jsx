@@ -12,7 +12,7 @@ const dayName = (d, today) => {
 }
 const TONE = { 'Needs you': 'pl-need', Ready: 'pl-ok', Posted: 'pl-done', Missed: 'pl-bad', Empty: 'pl-dim', Approved: 'pl-go', 'Being made': 'pl-go', 'Being made again': 'pl-go' }
 
-export default function PlanBoard({ data }) {
+export default function PlanBoard({ data, stories = null }) {
   const router = useRouter(), D = data, [busy, setBusy] = useState(''), [edit, setEdit] = useState(null), [title, setTitle] = useState('')
   const [tab, setTab] = useState((D.channels[0] || {}).key || 'youtube')
   async function act(key, body, ok) {
@@ -73,11 +73,36 @@ export default function PlanBoard({ data }) {
           </article>)) : <p className="sm-note">No posting time left on this day.</p>}
         </section>) })}
     </div>
+    {stories ? <Stories S={stories} act={act} busy={busy} /> : null}
     <p className="sm-note">How the plan chooses: a different format every time on each channel, never the same format on YouTube and Facebook on the same day, and Poor vs Rich at most once a week. A video that misses its time (not approved, or not finished) moves to the next free time instead of being wasted.</p>
     <style dangerouslySetInnerHTML={{ __html: SIMPLE_CSS + CSS }} />
   </div>)
 }
+// Install 29: the daily Facebook story (words and pictures). They post by themselves at their time after the checks.
+function Stories({ S, act, busy }) {
+  return (<section className="sm-card pl-stories" aria-label="Daily stories">
+    <div className="pl-sh"><h2>Daily stories</h2>
+      <button className="sm-btn sm-line" disabled={!!busy} onClick={() => act('so', { action: 'plan-stories', on: !S.on }, S.on ? 'Daily stories are off.' : 'Daily stories are on.')}>{S.on ? 'Turn stories off' : 'Turn stories on'}</button></div>
+    <p className="sm-note">A story in words and pictures every day at {S.time} (Lagos): Tayo’s World, True tech stories and The turnaround in turn. Each one is checked and then posts by itself, with the link in the first comment. Facebook videos go out on Monday, Wednesday and Friday.{S.fbOn ? '' : ' Facebook posting is off, so nothing posts until you turn it on.'}</p>
+    {S.stories.length ? S.stories.map((x) => (<article key={x.id} className="pl-story">
+      <div className="pl-head"><span className="sm-time">{x.day === S.today ? 'Today' : new Date(x.day + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span className="pl-fmt">{x.seriesName}{x.episode ? ' · Episode ' + x.episode : ''}</span>
+        <span className={'pl-st ' + ({ ready: 'pl-ok', posted: 'pl-done', skipped: 'pl-bad', missed: 'pl-bad' })[x.status]}>{({ ready: 'Goes out at ' + S.time, posted: 'Posted', skipped: 'Not posting', missed: 'Missed' })[x.status]}</span></div>
+      <b className="pl-title">{x.title}</b>
+      {x.note ? <span className="pl-hint">{x.note}</span> : null}
+      <div className="pl-slides">{x.images.map((src, i) => <img key={i} src={src} alt={'Slide ' + (i + 1)} loading="lazy" />)}</div>
+      <details className="pl-words"><summary>Read the post</summary><p className="pl-post">{x.post}</p><p className="pl-hint">First comment: {x.comment}</p></details>
+      {['ready', 'skipped', 'missed'].includes(x.status) ? <div className="pl-acts">
+        <button className="sm-btn sm-line" disabled={!!busy} onClick={() => act('sr' + x.id, { action: 'plan-story-rewrite', id: x.id }, (j) => j.status === 'ready' ? 'Rewritten.' : (j.note || 'Rewritten, but it didn’t pass the checks.'))}>{busy === 'sr' + x.id ? 'Writing… (about a minute)' : 'Write a different one'}</button>
+        {x.status === 'ready' ? <button className="sm-btn sm-line pl-x" disabled={!!busy} onClick={() => act('ss' + x.id, { action: 'plan-story-stop', id: x.id }, 'It won’t be posted.')}>Don’t post this one</button> : null}
+      </div> : null}
+    </article>)) : <p className="sm-note">The next three days’ stories are written over the next few runs.</p>}
+  </section>)
+}
 const CSS = `
+.pl-stories{margin:6px 0 14px}.pl-sh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pl-story{border-top:1px solid var(--line);padding:14px 0;display:flex;flex-direction:column;gap:8px}
+.pl-slides{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.pl-slides img{flex:none;width:150px;aspect-ratio:4/5;border-radius:8px;object-fit:cover;background:#111}
+.pl-post{white-space:pre-wrap;font-size:14.5px;line-height:1.55;margin:8px 0}
 .pl-top{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .pl-ch{display:flex;gap:6px;margin:18px 0 8px}
 .pl-ch button{padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--dim);font:inherit;font-weight:700;cursor:pointer}
