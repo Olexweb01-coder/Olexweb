@@ -715,3 +715,6 @@ alter table meta_settings add column if not exists story_time text not null defa
 alter table meta_settings add column if not exists video_days text;          -- '1,3,5' = Facebook videos on Mon, Wed, Fri (0 = Sunday); empty = every day
 alter table meta_settings add column if not exists v29 boolean not null default false;
 update meta_settings set video_days = '1,3,5', per_day = 1, v29 = true where not v29;   -- once: videos 3 a week on Facebook, the stories every day
+alter table portfolio_shots add column if not exists tries int not null default 0;   -- Install 28 fix: failed screenshots start again by themselves (up to 3 times)
+-- Install 28 fix: files kept in Vercel Blob (when the bucket refuses, or pictures when Blob is connected): where each one lives
+create table if not exists blob_files (key text primary key, url text not null, created_at timestamptz not null default now());

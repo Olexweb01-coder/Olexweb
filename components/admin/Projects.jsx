@@ -124,7 +124,7 @@ function Shots({ id, image, onPick }) {
     let stop = false, t = null
     const load = async () => {
       try { const r = await fetch('/admin/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'shots', id }) }), j = await r.json()
-        if (stop) return; setS(j); if (['waiting', 'taking'].includes(j.status)) t = setTimeout(load, 5000)
+        if (stop) return; setS(j); if (['waiting', 'taking'].includes(j.status) || j.retrying) t = setTimeout(load, j.retrying ? 30000 : 5000)
         else if (j.status === 'done' && !image && j.shots && j.shots[0]) onPick((j.shots.find((x) => x.label === 'The whole page') || j.shots[0]).url)
       } catch { if (!stop) t = setTimeout(load, 8000) }
     }
@@ -134,7 +134,8 @@ function Shots({ id, image, onPick }) {
   async function again() { setBusy(true); await fetch('/admin/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'retry-shots', id }) }).catch(() => {}); setBusy(false) }
   return (<div className="field pf-shots"><label>Screenshots from the site</label>
     {['waiting', 'taking'].includes(s.status) ? <p className="note">{s.status === 'waiting' ? 'Starting the browser…' : 'Taking screenshots…'} ({(s.shots || []).length} so far). You can keep editing; they appear here.</p> : null}
-    {s.status === 'failed' ? <p className="err">{s.error || 'The screenshots didn’t work.'} <button type="button" className="btn btn-line" onClick={again} disabled={busy}>Try again</button></p> : null}
+    {s.status === 'failed' ? (s.retrying ? <p className="note">The last try didn’t work ({s.error || 'no reason given'}). It tries again by itself in a few minutes, so there’s nothing to do.</p>
+      : <p className="err">{s.error || 'The screenshots didn’t work.'} It tried 3 times. <button type="button" className="btn btn-line" onClick={again} disabled={busy}>Try again</button></p>) : null}
     {(s.shots || []).length ? <div className="pf-grid">{s.shots.map((x) => <button type="button" key={x.url} className={'pf-pick' + (image === x.url ? ' on' : '')} onClick={() => onPick(x.url)} aria-pressed={image === x.url}>
       <img src={x.url} alt={x.label} loading="lazy" /><span>{x.label}{image === x.url ? ' ✓' : ''}</span></button>)}</div> : null}
     {(s.shots || []).length ? <p className="note">Tap one to use it. The whole page looks best on the portfolio.</p> : null}

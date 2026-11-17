@@ -36,12 +36,15 @@ check(j2.status === 'done' && labels[0] === 'The whole page' && labels.includes(
 const full = j2.shots[0]
 check(full.width === 1440 && full.height > 1200 && j2.shots[1].height === 900, 'the whole page is the full length of the site; the others are one screen', JSON.stringify(j2.shots.map((x) => [x.width, x.height])))
 check(P2.image === full.url && /^\/media\/img\/[a-f0-9]{24}\.webp$/.test(full.url), 'the whole page goes on the project straight away')
+const wall = (await one('select wall from projects where id = $1', [P.id])).wall, wm = await one('select width, height from media where key = $1', [String(wall).replace('/media/', '')])
+check(/^\/media\/img\/[a-f0-9]{24}\.webp$/.test(wall || '') && wm && wm.width === 880 && wm.height === 1924, 'and its top is cut for the homepage wall (880 × 1924)', JSON.stringify([wall, wm]))
 let m = await fetch(APP + full.url); check(m.status === 200 && /webp/.test(m.headers.get('content-type') || ''), 'and the picture opens', m.status)
 r = await api({ action: 'shots', id: P.id }); check(r.j.status === 'done' && r.j.shots.length === 5, 'the project screen shows all five to choose from')
 r = await fetch(APP + '/admin/api/content', { method: 'POST', headers: { cookie: '__Host-olex_sess=' + T, Origin: APP, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', type: 'project', id: P.id, data: { ...P, image: j2.shots[2].url } }) })
 check(r.status === 200 && (await one('select image from projects where id = $1', [P.id])).image === j2.shots[2].url, 'picking another one saves it like any change')
 
 console.log('\n202. When things go wrong')
+r = await fetch(APP + '/api/factory/shot?id=1&label=full&w=10&h=10', { method: 'POST', body: 'x' }); check(r.status === 401, '(only the factory can send pictures)')
 r = await api({ action: 'from-link', url: 'not a site at all' }); check(r.s === 400 && /web address|couldn’t be opened/.test(r.j.error), 'a bad address: a plain reason', r.j.error)
 r = await api({ action: 'from-link', url: 'http://down.test:4555/site/down' }); check(r.s === 400 && /answered 500/.test(r.j.error), 'a site that’s down: says so', r.j.error)
 r = await api({ action: 'from-link', url: 'http://10.0.0.1/' }); check(r.s === 400, 'a private or internal address is refused')
@@ -54,6 +57,20 @@ r = await api({ action: 'shots', id: P.id }); check(r.j.status === 'failed' && /
 await db.query("update portfolio_shots set url = $2 where id = $1", [job.id, SITE])
 r = await api({ action: 'retry-shots', id: P.id }); check(r.s === 200 && r.j.status === 'waiting', 'Try again starts them again'); worker(job.id)
 check((await one('select status from portfolio_shots where id = $1', [job.id])).status === 'done', 'and they arrive')
+// it mends itself: a failure is started again by the scheduler, up to 3 times, with nothing to press
+await db.query("update portfolio_shots set status = 'failed', error = 'the admin kept failing on /api/factory/shot (500)', tries = 0, updated_at = now() - interval '9 minutes' where id = $1", [job.id])
+r = await api({ action: 'shots', id: P.id }); check(r.j.status === 'failed' && r.j.retrying === true, 'after a failure the screen says it tries again by itself')
+let dn = ((await state()).dispatches || []).length
+await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } })
+let jj = await one('select status, tries from portfolio_shots where id = $1', [job.id])
+check(jj.status === 'waiting' && jj.tries === 1 && ((await state()).dispatches || []).length === dn + 1, 'and the next scheduler run starts the screenshots again by itself', JSON.stringify(jj))
+worker(job.id); check((await one('select status from portfolio_shots where id = $1', [job.id])).status === 'done', 'which arrive')
+await db.query("update portfolio_shots set status = 'failed', tries = 3, updated_at = now() - interval '9 minutes' where id = $1", [job.id])
+await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } })
+r = await api({ action: 'shots', id: P.id }); check(r.j.status === 'failed' && r.j.retrying === false && (await one('select tries from portfolio_shots where id = $1', [job.id])).tries === 3, 'after 3 tries it stops and shows Try again')
+await db.query("update portfolio_shots set status = 'waiting', updated_at = now() - interval '25 minutes' where id = $1", [job.id])
+await fetch(APP + '/api/assistant/cron?run=due', { headers: { authorization: 'Bearer ' + process.env.CRON_SECRET } })
+check((await one('select status, error from portfolio_shots where id = $1', [job.id])).status === 'failed', 'screenshots that go quiet for 20 minutes are caught')
 const h = await (await fetch(APP + '/admin/projects', { headers: { cookie: '__Host-olex_sess=' + T } })).text(); check(h.includes('Add from a link'), 'the Projects screen has “Add from a link”')
 
 if (!process.env.KEEP) await db.query("delete from projects where url like 'http://bakery.test%'")

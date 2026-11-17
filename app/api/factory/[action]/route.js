@@ -27,10 +27,10 @@ export async function POST(request, { params }) {
     try {
       const P = await import('@/lib/site/portfolio')
       if (action === 'shotjob') { const j = await P.shotJob(id); return j ? NextResponse.json(j) : no(409, 'Those screenshots aren’t waiting.') }
-      if (action === 'shot') return (await P.saveShot(id, String(sp.get('label') || 'part').slice(0, 120), buf)) ? NextResponse.json({ ok: true }) : no(409, 'Not taking screenshots for that.')
+      if (action === 'shot') return (await P.saveShot(id, String(sp.get('label') || 'part').slice(0, 120), buf, { w: sp.get('w'), h: sp.get('h') })) ? NextResponse.json({ ok: true }) : no(409, 'Not taking screenshots for that.')
       let body = {}; try { body = buf.length ? JSON.parse(buf.toString('utf8')) : {} } catch { return no(400, 'Bad request.') }
       return (await P.shotsDone(id, body)) ? NextResponse.json({ ok: true }) : no(409, 'Not taking screenshots for that.')
-    } catch (e) { console.error('factory shots call failed', action, e); return no(500, 'Something went wrong.') }
+    } catch (e) { console.error('factory shots call failed', action, e); return no(500, 'Something went wrong: ' + String(e.message).slice(0, 160)) }   // the reason travels back to the screen
   }
   try {
     if (action === 'upload') return (await savePiece(id, Number(sp.get('n')), buf)) ? NextResponse.json({ ok: true }) : no(409, 'Not accepting pieces for this video.')
