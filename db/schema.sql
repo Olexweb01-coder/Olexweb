@@ -687,3 +687,11 @@ create table if not exists plan_slots (id serial primary key,
 create index if not exists plan_slots_open on plan_slots (status, day, time);
 create index if not exists plan_slots_script on plan_slots (script_id) where script_id is not null;
 alter table yt_settings add column if not exists plan_on boolean not null default true;   -- on from this install: the plan replaces the old queue
+
+-- ---------- Install 27: the Directory goldmine. Topics to filter by, tech stories and history, up to 12 posts a day ----------
+alter table dir_finds add column if not exists topic text;
+alter table dir_entries add column if not exists topic text;      -- tools | hot | space | history | ai | phones | security | sport | gaming | science | africa | apps | howto
+create index if not exists dir_entries_topic on dir_entries (topic) where status = 'live';
+alter table dir_settings add column if not exists v27 boolean not null default false;
+update dir_settings set kinds = case when kinds like '%story%' then kinds else kinds || ',story' end,
+  slots = '07:00,08:30,10:00,11:30,13:00,14:30,16:00,17:30,19:00,20:30,21:30,22:30', per_day = greatest(per_day, 8), v27 = true where not v27;

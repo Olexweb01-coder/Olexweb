@@ -2,8 +2,8 @@
 // aggregators pick them up by themselves.
 import { liveEntries, SITE } from '@/lib/site/directory'
 export const revalidate = 600
-const KP = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts' }
-const KN = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert' }
+const KP = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts', story: 'stories' }
+const KN = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert', story: 'Tech story' }
 const x = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 export async function GET() {
   const items = (await liveEntries().catch(() => [])).slice(0, 50)

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 
 const dim = { color: 'var(--dim)' }
-const KP = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts' }
+const KP = { tool: 'tools', update: 'updates', guide: 'guides', alert: 'alerts', story: 'stories' }
 const pathOf = (e) => '/' + (KP[e.kind] || 'tools') + '/' + e.slug
 const ago = (d) => { const m = Math.round((Date.now() - new Date(d).getTime()) / 60e3); return m < 2 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago' }
 

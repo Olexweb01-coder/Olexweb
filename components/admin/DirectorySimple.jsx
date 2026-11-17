@@ -8,8 +8,8 @@ import { SIMPLE_CSS } from './AutomationSimple'
 import { YS_CSS } from './YouTubeSimple'
 import { showDetails } from './SimpleSwitch'
 
-const KN = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert' }
-const KS = { tool: 'Tools', update: 'Tech updates', guide: 'How-tos', alert: 'Safety alerts' }
+const KN = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert', story: 'Tech story' }
+const KS = { tool: 'Tools', update: 'Tech updates', guide: 'How-tos', alert: 'Safety alerts', story: 'Tech stories & history' }
 const fmt = (n) => Number(n || 0).toLocaleString('en-GB')
 const googleLine = (g) => !g ? 'Bing is told about each new post the moment it goes live. Google finds them through your sitemap.'
   : g.ok ? 'Bing and Google are both told about new posts the same day.'
@@ -61,7 +61,7 @@ export default function DirectorySimple({ data }) {
 
       <section className="sm-card" aria-label="Ready">
         <h2>Ready to go out</h2>
-        <div className="sm-chips">{['tool', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-chip"><b>{D.ready[k] || 0}</b>{KS[k].toLowerCase()}</div>)}</div>
+        <div className="sm-chips">{['tool', 'story', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-chip"><b>{D.ready[k] || 0}</b>{KS[k].toLowerCase()}</div>)}</div>
         <p className="sm-note">{readyAll ? 'Written and checked, waiting for their time. Every fact is quoted from its source.' : 'The next ones are being written and checked.'}</p>
         <button className="sm-btn sm-line" disabled={!!busy || !readyAll} onClick={() => call('now', { action: 'publish-now' }, (j) => `Live now: ${j.name}`)}>{busy === 'now' ? 'Publishing…' : 'Publish one now'}</button>
       </section>
@@ -75,14 +75,14 @@ export default function DirectorySimple({ data }) {
 
       <section className="sm-card" aria-label="How many a day">
         <h2>How many a day?</h2>
-        <div className="ys-per" role="group" aria-label="Posts a day">{[3, 4, 5].map((n) => <button key={n} aria-pressed={S.perDay === n} disabled={!!busy || S.perDay === n}
+        <div className="ys-per" role="group" aria-label="Posts a day">{[5, 8, 12].map((n) => <button key={n} aria-pressed={S.perDay === n} disabled={!!busy || S.perDay === n}
           onClick={() => call('per' + n, { action: 'simple-settings', perDay: n, autoPublish: true }, `${n} a day.`)}><b>{n}</b>a day</button>)}</div>
         <p className="sm-note">At {S.slots.join(', ')} (Lagos), so there’s always something new during the day.</p>
       </section>
 
       <section className="sm-card" aria-label="What it posts">
         <h2>What it posts</h2>
-        {['tool', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-sw"><div><b>{KS[k]}</b><span>{{ tool: 'Useful websites and AI tools, explained', update: 'What changed in apps people use, and what to do', guide: 'Step-by-step help people can follow today', alert: 'Scams and safety risks going round now' }[k]} · {fmt(D.counts[k] || 0)} live</span></div>
+        {['tool', 'story', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-sw"><div><b>{KS[k]}</b><span>{{ tool: 'Useful websites and AI tools, explained', update: 'What changed in apps people use, and what to do', guide: 'Step-by-step help people can follow today', alert: 'Scams and safety risks going round now', story: 'Big tech moments (space, sport tech, records) and tech history' }[k]} · {fmt(D.counts[k] || 0)} live</span></div>
           <button className={'sm-tog' + (S.kinds.includes(k) ? '' : ' off')} role="switch" aria-checked={S.kinds.includes(k)} aria-label={KS[k]} disabled={!!busy} onClick={() => toggleKind(k)}><i /><em>{busy === 'k' + k ? '…' : S.kinds.includes(k) ? 'ON' : 'OFF'}</em></button></div>)}
       </section>
 

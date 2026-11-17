@@ -5,8 +5,8 @@ import { MARK_PNG } from '@/lib/brandMark'
 
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
-const LABEL = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert' }
-const COLOR = { tool: '#8fe36a', update: '#7cc4ff', guide: '#8fe36a', alert: '#ff8a70' }
+const LABEL = { tool: 'Tool', update: 'Tech update', guide: 'How-to', alert: 'Safety alert', story: 'Tech story' }
+const COLOR = { tool: '#8fe36a', update: '#7cc4ff', guide: '#8fe36a', alert: '#ff8a70', story: '#ffd166' }
 export const shareImage = (kind) => async function Image({ params }) {
   const e = await entryBySlug(params.slug, kind).catch(() => null)
   const title = e ? String((e.content && e.content.title) || e.name) : 'The Olexweb Directory'

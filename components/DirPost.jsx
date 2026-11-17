@@ -6,10 +6,10 @@ import { DIR_CSS } from './dirStyles'
 import { ENTRY_CSS } from './DirEntry'
 import DirShare from './DirShare'
 
-const NAME = { update: 'Tech update', guide: 'How-to', alert: 'Safety alert' }
-const PATH = { update: 'updates', guide: 'guides', alert: 'alerts' }
-const POINTS = { update: 'What changed', guide: 'What it helps with', alert: 'How to spot it' }
-const TODO = { update: 'What to do', guide: 'Step by step', alert: 'Protect yourself' }
+const NAME = { update: 'Tech update', guide: 'How-to', alert: 'Safety alert', story: 'Tech story' }
+const PATH = { update: 'updates', guide: 'guides', alert: 'alerts', story: 'stories' }
+const POINTS = { update: 'What changed', guide: 'What it helps with', alert: 'How to spot it', story: 'What happened' }
+const TODO = { update: 'What to do', guide: 'Step by step', alert: 'Protect yourself', story: 'What next' }
 const beacon = (slug, lead) => { try { fetch('/api/dir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, lead }), keepalive: true }).catch(() => {}) } catch {} }
 
 export default function DirPost({ e }) {
@@ -46,6 +46,6 @@ export default function DirPost({ e }) {
 const CSS = `
 .dp-h1{font-size:clamp(34px,7vw,64px);line-height:.98;max-width:22ch}
 .dp-kind{display:inline-flex;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
-.dp-update{background:#dff1ff;color:#0b3a5c}.dp-guide{background:#e8f8df;color:#173d0b}.dp-alert{background:#ffe2dc;color:#6a1405}.dp-tool{background:#efe9ff;color:#2d1a66}
+.dp-update{background:#dff1ff;color:#0b3a5c}.dp-guide{background:#e8f8df;color:#173d0b}.dp-alert{background:#ffe2dc;color:#6a1405}.dp-story{background:#fff1cc;color:#5a3d00}.dp-tool{background:#efe9ff;color:#2d1a66}
 .dp-points{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:10px}.dp-points li{padding:15px 16px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:16px;line-height:1.5}
 .de-note a{color:inherit}`

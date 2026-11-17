@@ -5,11 +5,12 @@ import DirPost from '@/components/DirPost'
 import DirLibrary from '@/components/DirLibrary'
 import { entryBySlug, liveEntries, SITE } from '@/lib/site/directory'
 
-const PATH = { update: 'updates', guide: 'guides', alert: 'alerts' }
+const PATH = { update: 'updates', guide: 'guides', alert: 'alerts', story: 'stories' }
 const LIST = {
   update: ['Tech updates that matter to you', 'What changed in the apps and services you use, and what to do about it. Checked against the source.'],
   guide: ['How-tos you can follow today', 'Clear, step-by-step help for your phone, computer and online life.'],
   alert: ['Scam and safety alerts', 'The scams and security problems going round now, how to spot them, and how to protect yourself.'],
+  story: ['Tech stories and history', 'The big tech moments everyone is talking about (space, records, tech in sport) and the history behind today’s tech, told simply.'],
 }
 export const postMeta = (kind) => async function generateMetadata({ params }) {
   const e = await entryBySlug(params.slug, kind).catch(() => null); if (!e) return { title: 'Not found' }
