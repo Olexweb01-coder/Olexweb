@@ -9,7 +9,7 @@ export const maxDuration = 60
 const no = (status, error) => NextResponse.json({ error }, { status, headers: { 'Cache-Control': 'no-store' } })
 export async function POST(request, { params }) {
   const action = params.action
-  if (!['job', 'report', 'upload', 'finish', 'forms', 'form-result'].includes(action)) return no(404, 'Not found.')
+  if (!['job', 'report', 'upload', 'finish', 'forms', 'form-result', 'shotjob', 'shot', 'shotdone'].includes(action)) return no(404, 'Not found.')
   const buf = Buffer.from(await request.arrayBuffer())
   if (buf.length > 4.4 * 1024 * 1024) return no(413, 'Too large.')
   if (!verify(request, buf)) return no(401, 'Not allowed.')
@@ -23,6 +23,15 @@ export async function POST(request, { params }) {
   }
   const sp = new URL(request.url).searchParams, id = Number(sp.get('id'))
   if (!Number.isInteger(id) || id < 1) return no(400, 'Bad request.')
+  if (action.startsWith('shot')) {                                               // Install 28: portfolio screenshots (lib/site/portfolio.js)
+    try {
+      const P = await import('@/lib/site/portfolio')
+      if (action === 'shotjob') { const j = await P.shotJob(id); return j ? NextResponse.json(j) : no(409, 'Those screenshots aren’t waiting.') }
+      if (action === 'shot') return (await P.saveShot(id, String(sp.get('label') || 'part').slice(0, 120), buf)) ? NextResponse.json({ ok: true }) : no(409, 'Not taking screenshots for that.')
+      let body = {}; try { body = buf.length ? JSON.parse(buf.toString('utf8')) : {} } catch { return no(400, 'Bad request.') }
+      return (await P.shotsDone(id, body)) ? NextResponse.json({ ok: true }) : no(409, 'Not taking screenshots for that.')
+    } catch (e) { console.error('factory shots call failed', action, e); return no(500, 'Something went wrong.') }
+  }
   try {
     if (action === 'upload') return (await savePiece(id, Number(sp.get('n')), buf)) ? NextResponse.json({ ok: true }) : no(409, 'Not accepting pieces for this video.')
     let body = {}; try { body = buf.length ? JSON.parse(buf.toString('utf8')) : {} } catch { return no(400, 'Bad request.') }

@@ -10,7 +10,7 @@ const thumb = (src) => (src || '').replace(/-full\.webp$/, '.webp')
 
 export default function ProjectsBoard({ items, canPublish, isOwner }) {
   const router = useRouter()
-  const [list, setList] = useState(items), [edit, setEdit] = useState(null)
+  const [list, setList] = useState(items), [edit, setEdit] = useState(null), [link, setLink] = useState(false)
   const drag = useRef(null), rows = useRef([])
   useEffect(() => { if (!drag.current) setList(items) }, [items])     // after a save, show the fresh list from the server
 
@@ -35,7 +35,8 @@ export default function ProjectsBoard({ items, canPublish, isOwner }) {
   const close = useCallback(() => setEdit(null), [])
 
   return (<>
-    <div className="top"><h1 className="d">Projects</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { kind: 'Client website', built: [] } })}>Add</button></div>
+    <div className="top"><h1 className="d">Projects</h1><div style={{ display: 'flex', gap: 8 }}><button className="btn btn-line" onClick={() => setLink(true)}>Add from a link</button><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { kind: 'Client website', built: [] } })}>Add</button></div></div>
+    {link ? <FromLink onClose={() => setLink(false)} onDone={(r) => { setLink(false); router.refresh(); setEdit({ isNew: false, data: { ...r.data, id: r.id, status: 'draft' } }) }} /> : null}
     <Notice />
     <ul className="rows" onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
       {list.map((p, i) => (
@@ -80,6 +81,7 @@ function ProjectEditor({ item, canPublish, isOwner, onClose, onDone }) {
     {locked ? <p className="read-only">This project is on the site. Only Olaitan can change it.</p> : null}
     <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0 }}>
       <ImagePicker value={f.image} onChange={(v) => setF({ ...f, image: v })} kind="screenshot" label="Screenshot" />
+      {id ? <Shots id={id} image={f.image} onPick={(v) => setF({ ...f, image: v })} /> : null}
       <div className="field"><label htmlFor="pj1">Name</label><input className="input" id="pj1" value={f.name} onChange={set('name')} maxLength={80} /></div>
       <div className="field"><label htmlFor="pj2">Type</label><select className="input" id="pj2" value={f.kind} onChange={set('kind')}>{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
       <div className="field"><label htmlFor="pj3">Your role</label><input className="input" id="pj3" value={f.role} onChange={set('role')} maxLength={120} /></div>
@@ -94,4 +96,48 @@ function ProjectEditor({ item, canPublish, isOwner, onClose, onDone }) {
     {isOwner && !item.isNew ? <p style={{ marginTop: 22 }}><button className="btn btn-bad" disabled={busy} onClick={() => go('bin', 'Moved to the bin.')}>Move to bin</button></p> : null}
     {isOwner && !item.isNew ? <p className="note">Items in the bin are kept for 30 days. Only you can empty it.</p> : null}
   </Sheet>)
+}
+
+// Install 28: a project from a link. Olex AI reads the site and fills the project in; the factory takes the screenshots.
+function FromLink({ onClose, onDone }) {
+  const [url, setUrl] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
+  async function go(e) {
+    e.preventDefault(); if (!url.trim()) return; setBusy(true); setErr('')
+    try {
+      const r = await fetch('/admin/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'from-link', url }) }), j = await r.json().catch(() => ({}))
+      if (r.status === 401) { window.location.assign('/admin/login'); return }
+      if (!r.ok) { setErr(j.error || 'That didn’t work. Try again.'); setBusy(false); return }
+      toast('Read the site and filled it in. Screenshots are on the way.'); onDone(j)
+    } catch { setErr('No connection. Try again.'); setBusy(false) }
+  }
+  return (<Sheet title="Add from a link" onClose={busy ? () => {} : onClose} foot={<button className="btn btn-green" form="pfl" disabled={busy || !url.trim()}>{busy ? 'Reading the site…' : 'Read the site'}</button>}>
+    <form id="pfl" onSubmit={go}>
+      <div className="field"><label htmlFor="pfl1">The website you built</label><input className="input" id="pfl1" value={url} onChange={(e) => setUrl(e.target.value)} inputMode="url" placeholder="https://" maxLength={300} autoFocus disabled={busy} /></div>
+      <p className="note">Olex AI reads the site (the home page and a few inside pages) and fills in the name, type, your role, description, what was built and the result, only from what&rsquo;s on the site. Then real screenshots are taken: the whole page, the first screen, the best sections and the phone view. It&rsquo;s saved as a draft for you to check. Reading takes about 30 seconds; screenshots about 3 minutes.</p>
+      {err ? <p className="err" role="alert">{err}</p> : null}
+    </form>
+  </Sheet>)
+}
+function Shots({ id, image, onPick }) {
+  const [s, setS] = useState(null), [busy, setBusy] = useState(false)
+  useEffect(() => {
+    let stop = false, t = null
+    const load = async () => {
+      try { const r = await fetch('/admin/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'shots', id }) }), j = await r.json()
+        if (stop) return; setS(j); if (['waiting', 'taking'].includes(j.status)) t = setTimeout(load, 5000)
+        else if (j.status === 'done' && !image && j.shots && j.shots[0]) onPick((j.shots.find((x) => x.label === 'The whole page') || j.shots[0]).url)
+      } catch { if (!stop) t = setTimeout(load, 8000) }
+    }
+    load(); return () => { stop = true; clearTimeout(t) }
+  }, [id, busy]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!s || s.status === 'none') return null
+  async function again() { setBusy(true); await fetch('/admin/api/portfolio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'retry-shots', id }) }).catch(() => {}); setBusy(false) }
+  return (<div className="field pf-shots"><label>Screenshots from the site</label>
+    {['waiting', 'taking'].includes(s.status) ? <p className="note">{s.status === 'waiting' ? 'Starting the browser…' : 'Taking screenshots…'} ({(s.shots || []).length} so far). You can keep editing; they appear here.</p> : null}
+    {s.status === 'failed' ? <p className="err">{s.error || 'The screenshots didn’t work.'} <button type="button" className="btn btn-line" onClick={again} disabled={busy}>Try again</button></p> : null}
+    {(s.shots || []).length ? <div className="pf-grid">{s.shots.map((x) => <button type="button" key={x.url} className={'pf-pick' + (image === x.url ? ' on' : '')} onClick={() => onPick(x.url)} aria-pressed={image === x.url}>
+      <img src={x.url} alt={x.label} loading="lazy" /><span>{x.label}{image === x.url ? ' ✓' : ''}</span></button>)}</div> : null}
+    {(s.shots || []).length ? <p className="note">Tap one to use it. The whole page looks best on the portfolio.</p> : null}
+    <style>{`.pf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:8px}.pf-pick{padding:0;border:2px solid var(--line);border-radius:10px;overflow:hidden;background:none;cursor:pointer;text-align:left;color:inherit;font:inherit}.pf-pick.on{border-color:var(--green)}.pf-pick img{display:block;width:100%;height:150px;object-fit:cover;object-position:top}.pf-pick span{display:block;padding:6px 8px;font-size:12.5px}`}</style>
+  </div>)
 }

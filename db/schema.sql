@@ -695,3 +695,11 @@ create index if not exists dir_entries_topic on dir_entries (topic) where status
 alter table dir_settings add column if not exists v27 boolean not null default false;
 update dir_settings set kinds = case when kinds like '%story%' then kinds else kinds || ',story' end,
   slots = '07:00,08:30,10:00,11:30,13:00,14:30,16:00,17:30,19:00,20:30,21:30,22:30', per_day = greatest(per_day, 8), v27 = true where not v27;
+
+-- ---------- Install 28: a portfolio project from a link (the factory takes the screenshots) ----------
+create table if not exists portfolio_shots (id serial primary key,
+  project_id int not null references projects(id) on delete cascade, url text not null, headings jsonb not null default '[]',
+  status text not null default 'waiting' check (status in ('waiting', 'taking', 'done', 'failed')),
+  shots jsonb not null default '[]', error text, created_by uuid references admin_users(id) on delete set null,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+create index if not exists portfolio_shots_project on portfolio_shots (project_id);
