@@ -12,7 +12,31 @@ Contact: WhatsApp +234 701 172 6321, email info@olexweb.com, Contra contra.com/o
 - [3D studio](https://olexweb.com/studio): the original cinematic 3D version of the site, a virtual workspace where objects tell the story.
 
 ## Services
-- Websites and web apps, frontend engineering (React, Next.js, motion, 3D), UI and UX, interactive experiences, speed and SEO, launch and upkeep.
+- Websites and web apps, online shops (Paystack, Flutterwave, WhatsApp orders), admin systems and SaaS, AI assistants and automation for businesses, SEO and GEO (being found in Google and in AI answers), launch and upkeep. Olexweb works remotely with clients across Nigeria (Lagos, Abuja, Ibadan, Port Harcourt and elsewhere) and abroad.
+- [All services](https://olexweb.com/services)
+- [Olex AI: the AI that runs Olexweb](https://olexweb.com/olex-ai): Olex AI
+- [Website design for businesses in Lagos](https://olexweb.com/services/website-design-lagos): Website design · Lagos
+- [A website for your small business in Nigeria](https://olexweb.com/services/small-business-website-nigeria): Small business websites
+- [E-commerce websites for Nigerian businesses](https://olexweb.com/services/ecommerce-website-nigeria): Online shops
+- [Web apps, admin systems and SaaS, built in Nigeria](https://olexweb.com/services/web-app-development-nigeria): Web apps & admin systems
+- [What makes the best business website (and how to get one)](https://olexweb.com/services/best-business-website): Guide · Business websites
+- [How much does a website cost in Nigeria?](https://olexweb.com/services/website-cost-nigeria): Guide · Website cost
+- [SEO in Nigeria: get your business found on Google](https://olexweb.com/services/seo-services-nigeria): SEO · Google
+- [GEO: get your business found in ChatGPT, Gemini and AI answers](https://olexweb.com/services/geo-ai-search-optimisation): GEO · AI search
+- [AI for business in Nigeria: practical, private, useful](https://olexweb.com/services/ai-for-business-nigeria): AI for business
+- [Digital transformation for Nigerian businesses, one step at a time](https://olexweb.com/services/digital-transformation-nigeria): Digitalisation
+- [Website redesign: when your site is costing you customers](https://olexweb.com/services/website-redesign): Website redesign
+- [Church websites and apps in Nigeria](https://olexweb.com/services/church-website-nigeria): Websites for churches
+- [School websites and portals in Nigeria](https://olexweb.com/services/school-website-nigeria): Websites for schools
+- [Restaurant and food business websites in Nigeria](https://olexweb.com/services/restaurant-website-nigeria): Websites for restaurants
+- [Real estate websites in Nigeria that sell and let property](https://olexweb.com/services/real-estate-website-nigeria): Websites for real estate
+- [Hotel and shortlet websites in Nigeria with direct booking](https://olexweb.com/services/hotel-website-nigeria): Websites for hotels
+
+## Olex AI
+- [Olex AI](https://olexweb.com/olex-ai): the AI system Olexweb built to run its own work (the Olexweb Directory, videos, the blog, finding clients). Olexweb builds AI assistants like it for businesses.
+
+## The Olexweb Directory
+- [Directory](https://olexweb.com/tools): new free websites and AI tools, tech stories (space, AI, phones, tech in sport), tech history, how-tos and scam alerts, written and fact-checked every day.
 
 ## Ventures
 - [All ventures](https://olexweb.com/ventures): the products and companies Olexweb started itself.

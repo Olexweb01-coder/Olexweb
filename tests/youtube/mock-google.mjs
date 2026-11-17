@@ -109,6 +109,9 @@ http.createServer(async (req, res) => {
       : [item('Fake delivery text scam is going round', 'scam')]
     return send(res, 200, `<?xml version="1.0"?><rss><channel><title>${u.pathname.endsWith('news') ? 'TechNews' : 'SafeNet'}</title>${items.join('')}</channel></rss>`, { 'Content-Type': 'application/rss+xml' })
   }
+  if (u.pathname.startsWith('/ph/i/v0/e')) {                               // Install 30: a stand-in for PostHog's capture API
+    let raw = ''; for await (const ch of req) raw += ch; try { S.ph = (S.ph || []).concat([JSON.parse(raw)]) } catch {} return send(res, 200, { status: 1 })
+  }
   if (u.pathname === '/dirfeed/space') {                                  // Install 27: a big tech moment
     const now = new Date().toUTCString()
     return send(res, 200, `<?xml version="1.0"?><rss><channel><title>SpaceNews</title><item><title>SpaceX booster lands back on the pad it launched from</title><link>http://news.test:4555/news/booster</link><pubDate>${now}</pubDate><description>The booster came home. More inside.</description></item></channel></rss>`, { 'Content-Type': 'application/rss+xml' })

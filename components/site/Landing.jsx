@@ -7,7 +7,7 @@ export default function Landing({ L, projects = [] }) {
   return (<div className="dx">
     <style dangerouslySetInnerHTML={{ __html: DIR_CSS + CSS }} />
     <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olexweb</a><nav className="dx-nav"><a href="/portfolio">Portfolio</a><a href="/tools">Directory</a></nav></header>
-      <nav className="ln-crumbs" aria-label="Breadcrumb"><a href="/">Olexweb</a> › {L.path.startsWith('/services/') ? <><a href="/work-with-me">Services</a> › </> : null}<span>{L.kicker}</span></nav>
+      <nav className="ln-crumbs" aria-label="Breadcrumb"><a href="/">Olexweb</a> › {L.path.startsWith('/services/') ? <><a href="/services">Services</a> › </> : null}<span>{L.kicker}</span></nav>
       <section className="ln-hero"><span className="dx-eb">{L.kicker}</span><h1 className="dx-h1 ln-h1">{L.h1}</h1><p className="dx-lede">{L.lede}</p>
         <div className="ln-cta"><a className="ln-go" href={WA} target="_blank" rel="noopener">Talk on WhatsApp</a><a className="ln-line" href={'/start?from=' + encodeURIComponent(L.path)}>Send your project details</a></div></section>
       {L.sections.map(([h, items]) => (<section key={h} className="ln-sec"><h2>{h}</h2><ul>{items.map((t) => <li key={t}>{t}</li>)}</ul></section>))}

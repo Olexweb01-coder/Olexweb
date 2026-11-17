@@ -26,6 +26,9 @@ const nextConfig = {
     { source: '/apple-touch-icon.png', has: [MEET_HOST], destination: '/meet/apple-touch-icon.png' },
     { source: '/robots.txt', has: [MEET_HOST], destination: '/api/meet/seo/robots' },   // the Meet address's own search instructions
     { source: '/sitemap.xml', has: [MEET_HOST], destination: '/api/meet/seo/sitemap' },
+  ], afterFiles: [
+    // Install 30: optional PostHog analytics go through the site itself (components/site/Analytics.jsx)
+    { source: '/ingest/:path*', destination: `${(process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com').replace(/\/$/, '')}/:path*` },
   ] }; },
 };
 module.exports = nextConfig;
