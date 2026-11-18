@@ -61,7 +61,7 @@ export default function AutomationSimple({ data, onDetailed }) {
       </> : null}
     </section>
 
-    {data.plan && data.plan.on ? <section className="sm-need" style={data.plan.waiting ? null : { borderColor: 'var(--line)', background: 'none' }}><b>{data.plan.waiting ? `${data.plan.waiting} planned video${data.plan.waiting === 1 ? '' : 's'} wait${data.plan.waiting === 1 ? 's' : ''} for your approval. Nothing posts until you approve it.` : 'The next 3 days are planned: see every video before it goes out.'}</b><a className={'sm-btn ' + (data.plan.waiting ? 'sm-red' : 'sm-line')} href="/admin/automation/plan">Open the plan</a></section> : null}
+    {data.plan && data.plan.on && !data.plan.waiting ? <section className="sm-need" style={data.plan.waiting ? null : { borderColor: 'var(--line)', background: 'none' }}><b>{data.plan.waiting ? `${data.plan.waiting} planned video${data.plan.waiting === 1 ? '' : 's'} wait${data.plan.waiting === 1 ? 's' : ''} for your approval. Nothing posts until you approve it.` : 'The next 3 days are planned: see every video before it goes out.'}</b><a className={'sm-btn ' + (data.plan.waiting ? 'sm-red' : 'sm-line')} href="/admin/automation/plan">Open the plan</a></section> : null}
     {data.needs.map((n, i) => <section key={i} className="sm-need"><b>{n.text}</b><a className="sm-btn sm-red" href={n.href}>Fix it</a></section>)}
 
     <div className="sm-grid"><div>
@@ -85,6 +85,7 @@ export default function AutomationSimple({ data, onDetailed }) {
       </section>
     </div><div>
 
+      {data.plan && data.plan.on ? null : <>
       <section className="sm-card" aria-label="What kind of videos">
         <h2>What kind of videos?</h2>
         <button className={'sm-pick' + (explain ? ' on' : '')} disabled={!!busy || explain} onClick={() => yt('style', { action: 'explain-style' }, 'Explainer Shorts are on.')}>
@@ -112,6 +113,7 @@ export default function AutomationSimple({ data, onDetailed }) {
             catch (e) { toast(e.message) } finally { setBusy(null) } }} />
       </section>
 
+      </>}
       <section className="sm-card" aria-label="This week">
         <h2>This week</h2>
         <div className="sm-chips"><div className="sm-chip"><b>{plural((W.posted && W.posted.yt) || 0, 'video')}</b>on YouTube</div>

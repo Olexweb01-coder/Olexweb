@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from './ui'
 import { ChIcon, CSS } from './automationShared'
 import AutomationSimple from './AutomationSimple'
+import ControlPanel from './ControlPanel'
 
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const HERO = {
@@ -31,11 +32,12 @@ function Section({ id, title, icon, badge, children }) {
 }
 
 // Simple (the default, Install 14) or Detailed (everything below). The choice is remembered on this device.
-export default function AutomationToday({ data }) {
+export default function AutomationToday({ data, switches = [] }) {
   const [view, setView] = useState('simple')
   useEffect(() => { try { if (localStorage.getItem('olex-auto-view') === 'detailed') setView('detailed') } catch {} }, [])
   const pick = (v) => { setView(v); try { localStorage.setItem('olex-auto-view', v) } catch {}; window.scrollTo(0, 0) }
   return (<>
+    <ControlPanel switches={switches} waiting={(data.plan && data.plan.waiting) || 0} />
     <div className="sm-mode" role="group" aria-label="How much to show">
       {[['simple', 'Simple'], ['detailed', 'Detailed']].map(([k, l]) => <button key={k} aria-pressed={view === k} onClick={() => pick(k)}>{l}</button>)}
     </div>

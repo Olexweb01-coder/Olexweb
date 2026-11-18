@@ -62,7 +62,7 @@ let h = await html('/admin/automation/plan')
 const waiting = slots.length
 check(h.includes(`${waiting} videos wait for you`) && h.includes('Approve all ' + waiting) && h.includes('Tomorrow') && h.includes('Read the words') && slots.filter((s) => s.package).every((s) => h.includes(s.package.title.replace(/\s*#shorts\s*$/i, '').replace(/&/g, '&amp;').replace(/'/g, '&#x27;'))), 'the Plan screen shows each day, each video’s title and words, and what waits for you')
 check(h.includes('YouTube') && h.includes('Facebook') && h.includes('Swap') && h.includes('Leave empty') && h.includes('Change title'), 'with YouTube and Facebook separately, and Swap, Change title, Leave empty')
-const t1 = await html('/admin/automation'); check(t1.includes(`${waiting} planned videos wait for your approval`) && t1.includes('/admin/automation/plan'), 'the Today tab sends you to the plan')
+const t1 = await html('/admin/automation'); check(t1.includes(`${waiting} videos wait for your approval`) && t1.includes("Approve all") && t1.includes('/admin/automation/plan'), 'the Today tab sends you to the plan')
 
 console.log('\n181. Approved → made → posted to YouTube at its time')
 const y1 = slots.find((s) => s.channel === 'youtube')
