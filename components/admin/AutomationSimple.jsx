@@ -61,7 +61,7 @@ export default function AutomationSimple({ data, onDetailed }) {
       </> : null}
     </section>
 
-    {data.plan && data.plan.on && !data.plan.waiting ? <section className="sm-need" style={data.plan.waiting ? null : { borderColor: 'var(--line)', background: 'none' }}><b>{data.plan.waiting ? `${data.plan.waiting} planned video${data.plan.waiting === 1 ? '' : 's'} wait${data.plan.waiting === 1 ? 's' : ''} for your approval. Nothing posts until you approve it.` : 'The next 3 days are planned: see every video before it goes out.'}</b><a className={'sm-btn ' + (data.plan.waiting ? 'sm-red' : 'sm-line')} href="/admin/automation/plan">Open the plan</a></section> : null}
+    {data.plan && data.plan.on && data.plan.waiting ? <section className="sm-need" style={data.plan.waiting ? null : { borderColor: 'var(--line)', background: 'none' }}><b>{data.plan.waiting ? `${data.plan.waiting} planned video${data.plan.waiting === 1 ? '' : 's'} wait${data.plan.waiting === 1 ? 's' : ''} for your approval. Nothing posts until you approve it.` : 'The next 3 days are planned: see every video before it goes out.'}</b><a className={'sm-btn ' + (data.plan.waiting ? 'sm-red' : 'sm-line')} href="/admin/automation/plan">Open the plan</a></section> : null}
     {data.needs.map((n, i) => <section key={i} className="sm-need"><b>{n.text}</b><a className="sm-btn sm-red" href={n.href}>Fix it</a></section>)}
 
     <div className="sm-grid"><div>
