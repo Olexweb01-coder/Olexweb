@@ -727,3 +727,10 @@ create table if not exists admin_updates (id serial primary key, section text no
 create index if not exists admin_updates_unseen on admin_updates (section) where seen_at is null;
 update admin_updates set section = 'youtube' where section = 'automation' and url like '/admin/youtube%';   -- Install 39: YouTube and Facebook have their own pages in the sidebar
 update admin_updates set section = 'facebook' where url like '/admin/automation/facebook%';
+-- Install 42: LinkedIn (your own profile): posts written for LinkedIn, with the link as the first comment
+create table if not exists li_settings (id int primary key default 1 check (id = 1), enabled boolean not null default false, token_enc text, expires_at timestamptz,
+  person_urn text, name text, connected_at timestamptz, paused_reason text, warned_at timestamptz, post_time text not null default '08:10', days text not null default '1,2,3,4,5');
+insert into li_settings (id) values (1) on conflict do nothing;
+create table if not exists li_oauth_states (state_hash text primary key, user_id text not null, created_at timestamptz not null default now());
+create table if not exists li_posts (id serial primary key, kind text not null, ref text not null, urn text, text text, link text, status text not null default 'posted', error text, posted_at timestamptz not null default now());
+create index if not exists li_posts_ref on li_posts (kind, ref);
