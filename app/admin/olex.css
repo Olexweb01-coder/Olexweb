@@ -397,3 +397,14 @@
 .olex.side-closed .nav-a .count,.olex.side-closed .nav-a .dot-new{position:absolute;top:4px;right:6px;margin:0}
 .olex .nav-a{position:relative}
 .olex .menu-badge{position:absolute;top:-3px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ff3b30;color:#fff;font:800 10.5px/17px system-ui,sans-serif;text-align:center}
+/* Install 39: grouped sidebar */
+.olex .nav-g{width:100%;background:none;border:0;color:inherit;font:inherit;cursor:pointer;text-align:left;display:flex;align-items:center}
+.olex .nav-g .chev{margin-left:auto;display:flex;opacity:.55;transition:transform .15s}
+.olex .nav-g .count,.olex .nav-g .dot-new{margin-left:auto;margin-right:6px}
+.olex .nav-g .count+.chev,.olex .nav-g .dot-new+.chev{margin-left:0}
+.olex .nav-g .chev svg{width:15px;height:15px}
+.olex .nav-group.open>.nav-g .chev{transform:rotate(90deg)}
+.olex .nav-sub{display:flex;flex-direction:column;gap:1px;margin:1px 0 4px 18px;padding-left:8px;border-left:1px solid rgba(var(--fg),.1)}
+.olex .nav-a.sub{padding:7px 10px;font-size:14px}
+.olex .nav-a.sub svg{width:17px;height:17px}
+.olex .nav-a .dot-new{margin-right:4px}

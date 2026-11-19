@@ -725,3 +725,5 @@ alter table posts add column if not exists fix_tries int not null default 0;   -
 -- Install 38: what's new for you, section by section (red dots in the sidebar and the number on the app icon)
 create table if not exists admin_updates (id serial primary key, section text not null, body text not null, url text, at timestamptz not null default now(), seen_at timestamptz);
 create index if not exists admin_updates_unseen on admin_updates (section) where seen_at is null;
+update admin_updates set section = 'youtube' where section = 'automation' and url like '/admin/youtube%';   -- Install 39: YouTube and Facebook have their own pages in the sidebar
+update admin_updates set section = 'facebook' where url like '/admin/automation/facebook%';

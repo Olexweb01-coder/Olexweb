@@ -15,24 +15,33 @@ export default async function AppLayout({ children }) {
     (select count(*) from app_access where status = 'waiting')::int as downloads`).catch(() => one(`select (select count(*) from testimonials where status = 'waiting')::int as waiting, (select count(*) from leads where status = 'new')::int as leads, 0 as downloads`))
   const chats = owner ? (await q('select id, title, updated_at from assistant_chats order by updated_at desc limit 60')).rows.map((x) => ({ id: x.id, title: x.title })) : []
   // Sections, filtered by what this person may open (each page checks again on the server)
+  // Install 39: the sections, grouped (each group opens to show its pages); filtered by what this person may open
+  const G = (id, label, ic, items) => { const list = items.filter(Boolean); return list.length ? { group: id, label, ic, items: list } : null }
   const nav = [
     ['/admin/overview', 'home', 'Overview'],
-    owner && ['/admin/assistant', 'assistant', 'Olex Assistant'],
-    owner && ['/admin/memory', 'memory', 'Memory'],
-    ['/admin/blog', 'blog', 'Olex Blog'],
-    owner && ['/admin/automation', 'youtube', 'Automation', 0, ['/admin/youtube']],
-    owner && ['/admin/meetings', 'video', 'Meetings'],
-    owner && ['/admin/mail', 'mail', 'Mail'],
-    owner && ['/admin/sales', 'sales', 'Sales'],
-    owner && ['/admin/pages', 'link', 'Pages & links'],
-    owner && ['/admin/directory', 'link', 'Directory'],
-    ['/admin/projects', 'work', 'Projects'],
-    owner && ['/admin/downloads', 'download', 'Downloads', c.downloads],
+    G('ai', 'Olex AI', 'assistant', [owner && ['/admin/assistant', 'assistant', 'Olex Assistant'], owner && ['/admin/memory', 'memory', 'Memory']]),
+    G('content', 'Content & automation', 'youtube', [
+      owner && ['/admin/automation', 'today', 'Automation today', 0, [], ['/admin/automation/facebook']],
+      owner && ['/admin/youtube', 'youtube', 'YouTube'],
+      owner && ['/admin/automation/facebook', 'facebook', 'Facebook'],
+      ['/admin/blog', 'blog', 'Blog'],
+      owner && ['/admin/directory', 'grid', 'Directory'],
+    ]),
+    G('sales', 'Clients & sales', 'sales', [
+      owner && ['/admin/sales', 'sales', 'Sales'],
+      owner && ['/admin/leads', 'leads', 'Leads', c.leads],
+      owner && ['/admin/mail', 'mail', 'Mail'],
+      owner && ['/admin/meetings', 'video', 'Meetings'],
+      ['/admin/reviews', 'reviews', 'Reviews', c.waiting],
+      owner && ['/admin/people', 'person', 'People'],
+    ]),
+    G('site', 'Website & work', 'work', [
+      owner && ['/admin/pages', 'link', 'Pages & links'],
+      ['/admin/projects', 'work', 'Projects'],
+      can(u, 'ventures') && ['/admin/ventures', 'ventures', 'Ventures'],
+      owner && ['/admin/downloads', 'download', 'Downloads', c.downloads],
+    ]),
     owner && process.env.US_APP_URL && ['/admin/love', 'heart', 'Our Space'],
-    ['/admin/reviews', 'reviews', 'Reviews', c.waiting],
-    owner && ['/admin/leads', 'leads', 'Leads', c.leads],
-    can(u, 'ventures') && ['/admin/ventures', 'ventures', 'Ventures'],
-    owner && ['/admin/people', 'person', 'People'],
     owner && ['/admin/bin', 'bin', 'Bin'],
     ['/admin/more', 'gear', 'Settings'],
   ].filter(Boolean)

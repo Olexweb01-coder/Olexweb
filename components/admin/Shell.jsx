@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 import { Icon } from './icons'
+import { sectionOf } from '@/lib/admin/sections'
 import { Toast, toast } from './ui'
 import Freshness, { RefreshButton } from './Freshness'
 
@@ -33,10 +34,10 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
   // Install 38: red numbers where something needs you, red dots where something is new, and the total on the app icon
   const [att, setAtt] = useState(att0)
   useEffect(() => { setAtt(att0) }, [att0])
-  const keyOf = (href) => (/^\/admin\/([a-z0-9-]+)/.exec(href) || [])[1] || 'overview'
+  const keyOf = sectionOf
   useEffect(() => {                                                     // opening a section clears its dot
     if (!owner) return
-    const k = path === '/admin' ? 'overview' : keyOf(path.replace('/admin/youtube', '/admin/automation'))
+    const k = keyOf(path)
     if (!att || !att.sections[k] || !att.sections[k].fresh) return
     fetch('/admin/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ section: k }) }).then((r) => r.json()).then((j) => { if (j && j.sections) setAtt(j) }).catch(() => {})
   }, [path, owner]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,7 +51,15 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
     try { att.total > 0 ? navigator.setAppBadge(att.total) : navigator.clearAppBadge() } catch {}
   }, [att])
   const isChat = owner && path === '/admin', openChat = isChat ? Number(params.get('c')) || null : null
-  const here = (href, also = []) => [href, ...also].some((h) => path === h || path.startsWith(h + '/'))
+  const here = (href, also = [], not = []) => !not.some((h) => path === h || path.startsWith(h + '/')) && [href, ...also].some((h) => path === h || path.startsWith(h + '/'))
+  // Install 39: the sidebar in groups; the group you're in opens by itself, and the others remember how you left them
+  const groupOf = (g) => g.items.some(([href, , , , also, not]) => here(href, also, not))
+  const [opened, setOpened] = useState(() => Object.fromEntries(nav.filter((x) => x && x.group).map((g) => [g.group, groupOf(g)])))
+  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem('olex_groups') || '{}'); setOpened((o) => { const n = { ...o }; for (const g of nav) if (g && g.group) n[g.group] = groupOf(g) || !!saved[g.group]; return n }) } catch {} }, [path]) // eslint-disable-line react-hooks/exhaustive-deps
+  function flipGroup(id) { setOpened((o) => { const n = { ...o, [id]: !o[id] }; try { localStorage.setItem('olex_groups', JSON.stringify(n)) } catch {} return n }) }
+  const badge = (need, fresh) => (need > 0 ? <span className="count need" title="Needs you">{need}</span> : fresh > 0 ? <span className="dot-new" title={fresh + ' new'} aria-label={fresh + ' new'} /> : null)
+  const navLink = ([href, ic, label, count, also, not], sub) => { const a = (att && att.sections[keyOf(href)]) || { need: 0, fresh: 0 }, need = Math.max(count || 0, a.need)
+    return <Link key={href} href={href} className={'nav-a' + (sub ? ' sub' : '')} aria-current={here(href, also, not) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{badge(need, a.fresh)}</Link> }
   function toggle() {
     if (window.matchMedia('(max-width: 900px)').matches) { setDrawer((d) => !d); return }
     setClosed((c) => { setCookie('olex_side', c ? 'open' : 'closed'); return !c })
@@ -73,8 +82,16 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
           </div>
           {owner ? <Link href="/admin" className={'newchat' + (isChat && !openChat ? ' on' : '')}>{Icon.compose}New chat</Link> : null}
           <nav className="side-nav" aria-label="Sections">
-            {nav.map(([href, ic, label, count, also]) => { const a = (att && att.sections[keyOf(href)]) || { need: 0, fresh: 0 }, need = Math.max(count || 0, a.need)
-              return <Link key={href} href={href} className="nav-a" aria-current={here(href, also) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{need > 0 ? <span className="count need" title="Needs you">{need}</span> : a.fresh > 0 ? <span className="dot-new" title={a.fresh + ' new'} aria-label={a.fresh + ' new'} /> : null}</Link> })}
+            {nav.map((x) => {
+              if (!x.group) return navLink(x)
+              if (closed) return x.items.map((it) => navLink(it))           // a narrow sidebar shows every page as an icon
+              const sum = x.items.reduce((t, [href, , , count]) => { const a = (att && att.sections[keyOf(href)]) || { need: 0, fresh: 0 }; return { need: t.need + Math.max(count || 0, a.need), fresh: t.fresh + a.fresh } }, { need: 0, fresh: 0 })
+              const on = !!opened[x.group]
+              return <div key={x.group} className={'nav-group' + (on ? ' open' : '')}>
+                <button type="button" className="nav-a nav-g" aria-expanded={on} onClick={() => flipGroup(x.group)}>{Icon[x.ic]}<span>{x.label}</span>{on ? null : badge(sum.need, sum.fresh)}<i className="chev">{Icon.chev}</i></button>
+                {on ? <div className="nav-sub">{x.items.map((it) => navLink(it, true))}</div> : null}
+              </div>
+            })}
           </nav>
           {owner ? <div className="side-chats">
             <p className="side-label">Chats</p>
