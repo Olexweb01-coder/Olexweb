@@ -4,6 +4,7 @@ import { adminVersion } from '@/lib/admin/version'
 import Shell from '@/components/admin/Shell'
 import { requireUser, ownerOnly, can } from '@/lib/admin/auth'
 import { one, q } from '@/lib/admin/db'
+import { attention } from '@/lib/admin/attention'
 export const dynamic = 'force-dynamic'
 const STYLES = ['glass', 'clay', 'neu']
 export default async function AppLayout({ children }) {
@@ -37,5 +38,6 @@ export default async function AppLayout({ children }) {
   ].filter(Boolean)
   const jar = cookies(), style = STYLES.includes(jar.get('olex_style')?.value) ? jar.get('olex_style').value : 'glass'
   const mode = ['light', 'dark', 'system'].includes(jar.get('olex_mode')?.value) ? jar.get('olex_mode').value : 'dark'
-  return <Shell name={u.name} owner={owner} nav={nav} chats={chats} style={style} mode={mode} collapsed={jar.get('olex_side')?.value === 'closed'} version={adminVersion()}>{children}</Shell>
+  const att = owner ? await attention().catch(() => null) : null   // Install 38: red dots and the app-icon number
+  return <Shell att={att} name={u.name} owner={owner} nav={nav} chats={chats} style={style} mode={mode} collapsed={jar.get('olex_side')?.value === 'closed'} version={adminVersion()}>{children}</Shell>
 }

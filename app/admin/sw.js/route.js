@@ -6,6 +6,7 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
 self.addEventListener('push', (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {} } catch { d = { body: e.data ? e.data.text() : '' } }
   const url = typeof d.url === 'string' && /^\\/admin(\\/|$|\\?)/.test(d.url) ? d.url : '/admin'
+  if (typeof d.badge === 'number' && self.navigator && self.navigator.setAppBadge) { try { d.badge > 0 ? self.navigator.setAppBadge(d.badge) : self.navigator.clearAppBadge() } catch (x) {} }   // the number on the app icon
   e.waitUntil(self.registration.showNotification(d.title || 'Olex AI', { body: String(d.body || '').slice(0, 180), icon: '/icon.png', badge: '/icon.png', tag: d.tag || 'olex', renotify: true, data: { url } }))
 })
 self.addEventListener('notificationclick', (e) => {

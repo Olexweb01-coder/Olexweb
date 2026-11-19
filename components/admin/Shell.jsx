@@ -10,7 +10,7 @@ import Freshness, { RefreshButton } from './Freshness'
 
 const setCookie = (k, v) => { document.cookie = `${k}=${v}; path=/admin; max-age=31536000; samesite=strict${location.protocol === 'https:' ? '; secure' : ''}` }
 
-export default function Shell({ name, owner, nav, chats = [], style = 'glass', mode = 'dark', collapsed = false, version, children }) {
+export default function Shell({ name, owner, nav, chats = [], style = 'glass', mode = 'dark', collapsed = false, version, att: att0 = null, children }) {
   const path = usePathname(), params = useSearchParams(), router = useRouter()
   const [closed, setClosed] = useState(collapsed), [drawer, setDrawer] = useState(false), [list, setList] = useState(chats)
   useEffect(() => { setList(chats) }, [chats])
@@ -30,6 +30,25 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
     setCookie('olex_mode', next); setMd(next); const el = document.querySelector('.olex'); if (el) el.dataset.mode = next
     setTimeout(() => window.dispatchEvent(new Event('olex-look')), 0)
   }
+  // Install 38: red numbers where something needs you, red dots where something is new, and the total on the app icon
+  const [att, setAtt] = useState(att0)
+  useEffect(() => { setAtt(att0) }, [att0])
+  const keyOf = (href) => (/^\/admin\/([a-z0-9-]+)/.exec(href) || [])[1] || 'overview'
+  useEffect(() => {                                                     // opening a section clears its dot
+    if (!owner) return
+    const k = path === '/admin' ? 'overview' : keyOf(path.replace('/admin/youtube', '/admin/automation'))
+    if (!att || !att.sections[k] || !att.sections[k].fresh) return
+    fetch('/admin/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ section: k }) }).then((r) => r.json()).then((j) => { if (j && j.sections) setAtt(j) }).catch(() => {})
+  }, [path, owner]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {                                                     // and stays fresh while the app is open
+    if (!owner) return
+    const t = setInterval(() => { if (document.visibilityState === 'visible') fetch('/admin/api/updates', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { if (j && j.sections) setAtt(j) }).catch(() => {}) }, 120000)
+    return () => clearInterval(t)
+  }, [owner])
+  useEffect(() => {                                                     // the number on the app icon (home screen / dock)
+    if (!att || typeof navigator === 'undefined' || !navigator.setAppBadge) return
+    try { att.total > 0 ? navigator.setAppBadge(att.total) : navigator.clearAppBadge() } catch {}
+  }, [att])
   const isChat = owner && path === '/admin', openChat = isChat ? Number(params.get('c')) || null : null
   const here = (href, also = []) => [href, ...also].some((h) => path === h || path.startsWith(h + '/'))
   function toggle() {
@@ -54,9 +73,8 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
           </div>
           {owner ? <Link href="/admin" className={'newchat' + (isChat && !openChat ? ' on' : '')}>{Icon.compose}New chat</Link> : null}
           <nav className="side-nav" aria-label="Sections">
-            {nav.map(([href, ic, label, count, also]) => (
-              <Link key={href} href={href} className="nav-a" aria-current={here(href, also) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{count > 0 ? <span className="count">{count}</span> : null}</Link>
-            ))}
+            {nav.map(([href, ic, label, count, also]) => { const a = (att && att.sections[keyOf(href)]) || { need: 0, fresh: 0 }, need = Math.max(count || 0, a.need)
+              return <Link key={href} href={href} className="nav-a" aria-current={here(href, also) ? 'page' : undefined}>{Icon[ic]}<span>{label}</span>{need > 0 ? <span className="count need" title="Needs you">{need}</span> : a.fresh > 0 ? <span className="dot-new" title={a.fresh + ' new'} aria-label={a.fresh + ' new'} /> : null}</Link> })}
           </nav>
           {owner ? <div className="side-chats">
             <p className="side-label">Chats</p>
@@ -75,7 +93,7 @@ export default function Shell({ name, owner, nav, chats = [], style = 'glass', m
         <div className="scrim" onClick={() => setDrawer(false)} aria-hidden="true" />
         <div className="stage">
           <header className="topbar">
-            <button type="button" className="icon-btn opener" onClick={toggle} aria-label="Open the sidebar">{Icon.menu}</button>
+            <button type="button" className="icon-btn opener" onClick={toggle} aria-label="Open the sidebar" style={{ position: 'relative' }}>{Icon.menu}{att && att.total > 0 ? <span className="menu-badge">{att.total > 99 ? '99+' : att.total}</span> : null}</button>
             <span className="topbar-t">{isChat ? 'Olex AI' : ''}</span>
             <span className="topbar-end">
               {owner ? <Link href="/admin" className="icon-btn" aria-label="New chat">{Icon.compose}</Link> : null}

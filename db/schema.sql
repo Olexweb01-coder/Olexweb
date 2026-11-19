@@ -722,3 +722,6 @@ create table if not exists blob_files (key text primary key, url text not null, 
 -- ---------- Install 32: every Short is a real story (one main video a day); the websites Olex AI finds become the Directory's New tools ----------
 alter table dir_settings add column if not exists tools_per_day int not null default 8;     -- New tools a day (0 to 10), at their own times, beside the day's other posts
 alter table posts add column if not exists fix_tries int not null default 0;   -- Install 37: how many times Olex AI fixed a failing article by itself
+-- Install 38: what's new for you, section by section (red dots in the sidebar and the number on the app icon)
+create table if not exists admin_updates (id serial primary key, section text not null, body text not null, url text, at timestamptz not null default now(), seen_at timestamptz);
+create index if not exists admin_updates_unseen on admin_updates (section) where seen_at is null;

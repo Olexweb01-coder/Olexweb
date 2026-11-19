@@ -390,3 +390,10 @@
 .md-img img{max-width:min(100%,560px);border-radius:16px;display:block;box-shadow:0 10px 30px rgba(0,0,0,.25)}
 .md-img figcaption{display:flex;gap:14px;font-size:13px}
 .md-img a{color:var(--green);font-weight:700;text-decoration:none}
+
+/* Install 38: needs you (red number) and new (red dot) */
+.olex .nav-a .count.need{background:#ff3b30;color:#fff}
+.olex .nav-a .dot-new{margin-left:auto;width:9px;height:9px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 2px rgba(255,59,48,.25);flex:none}
+.olex.side-closed .nav-a .count,.olex.side-closed .nav-a .dot-new{position:absolute;top:4px;right:6px;margin:0}
+.olex .nav-a{position:relative}
+.olex .menu-badge{position:absolute;top:-3px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ff3b30;color:#fff;font:800 10.5px/17px system-ui,sans-serif;text-align:center}
