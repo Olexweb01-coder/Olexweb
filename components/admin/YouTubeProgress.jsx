@@ -32,7 +32,7 @@ export default function YouTubeProgress({ data }) {
       <div className="yp-acts">
         {x.action === 'retry' ? <button className="btn btn-green" disabled={!!busy} onClick={() => retry(x.id)}>{busy === 'r' + x.id ? 'Sending…' : 'Try again'}</button> : null}
         {x.action === 'review' ? <a className="btn btn-green" href="/admin/youtube?view=scripts">Review the script</a> : null}
-        {x.action === 'ideas' ? <a className="btn btn-green" href="/admin/youtube?view=ideas">Go to Ideas</a> : null}
+        {x.action === 'ideas' ? <a className="btn btn-green" href="/admin/directory">Go to the Directory</a> : null}
         {x.action === 'look' ? <a className="btn btn-line" href="/admin/youtube?view=scripts">Open Scripts</a> : null}
       </div></section>) : <p className="yp-empty">Nothing needs you right now. 🎉</p>) : null}
 

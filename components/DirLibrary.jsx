@@ -22,6 +22,10 @@ export default function DirLibrary({ entries: all, kind: fixed = null, heading =
   const entries = useMemo(() => (topic === 'all' ? base : base.filter((e) => topicOf(e) === topic)), [base, topic])
   const pickTopic = (k) => { setTopic(k); try { const u = new URL(location.href); if (k === 'all') u.searchParams.delete('topic'); else u.searchParams.set('topic', k); history.replaceState(null, '', u) } catch {} }
   const [q, setQ] = useState(''), [cat, setCat] = useState('All'), [price, setPrice] = useState('all')
+  // Install 32: the day's new tools first (or the newest ones, early in the day)
+  const tools = useMemo(() => all.filter((e) => (e.kind || 'tool') === 'tool').sort((a, b) => String(b.published_at || '').localeCompare(String(a.published_at || ''))), [all])
+  const todays = tools.filter((e) => e.published_at && new Date(new Date(e.published_at).getTime() + 3600e3).toISOString().slice(0, 10) === today())
+  const freshToday = todays.length >= 3, freshTools = (freshToday ? todays : tools).slice(0, 10)
   const cats = useMemo(() => ['All', ...[...new Set(entries.map((e) => e.category).filter(Boolean))].slice(0, 14)], [entries])
   const list = useMemo(() => { const n = q.trim().toLowerCase(); return entries.filter((e) => (cat === 'All' || e.category === cat) && (price === 'all' || (price === 'free' ? ['free', 'freemium'].includes(e.price) : e.price === price))
     && (!n || [e.name, e.one, e.category, ...(e.tags || [])].join(' ').toLowerCase().includes(n))) }, [entries, q, cat, price])
@@ -31,7 +35,7 @@ export default function DirLibrary({ entries: all, kind: fixed = null, heading =
       <section className="dl-hero"><span className="dx-eb">The Olexweb Directory</span>
         {heading ? <h1 className="dx-h1 dl-h1k">{heading[0]}</h1>
           : <h1 className="dx-h1"><span className="dx-ln"><span>Useful tech,</span></span><span className="dx-ln"><span style={{ animationDelay: '.1s' }}>explained <span className="dl-hl">clearly.</span></span></span></h1>}
-        <p className="dx-lede">{heading ? heading[1] : 'New tools before everyone else, the big tech stories (space, AI, phones, tech in sport), tech history, how-tos and scam alerts. New posts all day, every fact checked against its source.'}</p>
+        <p className="dx-lede">{heading ? heading[1] : 'New tools before everyone else, the big tech stories (space, AI, phones, tech in sport), tech history, how-tos and scam alerts. New tools every day and new posts all day, every fact checked.'}</p>
         <nav className="dl-kinds" aria-label="What to show">{KTABS.map(([h, l, k]) => <a key={h} href={h} aria-current={kind === k ? 'page' : undefined}>{l}</a>)}</nav>
         {topics.length > 1 ? <div className="dl-topics" role="group" aria-label="Topics"><button className={topic === 'all' ? 'on' : ''} aria-pressed={topic === 'all'} onClick={() => pickTopic('all')}>All</button>{topics.map(([k, l]) => <button key={k} className={topic === k ? 'on' : ''} aria-pressed={topic === k} onClick={() => pickTopic(k)}>{l}</button>)}</div> : null}
         <div className="dl-search"><svg className="dx-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={kind === 'alert' ? 'Search alerts: “WhatsApp”, “bank”, “job offer”…' : kind ? 'Search: “WhatsApp”, “Android”, “AI”…' : 'Search: “remove background”, “WhatsApp”, “scam”…'} aria-label="Search the directory" /></div>
@@ -42,17 +46,26 @@ export default function DirLibrary({ entries: all, kind: fixed = null, heading =
       <style>{`.dl-own{display:flex;gap:16px;align-items:center;margin:4px 0 18px;padding:18px 20px;border-radius:22px;text-decoration:none;color:#f2efe9;background:#0a0b0a;border:1px solid rgba(143,227,106,.4)}
 .dl-own-ic{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:14px;background:#8fe36a;color:#0e1a0b;font-size:22px}.dl-own small{display:block;color:#8fe36a;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11.5px}
 .dl-own b{display:block;font-size:19px;margin:2px 0}.dl-own span span{color:#c9c6bf;font-size:14.5px}.dl-own-go{margin-left:auto;font-size:22px;color:#8fe36a}`}</style>
+      {!fixed && topic === 'all' && !q && freshTools.length ? <section className="dl-fresh" aria-label={freshToday ? 'New tools today' : 'Newest tools'}>
+        <h2>{freshToday ? <>New tools today <span>{freshTools.length}</span></> : 'Newest tools'}</h2>
+        <div className="dl-frow">{freshTools.map((e) => <a key={e.slug} href={'/tools/' + e.slug} className="dl-fcard"><span className={'dx-badge dx-' + (e.price || 'unknown')}>{PRICE[e.price || 'unknown']}</span><b>{e.name}</b><p>{e.one}</p></a>)}</div>
+      </section> : null}
       <p className="dl-count">{list.length} {kind ? KNAME[kind].toLowerCase() + (list.length === 1 ? '' : 's') : list.length === 1 ? 'post' : 'posts'}</p>
       <div className="dl-grid">{list.map((e, i) => { const k = e.kind || 'tool', fresh = e.published_at && new Date(new Date(e.published_at).getTime() + 3600e3).toISOString().slice(0, 10) === today()
         return <a key={k + e.slug} href={'/' + KPATH[k] + '/' + e.slug} className="dx-card dl-card" style={{ animationDelay: Math.min(i, 12) * 0.04 + 's' }}>
         <span className="dl-top">{k === 'tool' ? <span className={'dx-badge dx-' + (e.price || 'unknown')}>{PRICE[e.price || 'unknown']}</span> : <span className={'dl-kind dl-' + k}>{KNAME[k]}</span>}{fresh ? <span className="dl-new">New today</span> : null}</span>
-        <b>{e.name}</b><p>{e.one}</p>{k === 'tool' && e.category ? <span className="dl-cat">{e.category}</span> : <span className="dl-cat">{(TOPICS.find((t) => t[0] === topicOf(e)) || [])[1]}{e.source ? ' · ' + e.source : ''}</span>}</a> })}</div>
+        <b>{e.name}</b><p>{e.one}</p>{k === 'tool' && e.category ? <span className="dl-cat">{e.category}</span> : <span className="dl-cat">{(TOPICS.find((t) => t[0] === topicOf(e)) || [])[1]}</span>}</a> })}</div>
       {!list.length ? <p className="dl-empty">{entries.length ? 'Nothing matches that yet. Try a simpler word.' : 'The first tools are being written and checked. Come back soon.'}</p> : null}
       <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span></footer>
     </div>
   </div>)
 }
 const CSS = `
+.dl-fresh{margin:6px 0 22px}.dl-fresh h2{font:800 22px/1.1 var(--font-mona),system-ui;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.dl-fresh h2 span{font-size:13px;padding:3px 10px;border-radius:999px;background:var(--g);color:#0e1a0b}
+.dl-frow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}.dl-frow::-webkit-scrollbar{height:6px}
+.dl-fcard{flex:0 0 240px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:18px;background:#fff;color:var(--ink);text-decoration:none}
+.dl-fcard b{font-size:17px}.dl-fcard p{margin:0;font-size:14px;line-height:1.45;color:var(--dim);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.dl-fcard .dx-badge{width:fit-content}
 .dl-topics{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:2px;scrollbar-width:none}.dl-topics::-webkit-scrollbar{display:none}
 .dl-topics button{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font:800 13.5px var(--font-mona),system-ui;cursor:pointer}
 .dl-topics button.on{background:var(--g);border-color:var(--g);color:#0e1a0b}

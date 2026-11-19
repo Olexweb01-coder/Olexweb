@@ -57,7 +57,7 @@ const calls = (await (await fetch(G + '/_indexnow')).json()).calls || []
 check(calls.length > before && calls.at(-1).urlList.includes('https://olexweb.com/alerts/' + alert.slug), 'search engines are told at once (IndexNow)')
 j = await run(); check(!(j.directory && j.directory.published), 'one per time: the next run doesn’t post again')
 h = await page('/alerts/' + alert.slug)
-check(h.s === 200 && h.h.includes('Safety alert') && h.h.includes('Protect yourself') && h.h.includes('based on reporting by') && h.h.includes('SafeNet'), 'olexweb.com/alerts/…: the alert, how to protect yourself, the source credited')
+check(h.s === 200 && h.h.includes('Safety alert') && h.h.includes('Protect yourself') && !h.h.includes('based on reporting by') && !h.h.includes('SafeNet'), 'olexweb.com/alerts/…: the alert and how to protect yourself (Install 32: the source is never named)')
 check(h.h.includes('NewsArticle') && h.h.includes('BreadcrumbList') && h.h.includes('wa.me/?text='), 'search-friendly (NewsArticle) and easy to share (WhatsApp first)')
 const og = await fetch(APP + '/alerts/' + alert.slug + '/opengraph-image'); check(og.status === 200 && /image\/png/.test(og.headers.get('content-type')), 'its own share picture for WhatsApp, Facebook and X')
 

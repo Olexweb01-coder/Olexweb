@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
 import { requireUser, ownerOnly } from '@/lib/admin/auth'
 import { youtubeData } from '@/lib/site/youtube'
-import { ideasData } from '@/lib/site/ideas'
 import { scriptsData } from '@/lib/site/scripts'
 import YouTube from '@/components/admin/YouTube'
 import AutomationHead from '@/components/admin/AutomationTabs'
-import YouTubeIdeas, { YouTubeTabs } from '@/components/admin/YouTubeIdeas'
+import { YouTubeTabs } from '@/components/admin/YouTubeIdeas'
+import YouTubeStorylines from '@/components/admin/YouTubeStorylines'
 import YouTubeScripts from '@/components/admin/YouTubeScripts'
 import YouTubeVideos from '@/components/admin/YouTubeVideos'
 import YouTubeProgress from '@/components/admin/YouTubeProgress'
@@ -32,8 +32,9 @@ export default async function YouTubePage({ searchParams }) {
     return (<><AutomationHead current="youtube" /><YouTubeTabs current="scripts" /><YouTubeScripts data={JSON.parse(JSON.stringify(data))} /></>)
   }
   if (sp.view === 'ideas') {
-    const data = await ideasData(typeof sp.status === 'string' ? sp.status : 'new')
-    return (<><AutomationHead current="youtube" /><YouTubeTabs current="ideas" /><YouTubeIdeas data={JSON.parse(JSON.stringify(data))} /></>)
+    const { planData } = await import('@/lib/site/plan')                 // Install 32: Storylines (the website finds go to the Directory)
+    const data = await planData()
+    return (<><AutomationHead current="youtube" /><YouTubeTabs current="ideas" /><YouTubeStorylines data={JSON.parse(JSON.stringify(data))} /></>)
   }
   const days = [7, 28, 90].includes(Number(sp.days)) ? Number(sp.days) : 28
   const data = await youtubeData(days)

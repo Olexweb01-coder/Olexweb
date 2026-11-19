@@ -10,7 +10,7 @@ export async function GET() {
   const body = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
 <title>Olexweb: tools, tech updates, how-tos and safety alerts</title><link>${SITE}/tools</link>
-<description>Useful websites and AI tools, tech updates that matter, how-tos and scam alerts. Every fact checked against its source.</description>
+<description>Useful websites and AI tools, tech updates that matter, how-tos and scam alerts. New every day, every fact checked.</description>
 <language>en</language><atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>
 ${items.map((e) => { const url = `${SITE}/${KP[e.kind] || 'tools'}/${e.slug}`
     return `<item><title>${x(e.name)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><category>${KN[e.kind] || 'Tool'}</category>${e.published_at ? `<pubDate>${new Date(e.published_at).toUTCString()}</pubDate>` : ''}<description>${x(e.one)}</description></item>` }).join('\n')}

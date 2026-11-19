@@ -718,3 +718,6 @@ update meta_settings set video_days = '1,3,5', per_day = 1, v29 = true where not
 alter table portfolio_shots add column if not exists tries int not null default 0;   -- Install 28 fix: failed screenshots start again by themselves (up to 3 times)
 -- Install 28 fix: files kept in Vercel Blob (when the bucket refuses, or pictures when Blob is connected): where each one lives
 create table if not exists blob_files (key text primary key, url text not null, created_at timestamptz not null default now());
+
+-- ---------- Install 32: every Short is a real story (one main video a day); the websites Olex AI finds become the Directory's New tools ----------
+alter table dir_settings add column if not exists tools_per_day int not null default 8;     -- New tools a day (0 to 10), at their own times, beside the day's other posts

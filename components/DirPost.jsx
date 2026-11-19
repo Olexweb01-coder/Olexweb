@@ -31,10 +31,10 @@ export default function DirPost({ e }) {
           <section className="de-sec"><span className="dx-eb">{POINTS[e.kind]}</span><ul className="dp-points">{(c.points || []).map((x, i) => <li key={i}>{x}</li>)}</ul></section>
           {c.whyItMatters ? <section className="de-sec de-take"><span className="dx-eb">Why it matters</span><p>{c.whyItMatters}</p></section> : null}
           <section className="de-sec" id="do"><span className="dx-eb">{TODO[e.kind]}</span><ol className="de-steps">{(c.whatToDo || []).map((x, i) => <li key={i}><span>{String(i + 1).padStart(2, '0')}</span>{x}</li>)}</ol></section>
-          <section className="de-sec"><span className="dx-eb">The facts</span><h2>In the source’s own words</h2>
-            <ul className="de-facts">{(c.facts || []).map((f, i) => <li key={i}><b>{f.claim}</b><span>“{f.quote}”, {e.source}</span></li>)}</ul></section>
+          {(c.facts || []).length ? <section className="de-sec"><span className="dx-eb">The facts</span><h2>What we know</h2>
+            <ul className="de-facts">{c.facts.map((f, i) => <li key={i}><b>{f.claim}</b></li>)}</ul></section> : null}
           {(c.faq || []).length ? <section className="de-sec"><span className="dx-eb">Questions</span><div className="de-faq">{c.faq.map((f, i) => <details key={i} open={i === 0}><summary>{f.q}</summary><p>{f.a}</p></details>)}</div></section> : null}
-          <p className="de-note">Written by Olexweb in our own words, based on reporting by <a href={e.url} target="_blank" rel="noopener nofollow">{e.source}</a>{when ? ' (' + when + ')' : ''}. Every fact is quoted from that source. Things change: check the source before you rely on details.</p>
+          <p className="de-note">Written by Olexweb{when ? ' on ' + when : ''}. Every fact is checked before it’s published. Things change, so details may have moved on since.</p>
         </main>
         <aside className="de-side"><div className="de-offer"><span className="dx-eb">Free from Olaitan</span><b>{e.offer.title}</b><p>{e.offer.line}</p><a className="dx-btn dx-g" href={e.offer.href + (e.offer.href.includes('?') ? '&' : '?') + 'from=' + PATH[e.kind] + '-' + e.slug} onClick={() => beacon(e.slug, true)}>{e.offer.kind === 'link' ? 'Join on WhatsApp' : 'Get it free'}</a></div></aside>
       </div>

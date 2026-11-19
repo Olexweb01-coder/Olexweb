@@ -17,7 +17,7 @@ export default function YouTubeSimple({ data, extra }) {
   const since = Date.now() - d.days * 86400e3
   const best = (d.videos || []).filter((v) => v.published_at && new Date(v.published_at).getTime() > since && v.views > 0).sort((x, y) => y.views - x.views).slice(0, 3)
   const decide = [C.scripts ? [`${plural(C.scripts, 'script')} to check`, 'What he’ll say, before it’s made', '/admin/youtube?view=scripts'] : null,
-    C.ideas ? [`${plural(C.ideas, 'new website')} found`, X.autopilot ? 'Optional: Autopilot also picks the best ones' : 'Pick the ones worth a video', '/admin/youtube?view=ideas'] : null].filter(Boolean)
+    null].filter(Boolean)
   return (<div className="sm">
     <section className={'sm-hero ' + (trend[0] === 'down' ? 'sm-low' : 'sm-ok')} aria-label="Your channel">
       <div className="sm-hrow">
@@ -61,7 +61,7 @@ export default function YouTubeSimple({ data, extra }) {
       <section className="sm-card" aria-label="Everything else">
         <h2>Everything else</h2>
         {[['All videos', 'Every finished and posted video, with its numbers', '/admin/youtube?view=videos'], ['Scripts', 'What he says in each video', '/admin/youtube?view=scripts'],
-          ['Ideas', 'The websites found for videos', '/admin/youtube?view=ideas'], ['The factory', 'How the video being made is getting on', '/admin/youtube?view=progress']]
+          ['Storylines', 'The stories coming up, day by day', '/admin/youtube?view=ideas'], ['The factory', 'How the video being made is getting on', '/admin/youtube?view=progress']]
           .map(([title, sub, href]) => <a key={href} className="ys-link" href={href}><span><b>{title}</b>{sub}</span><em aria-hidden="true">→</em></a>)}
       </section>
 

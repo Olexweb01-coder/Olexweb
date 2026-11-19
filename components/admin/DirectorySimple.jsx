@@ -59,10 +59,19 @@ export default function DirectorySimple({ data }) {
           : <p className="sm-note">No times set: it isn’t posting.</p>}
       </section>
 
+      <section className="sm-card" aria-label="New tools today">
+        <h2>New tools today</h2>
+        {(D.tools || []).length ? D.tools.map((t) => <div key={t.time} className="sm-item"><span className="sm-time">{t.time}</span>
+          <div className="sm-what">{t.state === 'live' ? <><b><a href={t.path} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{t.name}</a></b><span className="sm-tag sm-done">✓ live</span></>
+            : t.state === 'missed' ? <><b>Nothing went out</b><span className="sm-tag sm-none">No tool was ready in time</span></>
+            : <><b>A new tool</b><span className="sm-tag sm-soon">⏰ Coming up</span></>}</div></div>)
+          : <p className="sm-note">New tools are off. Choose how many a day on the right.</p>}
+      </section>
+
       <section className="sm-card" aria-label="Ready">
         <h2>Ready to go out</h2>
         <div className="sm-chips">{['tool', 'story', 'update', 'guide', 'alert'].map((k) => <div key={k} className="sm-chip"><b>{D.ready[k] || 0}</b>{KS[k].toLowerCase()}</div>)}</div>
-        <p className="sm-note">{readyAll ? 'Written and checked, waiting for their time. Every fact is quoted from its source.' : 'The next ones are being written and checked.'}</p>
+        <p className="sm-note">{readyAll ? 'Written and checked, waiting for their time. Every fact is checked.' : 'The next ones are being written and checked.'}</p>
         <button className="sm-btn sm-line" disabled={!!busy || !readyAll} onClick={() => call('now', { action: 'publish-now' }, (j) => `Live now: ${j.name}`)}>{busy === 'now' ? 'Publishing…' : 'Publish one now'}</button>
       </section>
 
@@ -78,6 +87,13 @@ export default function DirectorySimple({ data }) {
         <div className="ys-per" role="group" aria-label="Posts a day">{[5, 8, 12].map((n) => <button key={n} aria-pressed={S.perDay === n} disabled={!!busy || S.perDay === n}
           onClick={() => call('per' + n, { action: 'simple-settings', perDay: n, autoPublish: true }, `${n} a day.`)}><b>{n}</b>a day</button>)}</div>
         <p className="sm-note">At {S.slots.join(', ')} (Lagos), so there’s always something new during the day.</p>
+      </section>
+
+      <section className="sm-card" aria-label="New tools a day">
+        <h2>New tools a day</h2>
+        <div className="ys-per" role="group" aria-label="New tools a day">{[[0, 'Off'], [5, '5'], [8, '8'], [10, '10']].map(([n, l]) => <button key={n} aria-pressed={(S.toolsPerDay || 0) === n} disabled={!!busy || (S.toolsPerDay || 0) === n}
+          onClick={() => call('tpd' + n, { action: 'simple-settings', toolsPerDay: n, ...(n ? { kinds: [...new Set([...S.kinds, 'tool'])] } : {}) }, n ? `${n} new tools a day.` : 'New tools are off.')}><b>{l}</b>{n ? 'a day' : ''}</button>)}</div>
+        <p className="sm-note">The websites and AI tools Olex AI finds each day, each with its own page (what it does, if it’s free, how to start). They go out at their own times, between the other posts.</p>
       </section>
 
       <section className="sm-card" aria-label="What it posts">

@@ -18,7 +18,7 @@ export function YouTubeTabs({ current }) {
     <a href="/admin/youtube?view=videos" role="tab" aria-selected={current === 'videos'} aria-pressed={current === 'videos'} className="segl">Videos</a>
     <a href="/admin/youtube?view=progress" role="tab" aria-selected={current === 'progress'} aria-pressed={current === 'progress'} className="segl">Progress</a>
     <a href="/admin/youtube?view=scripts" role="tab" aria-selected={current === 'scripts'} aria-pressed={current === 'scripts'} className="segl">Scripts</a>
-    <a href="/admin/youtube?view=ideas" role="tab" aria-selected={current === 'ideas'} aria-pressed={current === 'ideas'} className="segl">Ideas</a>
+    <a href="/admin/youtube?view=ideas" role="tab" aria-selected={current === 'ideas'} aria-pressed={current === 'ideas'} className="segl">Storylines</a>
   </div>)
 }
 
@@ -51,7 +51,7 @@ export default function YouTubeIdeas({ data }) {
       <button className="btn btn-green" disabled={!!busy} onClick={find}>{busy === 'find' ? 'Searching…' : 'Find ideas now'}</button>
     </div>
     <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.55, ...dim }}>
-      Found on Show HN, Hacker News, GitHub and from Olex AI’s evergreen picks. Every site is opened live and judged on what its page actually says; anything unsafe or thin is turned down. Searched automatically once a day.
+      Every site is opened live and judged on what its page actually says; anything unsafe or thin is turned down. Searched automatically once a day.
       {d.run && d.run.last ? ` Last search ${when(rep && rep.at ? rep.at : d.run.last)}${rep && rep.loaded != null ? `: ${rep.found} found, ${rep.loaded} loaded, ${rep.saved} kept` : ''}${rep && rep.error ? ` (failed: ${rep.error})` : ''}.` : ''}
     </p>
     <JobProgress kind="ideas" title="Finding ideas" watch={busy === 'find'} onDone={() => router.refresh()} />
@@ -67,7 +67,7 @@ export default function YouTubeIdeas({ data }) {
             <h2 id={'idea' + it.id} style={{ margin: 0, fontFamily: 'var(--display)', fontWeight: 800, fontStretch: '88%', fontSize: 21, lineHeight: 1.15 }}>{it.name}</h2>
             <div style={{ fontSize: 13, marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', ...dim }}>
               <a href={it.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>{host} ↗</a>
-              {it.category ? <span className="pill res">{it.category}</span> : null}<span>{it.signal}</span>
+              {it.category ? <span className="pill res">{it.category}</span> : null}
             </div>
           </div>
         </div>

@@ -45,7 +45,7 @@ await db.query("update dir_entries set status = 'live', published_at = now() whe
 p = await page('/tools')
 check(p.h.includes('aria-label="Topics"') && ['All', 'Space', 'History', 'Security'].every((t) => p.h.includes('>' + t + '</button>')) && p.h.includes('Tech stories'), 'the Directory has topic filters (All, Space, History, Security…) and a Tech stories tab')
 check(!p.h.includes('>Gaming</button>'), 'a topic with nothing in it yet isn’t shown')
-check(p.h.includes('Space · SpaceNews') && p.h.includes('History · On this day'), 'each card says its topic and source')
+check(p.h.includes('>Space<') && p.h.includes('>History<') && !p.h.includes('SpaceNews') && !p.h.includes('On this day</span>'), 'each card says its topic (Install 32: never its source)')
 
 console.log('\n193. More a day, everywhere it should be')
 let r = await post('/admin/api/directory', { action: 'simple-settings', perDay: 12, autoPublish: true }); check(r.s === 200 && (await one('select per_day from dir_settings')).per_day === 12, 'up to 12 posts a day')

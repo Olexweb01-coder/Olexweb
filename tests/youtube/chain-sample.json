@@ -1,0 +1,19 @@
+{ "hook": "YOU WANT A CAR|THAT MOVES", "title": "You Build a Car Engine From Scratch",
+  "steps": [
+  { "line": "You want this car to move all by itself.", "ops": [ { "op": "add", "id": "car", "kind": "car" } ] },
+  { "line": "So you hire a man to push it.", "ops": [ { "op": "add", "id": "man", "kind": "person", "near": "car", "side": "left" }, { "op": "push", "id": "man", "target": "car" } ] },
+  { "line": "It moves! But after ten metres, he is completely exhausted.", "ops": [ { "op": "heat", "id": "man" }, { "op": "fail", "id": "man", "text": "TIRED" } ] },
+  { "line": "You need something that never gets tired. Fire!", "ops": [ { "op": "remove", "id": "man" }, { "op": "add", "id": "fire", "kind": "fire", "near": "car", "side": "right" } ] },
+  { "line": "You pour fuel on it. It burns brilliantly, and nothing moves at all.", "ops": [ { "op": "add", "id": "fuel", "kind": "can", "near": "fire", "side": "right" }, { "op": "flow", "from": "fuel", "to": "fire", "what": "fuel" }, { "op": "fail", "id": "fire", "text": "NO PUSH" } ] },
+  { "line": "So you trap the fire inside a strong metal cylinder.", "ops": [ { "op": "remove", "id": "fuel" }, { "op": "replace", "id": "fire", "kind": "cylinder", "label": "CYLINDER" } ] },
+  { "line": "Bang! The explosion shoots a piston up, hard.", "ops": [ { "op": "sparks", "id": "fire" }, { "op": "add", "id": "piston", "kind": "piston", "near": "fire", "side": "top", "label": "PISTON" }, { "op": "shake", "id": "fire" } ] },
+  { "line": "But it only pushes once, and wheels need to turn round and round.", "ops": [ { "op": "add", "id": "wheel", "kind": "wheel", "near": "fire", "side": "right" }, { "op": "fail", "id": "piston", "text": "ONLY UP" } ] },
+  { "line": "So you join the piston to a bent rod called a crankshaft.", "ops": [ { "op": "add", "id": "crank", "kind": "crankshaft", "near": "wheel", "side": "left", "label": "CRANKSHAFT" }, { "op": "connect", "from": "piston", "to": "crank", "kind": "rod" } ] },
+  { "line": "Now every bang turns it round and round.", "ops": [ { "op": "spin", "id": "crank" }, { "op": "connect", "from": "crank", "to": "wheel", "kind": "belt" }, { "op": "spin", "id": "wheel" }, { "op": "ok", "id": "wheel", "text": "IT SPINS" } ] },
+  { "line": "One cylinder shakes like crazy, so you add three more.", "ops": [ { "op": "shake", "id": "fire" }, { "op": "multiply", "id": "fire", "n": 3, "side": "back" } ] },
+  { "line": "Then it gets so hot it could melt.", "ops": [ { "op": "heat", "id": "fire" }, { "op": "smoke", "id": "fire" }, { "op": "fail", "id": "fire", "text": "TOO HOT" } ] },
+  { "line": "So you pump cold water all around it.", "ops": [ { "op": "add", "id": "rad", "kind": "radiator", "near": "fire", "side": "left", "label": "RADIATOR" }, { "op": "connect", "from": "rad", "to": "fire", "kind": "pipe" }, { "op": "flow", "from": "rad", "to": "fire", "what": "water" }, { "op": "cool", "id": "fire" } ] },
+  { "line": "You connect it to the car's wheels, and off it goes.", "ops": [ { "op": "connect", "from": "crank", "to": "car", "kind": "belt" }, { "op": "spin", "id": "car" }, { "op": "ok", "id": "car", "text": "IT DRIVES" } ] },
+  { "line": "Congratulations! You just built a car engine.", "ops": [] },
+  { "line": "Follow to build the next one.", "ops": [] }
+] }

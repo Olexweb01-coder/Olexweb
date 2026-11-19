@@ -1,0 +1,20 @@
+{ "titles": ["She almost closed her bakery. Then her son searched one thing", "Fifteen years of cakes, four sales a day", "The reason nobody came in"],
+  "hook": "SHE ALMOST QUIT", "logline": "A baker about to close after fifteen years finds out her shop simply doesn't exist when people search.",
+  "ask": "Would you have found the real reason sooner?", "jump": "2 WEEKS EARLIER",
+  "cast": [{ "id": "a", "name": "Grace", "role": "the baker", "sex": "f", "age": "older", "hair": "bun", "skin": "dark", "top": "red" },
+           { "id": "b", "name": "Tobi", "role": "her son", "sex": "m", "age": "young", "hair": "short", "skin": "brown", "top": "blue" },
+           { "id": "c", "name": "Mia", "role": "a customer", "sex": "f", "age": "adult", "hair": "long", "skin": "light", "top": "yellow" }],
+  "cold": [{ "place": "shop", "shot": "close", "who": ["a"], "speaker": "a", "emotion": "cry", "line": "Fifteen years. And I have to close it on Friday." }],
+  "beats": [
+    { "place": "shop", "shot": "wide", "who": ["a", "b"], "speaker": "b", "emotion": "worried", "line": "Mum, we sold four cakes today. Four." },
+    { "place": "shop", "shot": "two", "who": ["a", "b"], "speaker": "a", "emotion": "sad", "line": "People just don't buy cakes any more, love." },
+    { "place": "street", "shot": "wide", "who": ["b", "c"], "speaker": "c", "emotion": "happy", "line": "Best cake in town? I ordered from Sugar Lane last night." },
+    { "place": "street", "shot": "two", "who": ["b", "c"], "speaker": "b", "emotion": "shock", "line": "Sugar Lane? They only opened last month!" },
+    { "place": "bedroom", "shot": "phone", "who": ["b"], "speaker": "b", "emotion": "focus", "line": "Cake near me. Sugar Lane. Sugar Lane. Every single time.", "phone": { "from": "Search", "text": "cake near me: Sugar Lane, 4.9 stars, order online, open now" } },
+    { "place": "bedroom", "shot": "close", "who": ["b"], "speaker": "b", "emotion": "angry", "line": "Mum's shop doesn't even exist when you search.", "twist": true },
+    { "place": "kitchen", "shot": "two", "who": ["a", "b"], "speaker": "b", "emotion": "excited", "line": "We need a proper website. People order at midnight." },
+    { "place": "kitchen", "shot": "close", "who": ["a"], "speaker": "a", "emotion": "curious", "line": "At midnight? Who orders cake at midnight?" },
+    { "place": "shop", "shot": "wide", "who": ["a", "b", "c"], "speaker": "c", "emotion": "happy", "line": "I did. Three of them. For Saturday." },
+    { "place": "shop", "shot": "two", "who": ["a", "b"], "speaker": "narrator", "emotion": "happy", "line": "By the end of the month, there was a queue outside." },
+    { "place": "shop", "shot": "close", "who": ["a"], "speaker": "a", "emotion": "happy", "line": "Fifteen years. And I almost closed it on Friday." }
+  ] }

@@ -58,7 +58,7 @@ export default function PlanBoard({ data, stories = null }) {
                 <input value={title} maxLength={90} onChange={(e) => setTitle(e.target.value)} aria-label="Title" autoFocus />
                 <button className="sm-btn sm-go" disabled={!!busy}>Save</button><button type="button" className="sm-btn sm-line" onClick={() => setEdit(null)}>Cancel</button></form>
               : <b className="pl-title">{s.title ? s.title.replace(/\s*#shorts\s*$/i, '') : <span className="pl-dimt">{s.hint}</span>}</b>}
-            {s.site ? <span className="pl-site">{s.format === 'versus' ? 'Business: ' : s.format === 'build' ? '' : 'Website: '}{s.site}</span> : null}
+            {s.story ? <span className="pl-site">{s.story.logline}{s.story.cast ? <><br />With {s.story.cast}{s.story.city ? ', in ' + s.story.city : ''}</> : null}</span> : s.site ? <span className="pl-site">{s.format === 'versus' ? 'Business: ' : s.format === 'build' ? '' : 'Website: '}{s.site}</span> : null}
             {s.title && s.hint ? <span className="pl-hint">{s.hint}</span> : null}
             {s.failing.length && s.needsYou ? <ul className="pl-fail">{s.failing.map((f, i) => <li key={i}>{f}</li>)}</ul> : null}
             {s.lines.length ? <details className="pl-words"><summary>Read the words ({s.lines.length} lines{s.seconds ? `, about ${Math.round(s.seconds)} s` : ''})</summary><ol>{s.lines.map((l, i) => <li key={i}>{l}</li>)}</ol></details> : null}
@@ -74,7 +74,7 @@ export default function PlanBoard({ data, stories = null }) {
         </section>) })}
     </div>
     {stories ? <Stories S={stories} act={act} busy={busy} /> : null}
-    <p className="sm-note">How the plan chooses: a different format every time on each channel, never the same format on YouTube and Facebook on the same day, and Poor vs Rich at most once a week. A video that misses its time (not approved, or not finished) moves to the next free time instead of being wasted.</p>
+    <p className="sm-note">Every video is “You build it” in 3D: you want something simple, the first fix is silly, every fix causes the next problem, until “Congratulations! You just built…” the real invention. A new tech or internet topic every time, never repeated. One a day on YouTube, three a week on Facebook. A video that misses its time moves to the next free time instead of being wasted.</p>
     <style dangerouslySetInnerHTML={{ __html: SIMPLE_CSS + CSS }} />
   </div>)
 }
