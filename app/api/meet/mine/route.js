@@ -15,7 +15,7 @@ export async function POST(request) {
     if (b.action === 'create') {
       const owner = mu.role === 'owner'
       await canCreate(owner)                                              // paused near the monthly limit (not for Olaitan)
-      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
+      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
       return { ...r, link: M.meetLink(r.code) }
     }
     if (!['update', 'end', 'delete'].includes(b.action)) throw new Refused('Unknown action.')

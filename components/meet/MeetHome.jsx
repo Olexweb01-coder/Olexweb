@@ -67,10 +67,10 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
 
   function join(e) { e.preventDefault(); if (found) location.assign(pathFor(found)); else setToast('That isn’t a meeting code. It looks like abc-defg-hij.') }
   function needAccount(next) { setMenu(false); setSheet({ kind: 'signin', next }) }
-  async function startNow() {
-    setMenu(false); if (!user) return needAccount('/?then=start')
+  async function startNow(mode = 'video') {                               // audio or video is chosen before it starts
+    setMenu(false); if (!user) return needAccount(mode === 'audio' ? '/?then=start-audio' : '/?then=start')
     setBusy('start')
-    try { const r = await call({ action: 'create', title: `${user.name.split(' ')[0] || 'My'}’s meeting` }); location.assign(pathFor(r.code)) }
+    try { const r = await call({ action: 'create', mode, title: `${user.name.split(' ')[0] || 'My'}’s ${mode === 'audio' ? 'call' : 'meeting'}` }); location.assign(pathFor(r.code)) }
     catch (e) { setToast(e.message); setBusy('') }
   }
   function openSchedule(m = null) {
@@ -83,7 +83,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
     if (!Number.isFinite(startsAt.getTime())) { setToast('Choose a date and time.'); return }
     setBusy('schedule')
     try {
-      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, form: s.form && s.form.on ? s.form : { on: false } }
+      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video' }), form: s.form && s.form.on ? s.form : { on: false } }
       const r = s.edit ? await call({ action: 'update', code: s.edit.code, ...body }) : await call({ action: 'create', ...body })
       const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes }
       setSheet({ ...s, done: m }); refresh()
@@ -101,7 +101,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
   }
   async function signOut() { await fetch('/api/meet/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'sign-out' }) }).catch(() => {}); location.assign(homePath()) }
   // after signing in from "New meeting", carry on with what they wanted
-  useEffect(() => { if (!user) return; const t = new URLSearchParams(location.search).get('then'); if (!t) return; history.replaceState(null, '', homePath()); if (t === 'start') startNow(); if (t === 'schedule') openSchedule() }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!user) return; const t = new URLSearchParams(location.search).get('then'); if (!t) return; history.replaceState(null, '', homePath()); if (t === 'start') startNow(); if (t === 'start-audio') startNow('audio'); if (t === 'schedule') openSchedule() }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (<div className="mh">
     <header className="mh-top">
@@ -122,7 +122,8 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
           <div className="mh-new" ref={menuRef}>
             <button className="mh-btn mh-go" aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu((x) => !x)} disabled={busy === 'start'}>{ICON.plus}{busy === 'start' ? 'Starting…' : 'New meeting'}</button>
             {menu ? <div className="mh-menu" role="menu">
-              <button role="menuitem" onClick={startNow}>{ICON.bolt}<span><b>Start a meeting now</b><small>Get a link and go in</small></span></button>
+              <button role="menuitem" onClick={() => startNow('video')}>{ICON.bolt}<span><b>Start a video meeting now</b><small>Cameras and voices. Get a link and go in</small></span></button>
+              <button role="menuitem" onClick={() => startNow('audio')}>{ICON.bolt}<span><b>Start an audio call now</b><small>Voices only, light on data. Screen sharing still works</small></span></button>
               <button role="menuitem" onClick={() => openSchedule()}>{ICON.cal}<span><b>Schedule a meeting</b><small>Pick a time, share the invite</small></span></button>
             </div> : null}
           </div>
@@ -194,6 +195,9 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
             <label className="mh-f"><span>Time ({ready ? tzName() : 'your time'})</span><input type="time" value={sheet.time} step={300} onChange={(e) => setSheet({ ...sheet, time: e.target.value })} /></label>
             <label className="mh-f"><span>Length</span><select value={sheet.minutes} onChange={(e) => setSheet({ ...sheet, minutes: Number(e.target.value) })}>{[15, 30, 45, 60, 90, 120, 180].map((m) => <option key={m} value={m}>{m < 60 ? m + ' minutes' : m === 60 ? '1 hour' : m / 60 + ' hours'}</option>)}</select></label>
           </div>
+          {!sheet.edit ? <div className="mh-f"><span>Type</span><div className="mh-seg" role="group" aria-label="Meeting type">
+            <button type="button" aria-pressed={(sheet.mode || 'video') === 'video'} onClick={() => setSheet({ ...sheet, mode: 'video' })}>Video meeting</button>
+            <button type="button" aria-pressed={sheet.mode === 'audio'} onClick={() => setSheet({ ...sheet, mode: 'audio' })}>Audio call</button></div></div> : null}
           <div className="mh-f"><span>Who can speak</span><div className="mh-seg" role="group" aria-label="Who can speak">
             <button type="button" aria-pressed={sheet.speakers === 'everyone'} onClick={() => setSheet({ ...sheet, speakers: 'everyone' })}>Everyone</button>
             <button type="button" aria-pressed={sheet.speakers === 'invited'} onClick={() => setSheet({ ...sheet, speakers: 'invited' })}>Only people I let speak</button></div></div>

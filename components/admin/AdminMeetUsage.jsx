@@ -25,8 +25,11 @@ export default function AdminMeetUsage() {
     <div className="mu-head"><h2>Usage this month</h2><span className="mg-dim">Resets {day(u.resetsAt)}</span></div>
     {u.level === 'stop' ? <p className="mu-alert">Over 95% of this month’s minutes: <b>other hosts can’t start new meetings</b> until {day(u.resetsAt)}. Yours still work, and meetings already going carry on. Raise the limit below if you’ve upgraded.</p>
       : u.level === 'warn' ? <p className="mu-alert">Over 80% of this month’s minutes. At 95%, other hosts’ new meetings pause until the month resets.</p> : null}
+    {u.servers ? <p className="mu-srv"><span className={'mu-dot mu-' + u.servers.self} /> Free server: <b>{u.servers.self === 'ok' ? 'Working' : u.servers.self === 'down' ? 'Not responding, using the backup' : 'Not set up yet'}</b>
+      {u.servers.self !== 'off' ? <> · {num(u.selfMinutes)} minutes this month, no limit{u.selfLive ? ` · ${num(u.selfLive)} in meetings now` : ''}</> : null}
+      {' · '}Backup (LiveKit Cloud): <b>{u.servers.cloud ? 'Ready' : 'Not set up'}</b></p> : null}
     <div className="mu-grid">
-      <div className="mu-stat mu-wide"><span>Meeting minutes</span><b>{num(u.minutes)} <small>of {num(u.allowance)}</small></b>
+      <div className="mu-stat mu-wide"><span>{u.servers && u.servers.self !== 'off' ? 'Backup minutes (LiveKit Cloud)' : 'Meeting minutes'}</span><b>{num(u.minutes)} <small>of {num(u.allowance)}</small></b>
         <div className="mu-bar" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={u.pct} aria-label="Minutes used"><i style={{ width: bar + '%' }} /></div>
         <small>{u.pct}% used{u.projected != null ? `. At this pace, about ${num(u.projected)} by ${day(u.resetsAt)}${u.projected > u.allowance ? ' (over the limit)' : ''}` : ''}.</small></div>
       <div className="mu-stat"><span>In meetings now</span><b>{num(u.live)} <small>of {num(u.maxPeople)}</small></b><small>{u.live >= u.maxPeople ? 'Full: new people are told to try again' : 'People at once'}</small></div>
@@ -39,7 +42,7 @@ export default function AdminMeetUsage() {
         <label><span className="mg-lab">People at once</span><input className="input" type="number" min={2} value={edit.people} onChange={(e) => setEdit({ ...edit, people: e.target.value })} /></label></div>
       <div className="mg-acts"><button className="btn btn-green" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save limits'}</button><button className="btn btn-line" onClick={() => setEdit(null)}>Cancel</button></div>
     </div> : <button className="btn btn-line mu-change" onClick={() => setEdit({ minutes: u.allowance, people: u.maxPeople })}>Change limits</button>}
-    <style dangerouslySetInnerHTML={{ __html: `.mu-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.mu-head h2{margin:0 0 12px}
+    <style dangerouslySetInnerHTML={{ __html: `.mu-srv{margin:0 0 12px;font-size:14px;color:var(--dim)}.mu-srv b{color:var(--text,inherit)}.mu-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;background:#888}.mu-dot.mu-ok{background:var(--green)}.mu-dot.mu-down{background:#e5484d}.mu-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.mu-head h2{margin:0 0 12px}
 .mu-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.mu-stat{display:grid;gap:4px;align-content:start;padding:14px;border-radius:14px;border:1px solid var(--line)}
 .mu-stat>span{font-size:13px;font-weight:600;color:var(--dim)}.mu-stat b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}.mu-stat b small{font-size:14px;font-weight:600;color:var(--dim)}.mu-stat>small{font-size:13px;color:var(--dim);line-height:1.5}
 .mu-bar{height:10px;border-radius:999px;background:rgba(242,239,233,.08);overflow:hidden;margin:4px 0}.mu-bar i{display:block;height:100%;border-radius:999px;background:var(--green);transition:width .4s}

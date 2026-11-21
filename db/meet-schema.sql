@@ -49,6 +49,16 @@ create index if not exists meet_reports_open on meet_reports (created_at desc) w
 create table if not exists meet_usage (id bigserial primary key, identity text not null unique, code text not null, joined_at timestamptz not null default now(), left_at timestamptz);
 create index if not exists meet_usage_live on meet_usage (code) where left_at is null;
 create index if not exists meet_usage_month on meet_usage (joined_at);
+-- which video server: 'self' (ours, no limit) or 'cloud' (LiveKit Cloud, the backup); empty on meetings = cloud
+alter table meet_usage add column if not exists server text not null default 'cloud';
+alter table meetings add column if not exists server text;
+-- audio or video, chosen before the meeting starts; video_at = when an audio call switched to video (never recorded as video)
+alter table meetings add column if not exists mode text not null default 'video';
+alter table meetings add column if not exists video_at timestamptz;
+-- ratings: 1 to 5 stars and an optional review from anyone who was in the meeting (host = the host's own rating)
+create table if not exists meet_ratings (id bigserial primary key, code text not null, identity text not null, host boolean not null default false,
+  stars int not null check (stars between 1 and 5), review text, created_at timestamptz not null default now(), unique (code, identity));
+create index if not exists meet_ratings_code on meet_ratings (code);
 -- your limits (the plan you're on) and which warnings went out this month
 create table if not exists meet_settings (id int primary key default 1 check (id = 1), minutes_allowance int not null default 5000, max_people int not null default 100,
   warned jsonb not null default '{}', updated_at timestamptz not null default now());

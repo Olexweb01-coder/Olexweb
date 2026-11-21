@@ -654,6 +654,14 @@ alter table dir_entries add column if not exists tale_id bigint;                
 
 -- co-hosts (by their identity in the meeting): they can mute, let speak, remove, record and take AI notes
 alter table meetings add column if not exists cohosts jsonb not null default '[]'::jsonb;
+alter table meetings add column if not exists server text;                -- which video server (lib/meet/servers.js); empty = LiveKit Cloud
+-- audio or video, chosen before the meeting starts; video_at = when an audio call switched to video (never recorded as video)
+alter table meetings add column if not exists mode text not null default 'video';
+alter table meetings add column if not exists video_at timestamptz;
+-- ratings: 1 to 5 stars and an optional review from anyone who was in the meeting (host = the host's own rating)
+create table if not exists meet_ratings (id bigserial primary key, code text not null, identity text not null, host boolean not null default false,
+  stars int not null check (stars between 1 and 5), review text, created_at timestamptz not null default now(), unique (code, identity));
+create index if not exists meet_ratings_code on meet_ratings (code);
 -- Olex Sales: personal previews (a mock-up of a new homepage for each business, at /preview/<token>)
 create table if not exists sales_previews (company_id bigint primary key references sales_companies(id) on delete cascade, token text not null unique,
   created_at timestamptz not null default now(), data jsonb not null, views int not null default 0, first_view_at timestamptz, last_view_at timestamptz,

@@ -4,7 +4,7 @@
 // protected first (speech audio with redundancy and silence detection), video is 360p at most and drops to smaller
 // layers on its own, only the people on screen get video, and Data saver turns other people's cameras off entirely.
 // LiveKit's library loads after the page appears, so the first load stays light.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { MeetRecorder, canMp3, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
 import { keepWords, NotesPanel } from './Guests'
 import { MiniWindow, canMini, callControls, callState } from './pip'
@@ -69,7 +69,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
+export default function MeetRoom({ code, title, speakers, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -93,6 +93,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const [fxLive, setFxLive] = useState({ noise: false, blur: false })   // what's actually running (data-noise / data-blur)
   const [fx, setFx] = useState({ noise: true, blur: false }), [blurOk, setBlurOk] = useState(false), fxRef = useRef(fx)   // noise cancellation and background blur
   const [iosTip, setIosTip] = useState(false)
+  // audio call or video meeting (chosen before it started). An audio call can switch to video, but records sound only.
+  const [videoOk, setVideoOk] = useState(videoOn !== false), audioStart = mode === 'audio'
+  // the calm stage: the host first, then people who are talking (in the order they started), then everyone else
+  const layout = useRef({ up: new Map(), start: new Map(), order: [] }), gridRef = useRef(null), rects = useRef(new Map())
+  const poorAt = useRef(0), autoSaver = useRef(0), saverByHand = useRef(false)
   useEffect(() => setIosTip(onApple()), [])
   const [noiseOk, setNoiseOk] = useState(false)                             // decided in the browser (the server can't know), so the page matches
   useEffect(() => { const v = savedFx(); setFx(v); fxRef.current = v; setNoiseOk(canCleanNoise()); canBlur().then(setBlurOk) }, [])
@@ -145,7 +150,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       if (j.state === 'waiting') { setPhase('waiting'); return }
       if (j.state === 'ended') { setPhase('ended'); return }
       if (j.state === 'unavailable') { setPhase('unavailable'); return }
-      joinInfo.current = j; setHost(!!j.host); await connect(j)
+      joinInfo.current = j; setHost(!!j.host); setVideoOk(j.video !== false); await connect(j)
     } catch (err) { setPhase('lobby'); setError(err.message || 'Couldn’t join. Check your connection and try again.') }
   }
   // the waiting screen asks every 5 seconds whether the host has started
@@ -191,6 +196,10 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         bump()
       })
       .on(E.LocalTrackPublished, bump).on(E.LocalTrackUnpublished, bump).on(E.ParticipantNameChanged, bump)
+      .on(E.RoomMetadataChanged, (md) => {
+        let v = false; try { v = !!JSON.parse(md || '{}').video } catch {}
+        if (v) { setVideoOk(true); toast('Video is on. This meeting started as an audio call, so only its sound can be recorded.') }
+      })
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
         if ((info.host || cohostRef.current || isBoss(p)) && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(isHostId(p.identity) ? 'The host raised a hand.' : `${p.name || 'Someone'}${isCoId(p) ? ' (co-host)' : ''} raised a hand.`)   // the host's and co-hosts' hands: everyone is told
@@ -208,7 +217,18 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
         }
         bump()
       })
-      .on(E.ConnectionQualityChanged, (q, p) => { if (p === room.localParticipant) setConn((c) => ({ ...c, weak: q === lk.ConnectionQuality.Poor || q === lk.ConnectionQuality.Lost })); bump() })
+      .on(E.ConnectionQualityChanged, (q, p) => {
+        if (p === room.localParticipant) {
+          const bad = q === lk.ConnectionQuality.Poor || q === lk.ConnectionQuality.Lost
+          setConn((c) => ({ ...c, weak: bad }))
+          // weak for 10 seconds: Data saver turns on by itself so voices stay clear (unless they turned it off themselves)
+          clearTimeout(autoSaver.current)
+          if (bad) { poorAt.current = poorAt.current || Date.now(); autoSaver.current = setTimeout(() => {
+            if (poorAt.current && !saverRef.current && !saverByHand.current && roomRef.current) { saverRef.current = true; setSaver(true); applySaver(true); toast('Your connection is weak, so Data saver turned on to keep voices clear. Tap Data saver to see videos again.') }
+          }, 10_000) } else poorAt.current = 0
+        }
+        bump()
+      })
       .on(E.Reconnecting, () => setConn((c) => ({ ...c, reconnecting: true }))).on(E.Reconnected, () => setConn((c) => ({ ...c, reconnecting: false })))
       .on(E.AudioPlaybackStatusChanged, () => setConn((c) => ({ ...c, audioBlocked: !room.canPlaybackAudio })))
       .on(E.DataReceived, (payload, p, kind, topic) => {
@@ -279,6 +299,38 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     return () => cancelAnimationFrame(raf)
   }, [phase])
 
+  // the stage order, worked out once a second so nothing jumps: someone moves up after talking for about a second (a
+  // cough doesn't count) and stays up for 8 seconds after they stop. No limit on how many: if 60 answer, 60 move up.
+  useEffect(() => {
+    if (phase !== 'in') return
+    const t = setInterval(() => {
+      const room = roomRef.current; if (!room) return
+      const L = layout.current, now = Date.now(), ps = [room.localParticipant, ...room.remoteParticipants.values()], ids = new Set(ps.map((p) => p.identity))
+      for (const p of ps) {
+        const id = p.identity
+        if (p.isSpeaking) { if (!L.start.has(id)) L.start.set(id, now); if (now - L.start.get(id) >= 800 && !L.up.has(id)) L.up.set(id, now) }
+        else { L.start.delete(id); if (L.up.has(id) && now - (spoke.current.get(id) || 0) > 8000) L.up.delete(id) }
+      }
+      for (const id of [...L.up.keys()]) if (!ids.has(id)) L.up.delete(id)
+      const next = [...ps.filter((p) => isHostId(p.identity)).map((p) => p.identity),
+        ...[...L.up.entries()].filter(([id]) => !isHostId(id)).sort((a, b) => a[1] - b[1]).map(([id]) => id),
+        ...ps.filter((p) => !isHostId(p.identity) && !L.up.has(p.identity)).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0)).map((p) => p.identity)]
+      if (next.join() !== L.order.join()) { L.order = next; bump() }
+    }, 1000)
+    return () => clearInterval(t)
+  }, [phase, bump])
+  // tiles slide to their new place instead of jumping
+  useLayoutEffect(() => {
+    const g = gridRef.current; if (!g) return
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    for (const el of g.children) {
+      const id = el.dataset && el.dataset.id; if (!id) continue
+      const b = el.getBoundingClientRect(), o = rects.current.get(id)
+      if (o && !still && (Math.abs(o.x - b.left) > 1 || Math.abs(o.y - b.top) > 1) && el.animate) el.animate([{ transform: `translate(${o.x - b.left}px, ${o.y - b.top}px)` }, { transform: 'none' }], { duration: 450, easing: 'cubic-bezier(.2,.8,.2,1)' })
+      rects.current.set(id, { x: b.left, y: b.top })
+    }
+  })
+
   // ---------- controls ----------
   useEffect(() => { callState(micOn, camOn) }, [micOn, camOn])
   const room = roomRef.current, me = room && room.localParticipant
@@ -292,13 +344,14 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   async function toggleCam() {
     if (!room) return
     const on = !me.isCameraEnabled
+    if (on && !videoOk) { toast('This is an audio call.'); return }
     if (on && saverRef.current) { toast('Turn off Data saver to use your camera.'); return }
     try { await me.setCameraEnabled(on); setCamOn(on) } catch (e) { toast(deviceError(e, 'camera')) } bump()
   }
   async function toggleShare() {
     if (!room) return
     const on = !me.isScreenShareEnabled
-    try { await me.setScreenShareEnabled(on, { audio: false }) } catch (e) { if (e && e.name !== 'NotAllowedError') toast('Screen sharing couldn’t start. Try again.') } bump()
+    try { await me.setScreenShareEnabled(on, { audio: false, contentHint: 'detail', resolution: { width: 1920, height: 1080, frameRate: 5 } }, { screenShareEncoding: { maxBitrate: 900_000, maxFramerate: 5 } }) } /* sharp text, few updates: readable on weak data */ catch (e) { if (e && e.name !== 'NotAllowedError') toast('Screen sharing couldn’t start. Try again.') } bump()
   }
   async function toggleHand() {
     if (!room) return
@@ -312,7 +365,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     if (on && r.localParticipant.isCameraEnabled) { r.localParticipant.setCameraEnabled(false).catch(() => {}); setCamOn(false) }
     bump()
   }
-  function toggleSaver() { const on = !saverRef.current; saverRef.current = on; setSaver(on); applySaver(on); toast(on ? 'Data saver is on: voices and shared screens only.' : 'Data saver is off.') }
+  function toggleSaver() { const on = !saverRef.current; saverRef.current = on; if (!on) saverByHand.current = true; setSaver(on); applySaver(on); toast(on ? 'Data saver is on: voices and shared screens only.' : 'Data saver is off.') }
   async function sendChat(text) {
     const t = String(text || '').trim().slice(0, 1000); if (!t || !room) return false
     const id = Math.random().toString(36).slice(2)
@@ -320,6 +373,11 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       await me.publishData(new TextEncoder().encode(JSON.stringify({ id, text: t })), { reliable: true, topic: 'chat' })
       setMessages((l) => [...l.slice(-299), { id, who: me.identity, name: me.name || 'You', text: t, at: Date.now(), mine: true }]); return true
     } catch { toast('Your message didn’t send. Try again.'); return false }
+  }
+  async function switchToVideo() {
+    setPop(null)
+    if (!window.confirm('Switch this call to video? Everyone can then turn on their camera. It started as an audio call, so only its sound can be recorded.')) return
+    try { await post('/api/meet/host', { action: 'video-on', code, ...seat() }) } catch (e) { toast(e.message) }
   }
   async function hostDo(action, p) {
     if (action === 'remove' && !window.confirm(`Remove ${p.name || 'this person'} from the meeting?`)) return
@@ -428,7 +486,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
           </div> : null}
           {host || speakers === 'everyone' ? <div className="mt-toggles" role="group" aria-label="Before you join">
             <button type="button" className="mt-chip" aria-pressed={micOn} onClick={() => setMicOn((m) => !m)}>{micOn ? I.mic : I.micOff}{micOn ? 'Mic on' : 'Mic off'}</button>
-            <button type="button" className="mt-chip" aria-pressed={camOn} disabled={saver} onClick={() => previewOn(!camOn)}>{camOn ? I.cam : I.camOff}{camOn ? 'Camera on' : 'Camera off'}</button>
+            {videoOk ? <button type="button" className="mt-chip" aria-pressed={camOn} disabled={saver} onClick={() => previewOn(!camOn)}>{camOn ? I.cam : I.camOff}{camOn ? 'Camera on' : 'Camera off'}</button> : <span className="mt-chip mt-audiochip">{I.mic}Audio call</span>}
             <button type="button" className="mt-chip" aria-pressed={saver} onClick={() => { const on = !saver; setSaver(on); if (on && camOn) previewOn(false) }}>{I.leaf}Data saver</button>
             {noiseOk ? <button type="button" className="mt-chip" aria-pressed={fx.noise} onClick={() => { const v = { ...fx, noise: !fx.noise }; setFx(v); fxRef.current = v; rememberFx({ noise: v.noise }) }}>{I.wave}Noise cancellation</button> : null}
             {blurOk ? <button type="button" className="mt-chip" aria-pressed={fx.blur} onClick={() => { const v = { ...fx, blur: !fx.blur }; setFx(v); fxRef.current = v; rememberFx({ blur: v.blur }) }}>{I.blur}Blur background</button> : null}
@@ -437,6 +495,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
           {error ? <p className="mt-err" role="alert">{error}</p> : null}
           <button type="submit" className="mt-btn mt-go" disabled={phase === 'joining'}>{phase === 'joining' ? 'Joining…' : host ? 'Start the meeting' : 'Join the meeting'}</button>
         </form>}
+      {phase === 'ended' || phase === 'left' ? <AfterMeeting code={code} info={joinInfo.current} /> : null}
     </main>
   </div>)
 
@@ -445,15 +504,15 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
   const all = [me, ...room.remoteParticipants.values()]
   const speaksNow = (p) => !!(p.permissions && p.permissions.canPublish)
   const share = all.map((p) => ({ p, pub: p.getTrackPublication(S.ScreenShare) })).find((x) => x.pub && x.pub.track && !x.pub.isMuted)
-  const onStage = all.filter((p) => speaksNow(p) || isBoss(p))
-    .sort((a, b) => (spoke.current.get(b.identity) || 0) - (spoke.current.get(a.identity) || 0) || (+!!b.isCameraEnabled - +!!a.isCameraEnabled) || ((a.joinedAt || 0) - (b.joinedAt || 0)))
+  const order = layout.current.order, rank = (p) => { const i = order.indexOf(p.identity); return i < 0 ? (isHostId(p.identity) ? -1 : 1e15 + (+p.joinedAt || 0)) : i }
+  const onStage = all.filter((p) => speaksNow(p) || isBoss(p)).sort((a, b) => rank(a) - rank(b))
   const limit = share ? 4 : MAX_TILES
   const tiles = onStage.slice(0, limit)
   if (me && !tiles.includes(me) && onStage.includes(me)) tiles[tiles.length - 1] = me        // you always see yourself
   const listeners = all.filter((p) => !onStage.includes(p)), hidden = onStage.length - tiles.length
   const hands = all.filter((p) => p.attributes && p.attributes.hand).sort((a, b) => Number(a.attributes.hand) - Number(b.attributes.hand))
   const audioPubs = [...room.remoteParticipants.values()].flatMap((p) => [...p.audioTrackPublications.values()].filter((x) => x.track))
-  const canShare = canSpeak && typeof navigator !== 'undefined' && navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices
+  const canShare = canSpeak && (videoOk || boss) && typeof navigator !== 'undefined' && navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices
   const recording = !!rec || all.some((p) => isBoss(p) && p.attributes && p.attributes.rec)
   const notesOn = noting || all.some((p) => isBoss(p) && p.attributes && p.attributes.notes)
   const recPaused = rec ? !!rec.pausedAt : all.some((p) => isBoss(p) && p.attributes && p.attributes.rec === 'paused')
@@ -470,6 +529,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
 
     {conn.reconnecting ? <p className="mt-banner" role="status">Reconnecting… Your audio comes back on its own.</p>
       : conn.weak ? <p className="mt-banner mt-warn" role="status">{I.weak}Your connection is weak.{!saver ? <> <button className="mt-link" onClick={toggleSaver}>Turn on Data saver</button> to keep voices clear.</> : ' Voices come first.'}</p> : null}
+    {boss && all.length >= ((joinInfo.current && joinInfo.current.full) || 100) ? <p className="mt-banner mt-warn" role="status">Your meeting is full ({all.length} people), so new people can’t get in. <a className="mt-link" href={location.pathname.startsWith('/meet/') ? '/meet' : '/'} target="_blank" rel="noopener">Start a new meeting</a> and share its link with them.</p> : null}
     {boss && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <button className="mt-link" onClick={() => setShowNotes(true)}>Make AI notes</button><button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
@@ -477,7 +537,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       <main ref={stageRef} className={'mt-stage' + (share ? ' mt-sharing' : '')} aria-label="People in the meeting">
         <div className="mt-floats" aria-hidden="true">{floats.map((f) => <span key={f.id} className="mt-float" style={{ left: f.x + '%' }}><b>{f.e}</b><small>{f.who}</small></span>)}</div>
         {share ? <Shared pub={share.pub} who={share.p} local={share.p === me} /> : null}
-        <div className="mt-grid" data-n={Math.min(tiles.length + (hidden > 0 || listeners.length ? 1 : 0), limit)}>
+        <div ref={gridRef} className="mt-grid" data-n={Math.min(tiles.length + (hidden > 0 || listeners.length ? 1 : 0), limit)}>
           {tiles.map((p) => <Tile key={p.identity} p={p} me={p === me} lk={lk} saver={saver} levelEls={levelEls} />)}
           {hidden > 0 || listeners.length ? <button className="mt-tile mt-more" onClick={() => setPanel('people')}>
             {hidden > 0 ? <b>{hidden} more on stage</b> : null}{listeners.length ? <span>{listeners.length} listening</span> : null}</button> : null}
@@ -493,7 +553,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
     <nav className="mt-bar" aria-label="Meeting controls">
       {canSpeak ? <>
         <button className={'mt-c' + (me.isMicrophoneEnabled ? '' : ' mt-off')} aria-pressed={me.isMicrophoneEnabled} onClick={toggleMic}>{me.isMicrophoneEnabled ? I.mic : I.micOff}<span>{me.isMicrophoneEnabled ? 'Mute' : 'Unmute'}</span></button>
-        <button className={'mt-c' + (me.isCameraEnabled ? '' : ' mt-off')} aria-pressed={me.isCameraEnabled} onClick={toggleCam}>{me.isCameraEnabled ? I.cam : I.camOff}<span>{me.isCameraEnabled ? 'Stop video' : 'Start video'}</span></button>
+        {videoOk ? <button className={'mt-c' + (me.isCameraEnabled ? '' : ' mt-off')} aria-pressed={me.isCameraEnabled} onClick={toggleCam}>{me.isCameraEnabled ? I.cam : I.camOff}<span>{me.isCameraEnabled ? 'Stop video' : 'Start video'}</span></button> : null}
         {canShare ? <button className={'mt-c mt-wide' + (me.isScreenShareEnabled ? ' mt-on' : '')} aria-pressed={me.isScreenShareEnabled} onClick={toggleShare}>{I.share}<span>{me.isScreenShareEnabled ? 'Stop sharing' : 'Share screen'}</span></button> : null}
       </> : null}
       <button className={'mt-c' + (boss ? ' mt-wide' : '') + (hand ? ' mt-on' : '')} aria-pressed={hand} onClick={toggleHand}>{I.hand}<span>{hand ? 'Lower hand' : 'Raise hand'}</span></button>
@@ -517,6 +577,7 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
           {blurOk ? <button role="menuitemcheckbox" aria-checked={fx.blur} onClick={() => { setPop(null); toggleFx('blur') }}>{I.blur}Blur background{fx.blur ? ': on' : ''}</button> : null}
           {boss ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={hand} onClick={() => { setPop(null); toggleHand() }}>{I.hand}{hand ? 'Lower hand' : 'Raise hand'}</button> : null}
           {boss && canRecord() ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={noting} onClick={() => { setPop(null); toggleNotes() }}>{I.notes}{noting ? 'Stop AI notes' : 'AI notes'}</button> : null}
+          {boss && !videoOk ? <button role="menuitem" onClick={switchToVideo}>{I.cam}Switch to video</button> : null}
           {!host ? <button role="menuitem" onClick={() => { setPop(null); setReporting(true) }}>{I.close}Report this meeting</button> : null}
         </span> : null}
       </span>
@@ -527,16 +588,16 @@ export default function MeetRoom({ code, title, speakers, initialState, startsAt
       <div className="mt-card mt-dialog">
         <h2 className="mt-h2" id="mt-rec-h">Record this meeting?</h2>
         <p className="mt-p">Everyone sees that it’s being recorded. When you stop, the file saves to this device. Keep this tab open while recording.</p>
-        <div className="mt-seg" role="group" aria-label="What to record">
+        {audioStart ? <p className="mt-hint">This meeting started as an audio call, so it records sound only, as an MP3.</p> : <div className="mt-seg" role="group" aria-label="What to record">
           <button type="button" aria-pressed={!recAudio} onClick={() => setRecAudio(false)}>Video and audio</button>
           <button type="button" aria-pressed={recAudio} onClick={() => setRecAudio(true)}>Audio only</button>
-        </div>
-        {recAudio && canMp3() ? <div className="mt-recq"><span>MP3 quality</span><div className="mt-seg mt-seg-sm" role="group" aria-label="MP3 quality">
+        </div>}
+        {(audioStart || recAudio) && canMp3() ? <div className="mt-recq"><span>MP3 quality</span><div className="mt-seg mt-seg-sm" role="group" aria-label="MP3 quality">
           <button type="button" aria-pressed={!recHigh} onClick={() => setRecHigh(false)}>Standard</button><button type="button" aria-pressed={recHigh} onClick={() => setRecHigh(true)}>High</button></div>
           <small>{recHigh ? '96 kbps: about 43 MB an hour' : '64 kbps: clear speech, about 29 MB an hour'}</small></div> : null}
-        <p className="mt-hint">{recAudio ? (canMp3() ? 'An MP3 that plays everywhere (WhatsApp, phones, computers). Best for notes later.' : 'Small file, about 30 MB an hour. Best for notes later.') : 'What you see on screen, up to about 400 MB an hour.'}</p>
+        <p className="mt-hint">{(audioStart || recAudio) ? (canMp3() ? 'An MP3 that plays everywhere (WhatsApp, phones, computers). Best for notes later.' : 'Small file, about 30 MB an hour. Best for notes later.') : 'What you see on screen, up to about 400 MB an hour.'}</p>
         <div className="mt-col">
-          <button className="mt-btn mt-rec-go" onClick={() => startRec(recAudio)} autoFocus>{I.rec}Record</button>
+          <button className="mt-btn mt-rec-go" onClick={() => startRec(audioStart || recAudio)} autoFocus>{I.rec}Record</button>
           <button className="mt-btn mt-ghost" onClick={() => setAskRec(false)}>Not now</button>
         </div>
       </div>
@@ -615,7 +676,7 @@ function Tile({ p, me, lk, saver, levelEls }) {
   useEffect(() => { const el = vref.current; if (!el || !track) return; track.attach(el); return () => { track.detach(el) } }, [track])
   useEffect(() => { const el = ring.current, m = levelEls.current; if (el) m.set(p.identity, el); return () => { if (m.get(p.identity) === el) m.delete(p.identity) } }, [p.identity, levelEls])
   const muted = !mic || mic.isMuted, weak = p.connectionQuality === lk.ConnectionQuality.Poor
-  return (<div className={'mt-tile' + (p.isSpeaking ? ' mt-speaking' : '') + (track ? ' mt-has-video' : '')} ref={ring}
+  return (<div data-id={p.identity} className={'mt-tile' + (p.isSpeaking ? ' mt-speaking' : '') + (track ? ' mt-has-video' : '')} ref={ring}
     data-name={p.name || 'Guest'} data-initials={initials(p.name)} data-tone={tone(p.identity)} data-host={isHostId(p.identity) ? '1' : undefined}>
     {track ? <video ref={vref} muted playsInline autoPlay className={me && cam.source === S.Camera ? 'mt-mirror' : ''} />
       : <span className="mt-av" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>}
@@ -674,4 +735,40 @@ function People({ all, me, host, boss, hands, speaksNow, hostDo, lk }) {
         </span> : null}
       </li> })}
   </ul>)
+}
+
+// ---------- after the meeting: a rating (everyone, the host too) and, once, how to add Meet to the home screen ----------
+let installEvent = null
+if (typeof window !== 'undefined') window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e })
+function AfterMeeting({ code, info }) {
+  const [stars, setStars] = useState(0), [text, setText] = useState(''), [sent, setSent] = useState(false), [busy, setBusy] = useState(false), [err, setErr] = useState('')
+  const [tip, setTip] = useState(null)
+  useEffect(() => {
+    let seen = false; try { seen = localStorage.getItem('olex-meet-install') === '1' } catch {}
+    const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
+    if (!seen && !installed) setTip(/iphone|ipad|ipod/i.test(navigator.userAgent) ? 'ios' : /android/i.test(navigator.userAgent) ? 'android' : 'computer')
+  }, [])
+  const closeTip = () => { setTip(null); try { localStorage.setItem('olex-meet-install', '1') } catch {} }
+  async function send(e) {
+    e.preventDefault(); if (!stars) { setErr('Choose 1 to 5 stars.'); return }
+    setBusy(true); setErr('')
+    try { await post('/api/meet/rate', { code, identity: info.identity, key: info.rateKey, stars, review: text }); setSent(true) } catch (x) { setErr(x.message) } finally { setBusy(false) }
+  }
+  return (<div className="mt-after">
+    {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.</p> : <form onSubmit={send} className="mt-rate">
+      <p className="mt-lab">How was this meeting?</p>
+      <div className="mt-stars" role="radiogroup" aria-label="Your rating">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={n + (n === 1 ? ' star' : ' stars')} className={n <= stars ? 'on' : ''} onClick={() => setStars(n)}>★</button>)}</div>
+      {stars ? <><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
+        <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
+      {err ? <p className="mt-err" role="alert">{err}</p> : null}
+    </form>) : null}
+    {tip ? <div className="mt-install">
+      <b>Keep Olexweb Meet on your home screen</b>
+      {tip === 'ios' ? <ol><li>Tap the Share button (the square with an arrow) at the bottom of Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>
+        : tip === 'android' ? (installEvent ? <p>One tap and it opens like an app.</p> : <ol><li>Tap the menu (⋮) at the top right of Chrome.</li><li>Tap <b>Add to Home screen</b> or <b>Install app</b>.</li><li>Tap <b>Install</b>.</li></ol>)
+        : (installEvent ? <p>Install it and open it like an app, straight from your desktop.</p> : <p>In Chrome or Edge, click the install icon at the right of the address bar, then <b>Install</b>.</p>)}
+      <div className="mt-row">{installEvent ? <button className="mt-btn mt-go" onClick={async () => { installEvent.prompt(); await installEvent.userChoice.catch(() => {}); installEvent = null; closeTip() }}>Add to home screen</button> : null}
+        <button className="mt-btn mt-ghost" onClick={closeTip}>{installEvent ? 'Not now' : 'Got it'}</button></div>
+    </div> : null}
+  </div>)
 }
