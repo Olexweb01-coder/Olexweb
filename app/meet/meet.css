@@ -341,3 +341,24 @@
 .mt-stars button.on{color:#f5c542}.mt-stars button:hover{transform:scale(1.12)}.mt-thanks{color:var(--green,#8fe36a)}
 .mt-install{border:1px solid rgba(242,239,233,.14);border-radius:14px;padding:14px;display:grid;gap:8px;font-size:14px}
 .mt-install ol{margin:0;padding-left:20px;display:grid;gap:4px}.mt-install p{margin:0}
+/* Install B: the dashboard and plans */
+.md{margin-top:clamp(36px,6vh,60px);max-width:820px;display:grid;gap:14px}
+.md-head{display:flex;align-items:center;justify-content:space-between}.md-head h2{margin:0;font-family:var(--font-hubot),'Hubot Sans',sans-serif;font-stretch:108%;font-size:24px}
+.md-bellwrap{position:relative}.md-bell{position:relative;width:42px;height:42px;border-radius:50%;border:1px solid rgba(242,239,233,.16);background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center}
+.md-bell svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8}.md-bell i{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#ef7a6a;color:#fff;font-size:11px;font-style:normal;font-weight:800;display:grid;place-items:center;padding:0 4px}
+.md-pop{position:absolute;right:0;top:48px;z-index:20;width:min(340px,86vw);max-height:60vh;overflow:auto;background:#151815;border:1px solid rgba(242,239,233,.14);border-radius:16px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.md-note{padding:10px;border-radius:10px}.md-note.new{background:rgba(143,227,106,.08)}.md-note p,.md-newsitem p,.md-ticket p{margin:4px 0;font-size:14px;color:rgba(242,239,233,.75)}.md-note small,.md-newsitem small,.md-ticket small{font-size:12px;color:rgba(242,239,233,.45)}
+.md-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:10px}.md-card{display:grid;gap:4px;align-content:start;padding:14px;border:1px solid rgba(242,239,233,.1);border-radius:16px}
+.md-card b{font-size:24px;font-weight:800}.md-card small{font-size:13px;color:rgba(242,239,233,.6)}.md-lab{font-size:13px;font-weight:600;color:rgba(242,239,233,.6)}
+.md-plan b{color:#8fe36a}.md-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.md-dim{color:rgba(242,239,233,.5);font-size:13px}
+.md-due{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(240,179,94,.1);border:1px solid rgba(240,179,94,.35);font-size:14px}
+.md-ok{color:#8fe36a;margin:0}.md-err{color:#ef7a6a;margin:0}
+.md-news,.md-help{display:grid;gap:8px;padding:14px;border:1px solid rgba(242,239,233,.1);border-radius:16px}
+.md-ask{display:grid;gap:8px}.md-in{width:100%;box-sizing:border-box;background:#151815;border:1px solid rgba(242,239,233,.16);border-radius:12px;padding:10px 12px;color:inherit;font:inherit}
+.md-answer{padding:12px;border-radius:12px;background:rgba(143,227,106,.07)}.md-answer p{margin:4px 0 0;white-space:pre-wrap}.md-reply{color:#cfe9c2!important}
+.md-tickets{display:grid;gap:8px;margin-top:6px}.md-ticket{padding:10px;border-radius:10px;background:rgba(242,239,233,.03)}
+.md-pricing{margin-top:clamp(40px,7vh,70px)}.md-pricing h2{font-family:var(--font-hubot),'Hubot Sans',sans-serif;font-stretch:108%;font-size:clamp(24px,4vw,32px);margin:0 0 16px}
+.md-plans{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.md-planbox{display:grid;gap:6px;align-content:start;padding:18px;border:1px solid rgba(242,239,233,.12);border-radius:18px}
+.md-planbox>b{font-size:15px}.md-planbox strong{font-size:30px;font-weight:800}.md-planbox strong small{font-size:14px;font-weight:600;color:rgba(242,239,233,.6)}.md-planbox span{font-size:13px;color:rgba(242,239,233,.6)}
+.md-planbox ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}.md-pro{border-color:rgba(143,227,106,.5);background:rgba(143,227,106,.05)}
+@media (max-width:720px){.md-grid{grid-template-columns:1fr 1fr}.md-plan{grid-column:1/-1}.md-plans{grid-template-columns:1fr}.md-due{flex-direction:column;align-items:flex-start}}

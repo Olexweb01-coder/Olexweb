@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { FormSettings, Attendance, formFrom, NotesPanel } from './Guests'
 import { notesAudio } from './recorder'
 import EmailSignIn from './EmailSignIn'
+import MeetDash, { MeetPricing } from './MeetDash'
 
 const CODE_RE = /[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}/
 const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
@@ -45,7 +46,7 @@ function calLinks(m) {
   return { google: 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: m.title, dates: `${z(t)}/${z(t + (m.minutes || 60) * 60e3)}`, details: 'Join the meeting: ' + url, location: url }), ics: '/api/meet?calendar=1&code=' + m.code }
 }
 
-export default function MeetHome({ user, providers, meetings: initial, notice, faq = [], emailOn = false }) {
+export default function MeetHome({ user, providers, meetings: initial, notice, faq = [], emailOn = false, morePast = 0, pricing = null }) {
   const [ready, setReady] = useState(false), [list, setList] = useState(initial || []), [code, setCode] = useState(''), [menu, setMenu] = useState(false)
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [toast, setToast] = useState(notice || ''), [install, setInstall] = useState(null), [ios, setIos] = useState(false)
   const menuRef = useRef(null), [att, setAtt] = useState(null), [notesFor, setNotesFor] = useState(null), [local, setLocal] = useState({})
@@ -116,8 +117,8 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
 
     <main className="mh-main">
       <section className="mh-hero">
-        <h1>Meetings that keep working, even on a weak connection.</h1>
-        <p>Free video meetings from Olexweb. Voice comes first, so calls stay clear on mobile data. Anyone with the link can join, no account needed.</p>
+        <h1>Free audio and video meetings. No time limit.</h1>
+        <p>From Olexweb: unlimited hours, free MP3 recordings and AI notes. Built to stay light on mobile data. Anyone with the link can join, no account needed.</p>
         <div className="mh-actions">
           <div className="mh-new" ref={menuRef}>
             <button className="mh-btn mh-go" aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu((x) => !x)} disabled={busy === 'start'}>{ICON.plus}{busy === 'start' ? 'Starting…' : 'New meeting'}</button>
@@ -136,6 +137,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
         {!user ? <p className="mh-fine">Creating or scheduling needs a free account. Joining never does.</p> : null}
       </section>
 
+      {user ? <MeetDash user={user} /> : null}
       {user ? <section className="mh-mine" aria-label="Your meetings">
         <h2>Your meetings</h2>
         {upcoming.length ? <ul className="mh-list">{upcoming.map((m) => <li key={m.code}>
@@ -151,6 +153,8 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
           <div className="mh-li-acts">{local[m.code] && local[m.code].length ? <button className="mh-btn mh-sm mh-go" onClick={() => setNotesFor({ m, make: true })}>Make AI notes</button> : null}{m.notesAt ? <button className="mh-btn mh-sm" onClick={() => setNotesFor({ m, make: false })}>Notes</button> : null}{m.form ? <button className="mh-btn mh-sm" onClick={() => setAtt(m.code)}>Attendance</button> : null}<button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'delete')}>Delete</button></div></li>)}</ul></> : null}
       </section> : null}
 
+      {morePast ? <p className="mh-fine">{morePast} older meeting{morePast === 1 ? '' : 's'} and {morePast === 1 ? 'its transcript' : 'their transcripts'} are kept for you. Pro shows them all.</p> : null}
+      <MeetPricing pricing={pricing} />
       <section className="mh-features" aria-label="What you get">
         {[[ICON.wave, 'Clear on weak networks', 'Voice is protected first; video adjusts by itself. Data saver turns cameras off.'],
           [ICON.chat, 'Chat, reactions, screen share', 'Emoji, raised hands, and letting people speak when you choose.'],

@@ -2,11 +2,20 @@
 import { notFound, redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { currentUser } from '@/lib/admin/auth'
-import { CODE_RE, meetingState, meetHost, meetLink, hostOf } from '@/lib/site/meet'
+import { CODE_RE, meetingState, meetHost, meetLink, hostOf, meetBase, mainOrigin } from '@/lib/site/meet'
 import { currentMeetUser } from '@/lib/meet/auth'
 import MeetRoom from '@/components/meet/MeetRoom'
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Meeting | Olexweb', robots: { index: false, follow: false } }
+// shared on WhatsApp and elsewhere, the link shows the meeting's own name (never indexed)
+export async function generateMetadata({ params }) {
+  const code = String(params.code || '').toLowerCase()
+  const m = CODE_RE.test(code) ? await meetingState(code).catch(() => null) : null
+  const title = m ? m.title : 'Meeting', kind = m && m.mode === 'audio' ? 'audio call' : 'video meeting'
+  const description = `Join this ${kind} on Olexweb Meet. Free, no account needed: just open the link.`
+  const image = { url: (meetBase() || mainOrigin()) + '/meet/og.png?v=2', width: 1200, height: 630, alt: 'Olexweb Meet' }
+  return { title: { absolute: `${title} | Olexweb Meet` }, description, robots: { index: false, follow: false },
+    openGraph: { type: 'website', siteName: 'Olexweb Meet', title, description, images: [image] }, twitter: { card: 'summary_large_image', title, description, images: [image.url] } }
+}
 export const viewport = { themeColor: '#0a0b0a', colorScheme: 'dark' }
 export default async function MeetPage({ params }) {
   const code = String(params.code || '').toLowerCase()

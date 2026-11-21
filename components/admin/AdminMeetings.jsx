@@ -8,6 +8,7 @@ import { makeNotes, notesAudio, dropNotesAudio, notesText, download } from '@/co
 import { FormSettings, Attendance, formFrom, DEFAULT_FORM } from '@/components/meet/Guests'
 import AdminMeetApp from './AdminMeetApp'
 import AdminMeetUsage from './AdminMeetUsage'
+import AdminMeetBiz from './AdminMeetBiz'
 
 // Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
 // ("Tue 3 Nov" vs "Tue, 3 Nov"), which made React redraw the page. Lagos is UTC+1 all year (no daylight saving).
@@ -73,7 +74,7 @@ export default function AdminMeetings({ data }) {
   const refreshLocal = useCallback(() => notesAudio().then(setLocal).catch(() => {}), [])
   useEffect(() => {
     refreshLocal()
-    if (window.location.hash === '#usage' || window.location.hash === '#accounts') setTab(window.location.hash.slice(1))
+    if (['#usage', '#accounts', '#business'].includes(window.location.hash)) setTab(window.location.hash.slice(1))
     const m = /^#(?:notes|meet)-([a-z-]{12})$/.exec(window.location.hash)          // arrived from "Make AI notes" or a reminder
     if (m) { setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
   }, [refreshLocal])
@@ -135,8 +136,9 @@ export default function AdminMeetings({ data }) {
 
   return (<div className="mg">
     <div className="top"><h1 className="d">Meetings</h1></div>
-    <div className="seg mg-tabs" role="tablist" aria-label="Meetings sections">{[['meetings', 'Meetings'], ['usage', 'Usage'], ['accounts', 'Accounts and reports']].map(([k, l]) =>
+    <div className="seg mg-tabs" role="tablist" aria-label="Meetings sections">{[['meetings', 'Meetings'], ['usage', 'Usage'], ['business', 'Business'], ['accounts', 'Accounts and reports']].map(([k, l]) =>
       <button key={k} type="button" role="tab" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => { setTab(k); history.replaceState(null, '', k === 'meetings' ? '#' : '#' + k) }}>{l}</button>)}</div>
+    {tab === 'business' ? <AdminMeetBiz /> : null}
     {tab === 'usage' ? (data.ready ? <AdminMeetUsage /> : <section className="mg-box"><p className="mg-dim">Usage shows once the video service is connected.</p></section>) : null}
     {tab === 'accounts' ? <AdminMeetApp /> : null}
     {tab === 'meetings' ? <>

@@ -658,6 +658,8 @@ alter table meetings add column if not exists server text;                -- whi
 -- audio or video, chosen before the meeting starts; video_at = when an audio call switched to video (never recorded as video)
 alter table meetings add column if not exists mode text not null default 'video';
 alter table meetings add column if not exists video_at timestamptz;
+alter table meetings add column if not exists pro boolean not null default false;
+alter table meetings add column if not exists extra_ok boolean not null default false;
 -- ratings: 1 to 5 stars and an optional review from anyone who was in the meeting (host = the host's own rating)
 create table if not exists meet_ratings (id bigserial primary key, code text not null, identity text not null, host boolean not null default false,
   stars int not null check (stars between 1 and 5), review text, created_at timestamptz not null default now(), unique (code, identity));

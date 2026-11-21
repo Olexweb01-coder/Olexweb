@@ -98,6 +98,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
   // the calm stage: the host first, then people who are talking (in the order they started), then everyone else
   const layout = useRef({ up: new Map(), start: new Map(), order: [] }), gridRef = useRef(null), rects = useRef(new Map())
   const poorAt = useRef(0), autoSaver = useRef(0), saverByHand = useRef(false)
+  const [proNow, setProNow] = useState(true), [extraOk, setExtraOk] = useState(false), [paying, setPaying] = useState('')   // Install B (pricing on only)
   useEffect(() => setIosTip(onApple()), [])
   const [noiseOk, setNoiseOk] = useState(false)                             // decided in the browser (the server can't know), so the page matches
   useEffect(() => { const v = savedFx(); setFx(v); fxRef.current = v; setNoiseOk(canCleanNoise()); canBlur().then(setBlurOk) }, [])
@@ -150,7 +151,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       if (j.state === 'waiting') { setPhase('waiting'); return }
       if (j.state === 'ended') { setPhase('ended'); return }
       if (j.state === 'unavailable') { setPhase('unavailable'); return }
-      joinInfo.current = j; setHost(!!j.host); setVideoOk(j.video !== false); await connect(j)
+      joinInfo.current = j; setHost(!!j.host); setVideoOk(j.video !== false); setProNow(j.pro !== false); setExtraOk(!!j.extraOk); await connect(j)
     } catch (err) { setPhase('lobby'); setError(err.message || 'Couldn’t join. Check your connection and try again.') }
   }
   // the waiting screen asks every 5 seconds whether the host has started
@@ -374,6 +375,18 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       setMessages((l) => [...l.slice(-299), { id, who: me.identity, name: me.name || 'You', text: t, at: Date.now(), mine: true }]); return true
     } catch { toast('Your message didn’t send. Try again.'); return false }
   }
+  async function allowExtra() {
+    const j = joinInfo.current || {}
+    if (!window.confirm(`Let more than 100 people in? Each extra person costs ₦${j.extraPrice} for every 30 minutes they stay, on one invoice when the meeting ends. Up to 500 people.`)) return
+    try { await post('/api/meet/host', { action: 'allow-extra', code, ...seat() }); setExtraOk(true); toast('More people can join now. Rooms show at the top.') } catch (e) { toast(e.message) }
+  }
+  async function getPro() {
+    setPaying('go')
+    try { const r = await post('/api/meet/dash', { action: 'pay', kind: 'meeting', code }); if (r.url) window.open(r.url, '_blank', 'noopener'); else { window.open((location.pathname.startsWith('/meet/') ? '/meet' : '/') + '#dashboard', '_blank', 'noopener'); toast('Bank transfer details are in your dashboard. Once Olexweb confirms it, check again here.') } setPaying('wait') } catch (e) { toast(e.message); setPaying('') }
+  }
+  async function checkPro() {
+    try { const r = await post('/api/meet/dash', { action: 'pro-check', code }); if (r.pro) { setProNow(true); setPaying(''); toast('Pro is on for this meeting.') } else toast('Not paid yet. Finish the payment, then check again.') } catch (e) { toast(e.message) }
+  }
   async function switchToVideo() {
     setPop(null)
     if (!window.confirm('Switch this call to video? Everyone can then turn on their camera. It started as an audio call, so only its sound can be recorded.')) return
@@ -529,7 +542,9 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
 
     {conn.reconnecting ? <p className="mt-banner" role="status">Reconnecting… Your audio comes back on its own.</p>
       : conn.weak ? <p className="mt-banner mt-warn" role="status">{I.weak}Your connection is weak.{!saver ? <> <button className="mt-link" onClick={toggleSaver}>Turn on Data saver</button> to keep voices clear.</> : ' Voices come first.'}</p> : null}
-    {boss && all.length >= ((joinInfo.current && joinInfo.current.full) || 100) ? <p className="mt-banner mt-warn" role="status">Your meeting is full ({all.length} people), so new people can’t get in. <a className="mt-link" href={location.pathname.startsWith('/meet/') ? '/meet' : '/'} target="_blank" rel="noopener">Start a new meeting</a> and share its link with them.</p> : null}
+    {boss && !extraOk && all.length >= ((joinInfo.current && joinInfo.current.full) || 100) ? <p className="mt-banner mt-warn" role="status">Your meeting is full ({all.length} people), so new people can’t get in.
+      {joinInfo.current && joinInfo.current.pricing ? <> <button className="mt-link" onClick={allowExtra}>Let more people in</button> ({'₦' + joinInfo.current.extraPrice} per extra person for every 30 minutes, one invoice after the meeting), or</> : null} <a className="mt-link" href={location.pathname.startsWith('/meet/') ? '/meet' : '/'} target="_blank" rel="noopener">start a new meeting</a> and share its link with them.</p> : null}
+    {boss && all.length > 100 ? <p className="mt-banner" role="status">{Array.from({ length: Math.ceil(all.length / 100) }, (_, i) => `Room ${i + 1}: ${Math.min(100, all.length - i * 100)}`).join(' · ')}{extraOk ? ' · extra people are billed after the meeting' : ''}</p> : null}
     {boss && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <button className="mt-link" onClick={() => setShowNotes(true)}>Make AI notes</button><button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
@@ -589,7 +604,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
         <h2 className="mt-h2" id="mt-rec-h">Record this meeting?</h2>
         <p className="mt-p">Everyone sees that it’s being recorded. When you stop, the file saves to this device. Keep this tab open while recording.</p>
         {audioStart ? <p className="mt-hint">This meeting started as an audio call, so it records sound only, as an MP3.</p> : <div className="mt-seg" role="group" aria-label="What to record">
-          <button type="button" aria-pressed={!recAudio} onClick={() => setRecAudio(false)}>Video and audio</button>
+          <button type="button" aria-pressed={!recAudio} onClick={() => setRecAudio(false)}>Video and audio{proNow ? '' : ' · Pro'}</button>
           <button type="button" aria-pressed={recAudio} onClick={() => setRecAudio(true)}>Audio only</button>
         </div>}
         {(audioStart || recAudio) && canMp3() ? <div className="mt-recq"><span>MP3 quality</span><div className="mt-seg mt-seg-sm" role="group" aria-label="MP3 quality">
@@ -597,7 +612,10 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
           <small>{recHigh ? '96 kbps: about 43 MB an hour' : '64 kbps: clear speech, about 29 MB an hour'}</small></div> : null}
         <p className="mt-hint">{(audioStart || recAudio) ? (canMp3() ? 'An MP3 that plays everywhere (WhatsApp, phones, computers). Best for notes later.' : 'Small file, about 30 MB an hour. Best for notes later.') : 'What you see on screen, up to about 400 MB an hour.'}</p>
         <div className="mt-col">
-          <button className="mt-btn mt-rec-go" onClick={() => startRec(audioStart || recAudio)} autoFocus>{I.rec}Record</button>
+          {!audioStart && !recAudio && !proNow ? <>
+            <p className="mt-hint">Video recording is part of Pro. MP3 (Audio only) is free.</p>
+            {host ? <button className="mt-btn mt-go" disabled={paying === 'go'} onClick={paying === 'wait' ? checkPro : getPro}>{paying === 'wait' ? 'I’ve paid: check' : `Get Pro for this meeting (₦${(joinInfo.current && joinInfo.current.proPrice) || '1,000'})`}</button> : <p className="mt-hint">Ask the host to get Pro for this meeting.</p>}
+          </> : <button className="mt-btn mt-rec-go" onClick={() => startRec(audioStart || recAudio)} autoFocus>{I.rec}Record</button>}
           <button className="mt-btn mt-ghost" onClick={() => setAskRec(false)}>Not now</button>
         </div>
       </div>

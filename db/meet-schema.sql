@@ -78,3 +78,27 @@ create index if not exists meet_login_fails_email on meet_login_fails (lower(ema
 
 -- co-hosts (by their identity in the meeting): they can mute, let speak, remove, record and take AI notes
 alter table meetings add column if not exists cohosts jsonb not null default '[]'::jsonb;
+-- Install B: plans and payments. Pricing is off until you turn it on (Admin → Meetings → Business); while it's off,
+-- everything works and is free exactly as before.
+alter table meet_settings add column if not exists pricing_on boolean not null default false;
+alter table meet_settings add column if not exists prices jsonb not null default '{"month":4500,"year":45000,"meeting":1000,"extra":50}';
+alter table meet_users add column if not exists pro_until timestamptz;               -- Pro for the account (monthly, yearly, rewards, gifts)
+alter table meet_users add column if not exists phone text;                          -- optional, for support replies on WhatsApp
+alter table meetings add column if not exists pro boolean not null default false;    -- Pro bought for this one meeting
+alter table meetings add column if not exists extra_ok boolean not null default false; -- the host let more than 100 people in (paid per person)
+alter table meet_usage add column if not exists extra boolean not null default false;  -- joined when the meeting already had 100 people
+create table if not exists meet_payments (id bigserial primary key, reference text not null unique, user_id int, kind text not null, code text, invoice_id bigint,
+  amount int not null, status text not null default 'pending', created_at timestamptz not null default now(), paid_at timestamptz);
+create table if not exists meet_invoices (id bigserial primary key, user_id int, code text not null unique, title text not null default '', people int not null default 0,
+  blocks int not null default 0, amount int not null, created_at timestamptz not null default now(), paid_at timestamptz, paid_how text);
+create index if not exists meet_invoices_due on meet_invoices (user_id) where paid_at is null;
+-- announcements (everyone) and notices (one person: invoices, Pro, support replies)
+create table if not exists meet_news (id bigserial primary key, title text not null, body text not null default '', created_at timestamptz not null default now());
+create table if not exists meet_notices (id bigserial primary key, user_id int not null, title text not null, body text not null default '', link text, created_at timestamptz not null default now(), read_at timestamptz);
+create index if not exists meet_notices_user on meet_notices (user_id, created_at desc);
+-- support: Olex AI answers first; what it can't solve becomes a ticket for you
+create table if not exists meet_tickets (id bigserial primary key, user_id int, email text, phone text, question text not null, ai_answer text, status text not null default 'open',
+  reply text, created_at timestamptz not null default now(), replied_at timestamptz);
+-- bank transfer (your account, you confirm each one) and which platform a payment went through
+alter table meet_settings add column if not exists bank jsonb not null default '{}';
+alter table meet_payments add column if not exists provider text not null default 'paystack';

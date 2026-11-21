@@ -5,15 +5,22 @@ import { Refused } from '@/lib/admin/content'
 import { currentMeetUser } from '@/lib/meet/auth'
 import * as M from '@/lib/site/meet'
 import { canCreate } from '@/lib/meet/usage'
+import { pricing, planOf, mustNotOwe } from '@/lib/meet/plans'
 export const dynamic = 'force-dynamic'
 export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const mu = await currentMeetUser(); if (!mu) return refuse('Sign in to create or schedule meetings.', 401)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   return respond(async () => {
-    if (b.action === 'list') return { meetings: await M.myMeetings(mu) }
+    if (b.action === 'list') {
+      const all = await M.myMeetings(mu), p = await pricing()
+      if (!p.on || (await planOf(mu)).pro) return { meetings: all }
+      const past = all.filter((m) => m.endedAt)                                 // Free (pricing on): the last 3 ended meetings; Pro: all
+      return { meetings: all.filter((m) => !m.endedAt || past.indexOf(m) < 3), morePast: Math.max(0, past.length - 3) }
+    }
     if (b.action === 'create') {
       const owner = mu.role === 'owner'
+      if (!owner) await mustNotOwe(mu.id)                                    // an unpaid invoice pauses new meetings
       await canCreate(owner)                                              // paused near the monthly limit (not for Olaitan)
       const r = await M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
       return { ...r, link: M.meetLink(r.code) }
