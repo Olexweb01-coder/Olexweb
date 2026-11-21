@@ -42,7 +42,9 @@ export default function Freshness({ version }) {
 
   useEffect(() => {                                                              // pull down from the top to refresh (phones)
     let y0 = null, d = 0
-    const start = (e) => { y0 = isPhone() && window.scrollY <= 0 && !editorOpen() && e.touches.length === 1 ? e.touches[0].clientY : null; d = 0 }
+    // pull to refresh only on the page itself: never while the menu, a sheet or a dialog is open (they scroll on their own)
+    const inside = (e) => !!(e.target && e.target.closest && e.target.closest('.side, .sheet, [role=dialog], .bz-modal, .mt-modal')) || !!document.querySelector('.olex.drawer-on')
+    const start = (e) => { y0 = isPhone() && window.scrollY <= 0 && !editorOpen() && !inside(e) && e.touches.length === 1 ? e.touches[0].clientY : null; d = 0 }
     const move = (e) => { if (y0 === null) return; d = e.touches[0].clientY - y0; setPull(d > 0 && window.scrollY <= 0 ? Math.min(d, 110) : 0) }
     const end = () => { if (y0 !== null && d > 80) refresh(false); y0 = null; d = 0; setPull(0) }
     window.addEventListener('touchstart', start, { passive: true }); window.addEventListener('touchmove', move, { passive: true }); window.addEventListener('touchend', end); window.addEventListener('touchcancel', end)

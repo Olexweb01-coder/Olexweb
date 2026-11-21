@@ -15,6 +15,8 @@ const mb = (n) => (n / 1048576).toFixed(1) + ' MB'
 const TABS = [['waiting', 'Waiting'], ['approved', 'Approved'], ['banned', 'Banned'], ['declined', 'Declined']]
 
 export default function DownloadsBoard({ initial }) {
+  const [shown, setShown] = useState(false); useEffect(() => setShown(true), [])   // times like “5 min ago” only in the browser (the server's clock and zone differ)
+  const since = (iso) => (shown ? ago(iso) : '')
   const [data, setData] = useState(initial), [tab, setTab] = useState('waiting'), [busy, setBusy] = useState(0), [up, setUp] = useState(null)
   const [fail, setFail] = useState('')
   // closing or refreshing during an upload: the browser asks first (it can carry on afterwards from the same file)
@@ -59,7 +61,7 @@ export default function DownloadsBoard({ initial }) {
     {data.apps.map((a) => {
       const list = a.people.filter((p) => p.status === tab), count = (s) => a.people.filter((p) => p.status === s).length
       return (<section key={a.slug} className="dl-app">
-        <div className="dl-head"><div><b className="d">{a.name}</b><span>{a.release ? `Version ${a.release.version} · ${a.release.filename} · ${mb(a.release.size)} · uploaded ${ago(a.release.live_at)}` : 'No installer uploaded yet: nobody can download until you upload it.'}</span></div>
+        <div className="dl-head"><div><b className="d">{a.name}</b><span>{a.release ? `Version ${a.release.version} · ${a.release.filename} · ${mb(a.release.size)} · uploaded ${since(a.release.live_at)}` : 'No installer uploaded yet: nobody can download until you upload it.'}</span></div>
           <a className="btn btn-line" href={'/tools/' + a.slug} target="_blank" rel="noopener">See the page ↗</a></div>
         <div className="dl-up">
           <label className="btn btn-line dl-file">Choose installer<input ref={file} type="file" accept=".exe,.msi,.zip" onChange={(e) => { const f = e.target.files[0]; setPicked(f ? { name: f.name, size: f.size } : null); const v = f && f.name.match(/(\d{4}\.\d{1,2}\.\d+|\d+\.\d+\.\d+)/); if (v && !version) setVersion(v[1]) }} /></label>
@@ -74,7 +76,7 @@ export default function DownloadsBoard({ initial }) {
         {!list.length ? <div className="empty">{tab === 'waiting' ? 'Nobody is waiting. When someone taps Request download, they appear here and you get a notification.' : 'Nobody here.'}</div>
           : list.map((p) => (<article className="dl-row" key={p.id}>
             <div><b>{p.name}</b><span>{p.email}{p.phone ? ' · ' + p.phone : ''}</span>
-              <small>Asked {ago(p.created_at)}{p.downloads ? ` · downloaded ${p.downloads}× (last ${ago(p.last_download_at)})` : p.status === 'approved' ? ' · not downloaded yet' : ''}</small></div>
+              <small>Asked {since(p.created_at)}{p.downloads ? ` · downloaded ${p.downloads}× (last ${since(p.last_download_at)})` : p.status === 'approved' ? ' · not downloaded yet' : ''}</small></div>
             <span className="acts">
               {p.status === 'waiting' ? <><button className="btn btn-bad" disabled={busy === p.id} onClick={() => decide(p, 'decline', 'Declined.')}>Decline</button><button className="btn btn-green" disabled={busy === p.id} onClick={() => decide(p, 'approve', `Approved. ${p.name.split(' ')[0]}’s download starts now.`)}>Approve</button></> : null}
               {p.status === 'approved' ? <button className="btn btn-bad" disabled={busy === p.id} onClick={() => decide(p, 'ban', `${p.name.split(' ')[0]} is banned: no more downloads.`)}>Ban</button> : null}
@@ -84,7 +86,7 @@ export default function DownloadsBoard({ initial }) {
           </article>))}
       </section>)
     })}
-    <style>{`.dl-app{margin-top:18px;padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--raise,transparent);display:grid;gap:14px}
+    <style>{`.dl-app{margin-top:18px;padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--raise,transparent);display:grid;grid-template-columns:minmax(0,1fr);gap:14px}.dl-head div{min-width:0;flex:1 1 220px}
 .dl-head{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}.dl-head b{display:block;font-size:20px}.dl-head span{color:var(--dim);font-size:14px}
 .dl-up{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.dl-up .input{flex:1 1 200px;min-width:0}.dl-file{position:relative;overflow:hidden}.dl-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .dl-bar{position:relative;min-height:34px;border-radius:12px;background:var(--line);overflow:hidden}.dl-bar i{position:absolute;inset:0 auto 0 0;background:var(--green);opacity:.35;transition:width .3s}.dl-bar span{position:relative;display:block;padding:8px 12px;font-size:13.5px;font-weight:600}

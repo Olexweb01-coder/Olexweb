@@ -184,6 +184,8 @@
     padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);background:var(--page)}
   .olex[data-style=glass] .side,.olex:not([data-style]) .side{background:rgba(10,12,11,.9)}
   .olex.drawer-on .side{transform:none}
+  .olex .side{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}   /* the whole drawer scrolls on a phone: sections, chats, account */
+  .olex .side-chats{flex:none;overflow:visible;min-height:0}
   .scrim{display:block;position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .3s}
   .olex.drawer-on .scrim{opacity:1;pointer-events:auto}
   .topbar .opener,.topbar-end>.icon-btn{display:grid}
@@ -408,3 +410,9 @@
 .olex .nav-a.sub{padding:7px 10px;font-size:14px}
 .olex .nav-a.sub svg{width:17px;height:17px}
 .olex .nav-a .dot-new{margin-right:4px}
+
+/* a short window on a computer: the sidebar scrolls as a whole too, so nothing is cut off */
+@media (min-width:901px) and (max-height:760px){.olex .side{overflow-y:auto;overscroll-behavior:contain}.olex .side-chats{flex:none;overflow:visible}}
+
+/* nothing pushes a page sideways on a phone: long names and links wrap, inputs fit the screen */
+.olex .main,.olex .page{min-width:0}.olex .page{overflow-wrap:anywhere}.olex .input,.olex input,.olex select,.olex textarea{max-width:100%;min-width:0}
