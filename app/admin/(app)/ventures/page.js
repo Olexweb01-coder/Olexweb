@@ -1,11 +1,13 @@
+// Ventures (Install E): the businesses that make money (owner only). The public ventures list for the website lives
+// in Projects now, so anyone else who could edit it is sent there.
 import { redirect } from 'next/navigation'
 import { requireUser, can, ownerOnly } from '@/lib/admin/auth'
-import { q } from '@/lib/admin/db'
-import VenturesBoard from '@/components/admin/Ventures'
+import { business } from '@/lib/admin/business'
+import Business from '@/components/admin/Business'
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Ventures' }
 export default async function Ventures() {
   const u = await requireUser()
-  if (!can(u, 'ventures')) redirect('/admin/more')
-  const rows = (await q("select id, slug, name, line, kind, summary, text, url, image, status from ventures where status <> 'bin' order by sort, id")).rows
-  return <VenturesBoard items={rows} isOwner={ownerOnly(u)} />
+  if (!ownerOnly(u)) redirect(can(u, 'ventures') ? '/admin/projects#ventures' : '/admin/more')
+  return <Business initial={JSON.parse(JSON.stringify(await business()))} />
 }

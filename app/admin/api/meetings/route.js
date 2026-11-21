@@ -27,6 +27,7 @@ export async function POST(request) {
     if (b.action === 'usage') return { usage: await U.usageNow(), databases: await U.databases(), presets: U.PRESETS }
     if (b.action === 'limits') return U.saveLimits({ minutes: b.minutes, people: b.people })
     // Install B: Business (pricing, support, invoices, announcements, gifts)
+    if (b.action === 'console') return D.consoleData()
     if (b.action === 'biz') return D.bizData()
     if (b.action === 'pricing') return D.savePricing(b)
     if (b.action === 'news') return D.postNews(b)

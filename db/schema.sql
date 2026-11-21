@@ -763,3 +763,13 @@ alter table li_posts add column if not exists photo_type text;
 -- Install 48: your photo library for LinkedIn (up to 10), each read once by AI for its mood, used now and then where it fits
 create table if not exists li_photos (id serial primary key, bytes bytea not null, type text not null, mood text, what text, used int not null default 0, last_used timestamptz, created_at timestamptz not null default now());
 alter table li_posts add column if not exists photo_id int;
+-- Install E: Ventures = the businesses that make money (Olexweb Meet, Belloft, and the ones to come). The public list of
+-- ventures on the website is managed in Projects now (the ventures table above is unchanged).
+create table if not exists biz_ventures (id serial primary key, name text not null, line text, url text, admin_url text, status text not null default 'live',
+  kind text not null default 'manual', users int, notes text, sort int not null default 0, created_at timestamptz not null default now());
+create table if not exists biz_income (id bigserial primary key, venture_id int not null references biz_ventures(id) on delete cascade, month text not null, amount int not null,
+  note text, created_at timestamptz not null default now());
+create index if not exists biz_income_v on biz_income (venture_id, month);
+insert into biz_ventures (name, line, url, admin_url, kind, sort) select 'Olexweb Meet', 'Free audio and video meetings, with Pro and big-meeting billing', 'https://meet.olexweb.com', '/admin/meetings', 'meet', 1
+  where not exists (select 1 from biz_ventures where kind = 'meet');
+insert into biz_ventures (name, line, kind, status, sort) select 'Belloft', 'Payments by Paystack', 'manual', 'live', 2 where not exists (select 1 from biz_ventures where lower(name) = 'belloft');

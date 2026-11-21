@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation'
 import { act, toast, Sheet, ImagePicker, Notice } from './ui'
 
 const PILL = { live: ['live', 'Live'], hidden: ['', 'Hidden'], draft: ['draft', 'Draft'], waiting: ['draft', 'Waiting for approval'] }
-export default function VenturesBoard({ items, isOwner }) {
+export default function VenturesBoard({ items, isOwner, title = 'Ventures' }) {
   const router = useRouter(), [edit, setEdit] = useState(null), close = useCallback(() => setEdit(null), [])
   return (<>
-    <div className="top"><h1 className="d">Ventures</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { text: [''] } })}>Add</button></div>
+    <div className="top"><h1 className="d">{title}</h1><button className="btn btn-green" onClick={() => setEdit({ isNew: true, data: { text: [''] } })}>Add</button></div>
     <Notice />
     <ul className="rows">{items.map((v) => (
       <li key={v.id} className="row click" onClick={() => setEdit({ data: v })}>

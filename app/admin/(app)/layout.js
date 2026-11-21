@@ -32,14 +32,16 @@ export default async function AppLayout({ children }) {
       owner && ['/admin/sales', 'sales', 'Sales'],
       owner && ['/admin/leads', 'leads', 'Leads', c.leads],
       owner && ['/admin/mail', 'mail', 'Mail'],
-      owner && ['/admin/meetings', 'video', 'Meetings'],
       ['/admin/reviews', 'reviews', 'Reviews', c.waiting],
       owner && ['/admin/people', 'person', 'People'],
+    ]),
+    G('ventures', 'Ventures', 'ventures', [                                   // Install E: the businesses that make money
+      owner && ['/admin/ventures', 'ventures', 'All ventures'],
+      owner && ['/admin/meetings', 'video', 'Olexweb Meet'],
     ]),
     G('site', 'Website & work', 'work', [
       owner && ['/admin/pages', 'link', 'Pages & links'],
       ['/admin/projects', 'work', 'Projects'],
-      can(u, 'ventures') && ['/admin/ventures', 'ventures', 'Ventures'],
       owner && ['/admin/downloads', 'download', 'Downloads', c.downloads],
     ]),
     owner && process.env.US_APP_URL && ['/admin/love', 'heart', 'Our Space'],

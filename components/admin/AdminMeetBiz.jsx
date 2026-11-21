@@ -13,7 +13,8 @@ async function act(body) {
 }
 const wa = (phone, text) => 'https://wa.me/' + String(phone || '').replace(/[^\d]/g, '').replace(/^0/, '234') + '?text=' + encodeURIComponent(text)
 
-export default function AdminMeetBiz() {
+export default function AdminMeetBiz({ only = null }) {
+  const show = (k) => !only || only.includes(k)                              // the console shows these in different tabs
   const [d, setD] = useState(null), [err, setErr] = useState(''), [msg, setMsg] = useState(''), [busy, setBusy] = useState('')
   const [bank, setBank] = useState(null), [prices, setPrices] = useState(null), [news, setNews] = useState({ title: '', body: '' }), [replies, setReplies] = useState({}), [gift, setGift] = useState({ email: '', days: 30 })
   async function load() { try { const j = await act({ action: 'biz' }); setD(j); setPrices(j.pricing.prices); setBank((b) => b || { on: false, bankName: '', accountName: '', accountNumber: '', note: '', ...j.bank }) } catch (e) { setErr(e.message) } }
@@ -27,7 +28,7 @@ export default function AdminMeetBiz() {
   return (<div className="mb">
     {err ? <p className="mb-err" role="alert">{err}</p> : null}{msg ? <p className="mb-ok" role="status">{msg}</p> : null}
 
-    <section className="mg-box">
+    {show('pricing') ? <section className="mg-box">
       <div className="mb-row"><h2>Pricing</h2><button className={'btn ' + (d.pricing.on ? '' : 'btn-green')} disabled={!!busy} onClick={() => run('sw', { action: 'pricing', on: !d.pricing.on, prices }, d.pricing.on ? 'Pricing is off: everything is free again.' : 'Pricing is on.')}>{busy === 'sw' ? '…' : d.pricing.on ? 'Turn pricing off' : 'Turn pricing on'}</button></div>
       <p className="mg-dim">{d.pricing.on ? 'On: the plans show on the Meet home page, video recording and past meetings beyond the last 3 are Pro, and hosts can let more than 100 people in for a fee.' : 'Off: everything in Meet is free and nobody sees prices. Turning it on changes the Meet home page and the paid features at once; turning it off puts everything back.'}
         {!d.payReady && !(d.bank && d.bank.on) ? ' To take payments, add PAYSTACK_SECRET_KEY in Vercel or turn on bank transfer below.' : ''}</p>
@@ -35,9 +36,9 @@ export default function AdminMeetBiz() {
         <label key={k}><span className="mg-lab">{l} (₦)</span><input className="input" type="number" min={10} value={prices[k]} onChange={(e) => setPrices({ ...prices, [k]: e.target.value })} /></label>)}</div>
       <button className="btn btn-line" disabled={!!busy} onClick={() => run('pr', { action: 'pricing', on: d.pricing.on, prices }, 'Prices saved.')}>Save prices</button>
       <p className="mg-dim">This month: {naira(d.month.total)} from {d.month.n} payment{d.month.n === 1 ? '' : 's'} · {d.proUsers} on Pro.</p>
-    </section>
+    </section> : null}
 
-    <section className="mg-box">
+    {show('bank') ? <section className="mg-box">
       <div className="mb-row"><h2>Bank transfer</h2><span className="mg-dim">{bank.on ? 'On' : 'Off'}</span></div>
       <p className="mg-dim">A way to pay that you control, for when Paystack isn’t set up or isn’t working. People see these details, send the money, tap “I’ve sent it”, and you confirm here after checking your bank. More payment platforms can be added later the same way as Paystack.</p>
       <div className="mb-prices">{[['bankName', 'Bank'], ['accountName', 'Account name'], ['accountNumber', 'Account number']].map(([k, l]) =>
@@ -47,9 +48,9 @@ export default function AdminMeetBiz() {
         {bank.on ? <button className="btn btn-line" disabled={!!busy} onClick={() => run('bs', { action: 'bank', ...bank }, 'Saved.')}>Save changes</button> : null}</div>
       {d.transfers.length ? <ul className="mb-list">{d.transfers.map((t) => <li key={t.id}><span><b>{naira(t.amount)}</b> · ref <b>{t.ref}</b> · {t.name || t.email || 'Meet user'} · {t.kind} · {when(t.created_at)} · {t.status === 'claimed' ? 'says it’s sent' : 'not sent yet'}</span>
         <span className="mb-acts"><button className="btn btn-green" disabled={!!busy} onClick={() => run('t' + t.id, { action: 'transfer', id: t.id, yes: true }, 'Confirmed. It’s applied and they’ve been told.')}>Received</button><button className="btn btn-line" disabled={!!busy} onClick={() => run('x' + t.id, { action: 'transfer', id: t.id, yes: false }, 'Declined. They’ve been told.')}>Not received</button></span></li>)}</ul> : null}
-    </section>
+    </section> : null}
 
-    <section className="mg-box" id="business">
+    {show('tickets') ? <section className="mg-box" id="business">
       <h2>Support requests {open.length ? <span className="mb-pill">{open.length} waiting</span> : null}</h2>
       {d.tickets.length ? d.tickets.map((t) => <div key={t.id} className={'mb-ticket' + (t.status === 'open' ? ' open' : '')}>
         <div className="mb-row"><b>{t.name || 'Meet user'}</b><small className="mg-dim">{when(t.created_at)} · {t.status}</small></div>
@@ -65,31 +66,31 @@ export default function AdminMeetBiz() {
             <button className="btn btn-line" disabled={!!busy} onClick={() => run('c' + t.id, { action: 'ticket-close', id: t.id })}>Close</button>
           </div></> : null}
       </div>) : <p className="mg-dim">No requests yet. Olex AI answers the simple ones itself.</p>}
-    </section>
+    </section> : null}
 
-    <section className="mg-box">
+    {show('invoices') ? <section className="mg-box">
       <h2>Invoices {due.length ? <span className="mb-pill">{due.length} unpaid</span> : null}</h2>
       {d.invoices.length ? <ul className="mb-list">{d.invoices.map((i) => <li key={i.id}><span><b>{naira(i.amount)}</b> · {i.title} · {i.name || i.email || 'host'} · {i.people} extra people · {when(i.created_at)}</span>
         {i.paid_at ? <small className="mg-dim">Paid ({i.paid_how})</small> : <button className="btn btn-line" disabled={!!busy} onClick={() => run('i' + i.id, { action: 'invoice-paid', id: i.id }, 'Marked as paid. They can start meetings again.')}>Mark as paid</button>}</li>)}</ul>
         : <p className="mg-dim">No invoices. They appear when a meeting goes past 100 people with pricing on.</p>}
-    </section>
+    </section> : null}
 
-    <section className="mg-box">
+    {show('news') ? <section className="mg-box">
       <h2>Announcements</h2>
       <p className="mg-dim">Shows in every Meet user’s dashboard under “What’s new”.</p>
       <input className="input" maxLength={120} value={news.title} onChange={(e) => setNews({ ...news, title: e.target.value })} placeholder="Title, e.g. Audio calls are here" />
       <textarea className="input" rows={3} maxLength={2000} value={news.body} onChange={(e) => setNews({ ...news, body: e.target.value })} placeholder="A few lines about it" />
       <button className="btn btn-green" disabled={!!busy || !news.title.trim()} onClick={() => run('n', { action: 'news', ...news }, 'Posted.').then((ok) => ok && setNews({ title: '', body: '' }))}>Post</button>
       {d.news.length ? <ul className="mb-list">{d.news.map((n) => <li key={n.id}><span><b>{n.title}</b> · {when(n.created_at)}</span><button className="btn btn-line" disabled={!!busy} onClick={() => run('nd' + n.id, { action: 'news-delete', id: n.id })}>Delete</button></li>)}</ul> : null}
-    </section>
+    </section> : null}
 
-    <section className="mg-box">
+    {show('gift') ? <section className="mg-box">
       <h2>Give Pro</h2>
       <p className="mg-dim">A gift or a thank-you: type an email, or <b>all</b> for every Meet account.</p>
       <div className="mb-prices"><label><span className="mg-lab">Email (or all)</span><input className="input" value={gift.email} onChange={(e) => setGift({ ...gift, email: e.target.value })} /></label>
         <label><span className="mg-lab">Days</span><input className="input" type="number" min={1} value={gift.days} onChange={(e) => setGift({ ...gift, days: e.target.value })} /></label></div>
       <button className="btn btn-line" disabled={!!busy || !gift.email.trim()} onClick={() => run('g', { action: 'give-pro', ...gift }, (j) => `Pro given to ${j.people} account${j.people === 1 ? '' : 's'}. They were told in their dashboard.`)}>Give Pro</button>
-    </section>
+    </section> : null}
     <style dangerouslySetInnerHTML={{ __html: `.mb{display:grid;gap:16px}.mb h2{margin:0 0 8px;display:flex;align-items:center;gap:10px}.mb-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mb-prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}.mb-prices label{display:grid;gap:4px}
 .mb-pill{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(239,122,106,.15);color:#ef7a6a}

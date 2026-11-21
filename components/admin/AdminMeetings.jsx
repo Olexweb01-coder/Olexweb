@@ -9,6 +9,7 @@ import { FormSettings, Attendance, formFrom, DEFAULT_FORM } from '@/components/m
 import AdminMeetApp from './AdminMeetApp'
 import AdminMeetUsage from './AdminMeetUsage'
 import AdminMeetBiz from './AdminMeetBiz'
+import AdminMeetConsole, { Kpis, useConsole, CONSOLE_CSS } from './AdminMeetConsole'
 
 // Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
 // ("Tue 3 Nov" vs "Tue, 3 Nov"), which made React redraw the page. Lagos is UTC+1 all year (no daylight saving).
@@ -66,17 +67,19 @@ let BASE = null                                                           // the
 const link = (code) => (BASE ? `${BASE}/${code}` : `${typeof window === 'undefined' ? 'https://olexweb.com' : window.location.origin}/meet/${code}`)
 
 export default function AdminMeetings({ data }) {
+  const [con, conErr] = useConsole()                                        // Install E: the console's live numbers
   BASE = data.base || null
   const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [mode, setMode] = useState('video'), [secret, setSecret] = useState(false), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
   const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
-  const [edit, setEdit] = useState(null), [tab, setTab] = useState('meetings'), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
+  const [edit, setEdit] = useState(null), [tab, setTab] = useState('overview'), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
   const refreshLocal = useCallback(() => notesAudio().then(setLocal).catch(() => {}), [])
   useEffect(() => {
     refreshLocal()
-    if (['#usage', '#accounts', '#business'].includes(window.location.hash)) setTab(window.location.hash.slice(1))
+    const h = window.location.hash.slice(1), old = { business: 'support' }   // (old links: #business went to support requests)
+    if (['meetings', 'usage', 'accounts', 'revenue', 'support', 'business'].includes(h)) setTab(old[h] || h)
     const m = /^#(?:notes|meet)-([a-z-]{12})$/.exec(window.location.hash)          // arrived from "Make AI notes" or a reminder
-    if (m) { setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
+    if (m) { setTab('meetings'); setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
   }, [refreshLocal])
   const closeView = useCallback(() => setView(null), [])
   async function notes(m) {
@@ -123,6 +126,8 @@ export default function AdminMeetings({ data }) {
   }
   const closeEdit = useCallback(() => setEdit(null), [])
   async function copy(code) { try { await navigator.clipboard.writeText(link(code)); toast('Link copied.') } catch { window.prompt('Copy the meeting link:', link(code)) } }
+  const go = (k) => { setTab(k); history.replaceState(null, '', k === 'overview' ? '#' : '#' + k); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const meetHome = () => (data.base ? data.base + '/' : '/meet')
   const open = data.meetings.filter((m) => !m.endedAt), ended = data.meetings.filter((m) => m.endedAt)
   const noteBits = (m) => { const parts = (local[m.code] || []).length, working = job && job.code === m.code
     return <>
@@ -135,10 +140,14 @@ export default function AdminMeetings({ data }) {
     return parts && !m.notesAt ? <span className="mg-dim">A recording on this device is ready for AI notes.</span> : m.notesAt ? <span className="mg-dim">Notes made {when(m.notesAt)}</span> : null }
 
   return (<div className="mg">
-    <div className="top"><h1 className="d">Meetings</h1></div>
-    <div className="seg mg-tabs" role="tablist" aria-label="Meetings sections">{[['meetings', 'Meetings'], ['usage', 'Usage'], ['business', 'Business'], ['accounts', 'Accounts and reports']].map(([k, l]) =>
-      <button key={k} type="button" role="tab" aria-selected={tab === k} aria-pressed={tab === k} onClick={() => { setTab(k); history.replaceState(null, '', k === 'meetings' ? '#' : '#' + k) }}>{l}</button>)}</div>
-    {tab === 'business' ? <AdminMeetBiz /> : null}
+    <div className="mc-head"><div><h1 className="d">Olexweb Meet</h1><p>Free audio and video meetings · your SaaS console</p></div>
+      <a className="btn btn-line" href={meetHome()} target="_blank" rel="noopener">Open Meet ↗</a></div>
+    <Kpis d={con} />
+    <div className="mc-tabs" role="tablist" aria-label="Meet sections">{[['overview', 'Overview'], ['meetings', 'Meetings'], ['accounts', 'Accounts'], ['revenue', 'Revenue', con && con.k.transfers + con.k.invoices], ['support', 'Support', con && con.k.tickets], ['usage', 'Usage and servers']].map(([k, l, n]) =>
+      <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => go(k)}>{l}{n ? <i>{n}</i> : null}</button>)}</div>
+    {tab === 'overview' ? <AdminMeetConsole d={con} err={conErr} go={go} /> : null}
+    {tab === 'revenue' ? <AdminMeetBiz only={['pricing', 'bank', 'invoices', 'gift']} /> : null}
+    {tab === 'support' ? <AdminMeetBiz only={['tickets', 'news']} /> : null}
     {tab === 'usage' ? (data.ready ? <AdminMeetUsage /> : <section className="mg-box"><p className="mg-dim">Usage shows once the video service is connected.</p></section>) : null}
     {tab === 'accounts' ? <AdminMeetApp /> : null}
     {tab === 'meetings' ? <>
@@ -227,7 +236,7 @@ export default function AdminMeetings({ data }) {
     </Sheet> : null}
 
     <style dangerouslySetInnerHTML={{ __html: `
-.mg{display:grid;gap:14px;max-width:880px}.mg-tabs{justify-self:start;margin-bottom:2px}
+.mg{display:grid;gap:16px;max-width:1180px}${CONSOLE_CSS}.mg-tabs{justify-self:start;margin-bottom:2px}
 .mg-box{padding:18px;border-radius:20px;border:1px solid var(--line);background:var(--raise)}
 .mg-box h2{margin:0 0 12px;font-size:17px;font-weight:800}
 .mg-box p{margin:0 0 12px;font-size:14.5px;line-height:1.6}
