@@ -1,5 +1,6 @@
 // Install 29: one page per real search (lib/site/landings.js), in the Directory's look: the answer, what you get, how it
 // works, real work from the portfolio, the questions people ask, and one way to start (WhatsApp or the project form).
+import { VERIFIED_HTML } from '@/lib/site/trust'   // Install 46
 import { DIR_CSS } from '@/components/dirStyles'
 
 const WA = 'https://wa.me/2347011726321?text=' + encodeURIComponent('Hi Olexweb, I found you on Google and I’d like to talk about a project.')
@@ -17,7 +18,7 @@ export default function Landing({ L, projects = [] }) {
       <section className="ln-end"><h2>Tell us what you’re building.</h2><p>WhatsApp opens with a message already written. Or send the details and get a reply within a day.</p>
         <div className="ln-cta"><a className="ln-go" href={WA} target="_blank" rel="noopener">Talk on WhatsApp</a><a className="ln-line" href={'/start?from=' + encodeURIComponent(L.path)}>Send your project details</a></div></section>
       <nav className="ln-more" aria-label="Related">{L.links.map(([h, t]) => <a key={h} href={h}>{t} →</a>)}</nav>
-      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span></footer>
+      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span><span style={{ flexBasis: '100%' }} dangerouslySetInnerHTML={{ __html: VERIFIED_HTML }} /></footer>
     </div>
   </div>)
 }

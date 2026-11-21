@@ -734,3 +734,18 @@ insert into li_settings (id) values (1) on conflict do nothing;
 create table if not exists li_oauth_states (state_hash text primary key, user_id text not null, created_at timestamptz not null default now());
 create table if not exists li_posts (id serial primary key, kind text not null, ref text not null, urn text, text text, link text, status text not null default 'posted', error text, posted_at timestamptz not null default now());
 create index if not exists li_posts_ref on li_posts (kind, ref);
+-- Install 43: LinkedIn in your own voice: your past posts as the voice, your real notes as the stories, the 100-day series, drafts you can edit
+alter table li_settings add column if not exists voice text not null default '';
+alter table li_settings add column if not exists series text not null default 'Raw truth about websites, apps and building in public';
+alter table li_settings add column if not exists intro_done boolean not null default false;
+alter table li_posts add column if not exists comment text;
+alter table li_posts add column if not exists format text;
+alter table li_posts add column if not exists day int;
+alter table li_posts add column if not exists due_at timestamptz;
+create table if not exists li_notes (id serial primary key, text text not null, created_at timestamptz not null default now(), used_at timestamptz);
+alter table li_posts add column if not exists card jsonb;   -- Install 44: the words on the post's own picture
+-- Install 46: your personal page's series, and a photo you choose for a special post
+alter table li_settings alter column series set default 'Creator, not user: ideas, deep thinking and building in public';
+update li_settings set series = 'Creator, not user: ideas, deep thinking and building in public' where series = 'Raw truth about websites, apps and building in public';
+alter table li_posts add column if not exists photo bytea;
+alter table li_posts add column if not exists photo_type text;

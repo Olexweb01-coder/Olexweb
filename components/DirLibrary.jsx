@@ -1,6 +1,7 @@
 'use client'
 // olexweb.com/tools: search and browse every Directory post (Install 16: tools, tech updates, how-tos and safety alerts;
 // /updates, /guides and /alerts show one kind each).
+import { VERIFIED_HTML } from '@/lib/site/trust'   // Install 46
 import { useEffect, useMemo, useState } from 'react'
 import { DIR_CSS, PRICE } from './dirStyles'
 
@@ -56,7 +57,7 @@ export default function DirLibrary({ entries: all, kind: fixed = null, heading =
         <span className="dl-top">{k === 'tool' ? <span className={'dx-badge dx-' + (e.price || 'unknown')}>{PRICE[e.price || 'unknown']}</span> : <span className={'dl-kind dl-' + k}>{KNAME[k]}</span>}{fresh ? <span className="dl-new">New today</span> : null}</span>
         <b>{e.name}</b><p>{e.one}</p>{k === 'tool' && e.category ? <span className="dl-cat">{e.category}</span> : <span className="dl-cat">{(TOPICS.find((t) => t[0] === topicOf(e)) || [])[1]}</span>}</a> })}</div>
       {!list.length ? <p className="dl-empty">{entries.length ? 'Nothing matches that yet. Try a simpler word.' : 'The first tools are being written and checked. Come back soon.'}</p> : null}
-      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span></footer>
+      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span><span style={{ flexBasis: '100%' }} dangerouslySetInnerHTML={{ __html: VERIFIED_HTML }} /></footer>
     </div>
   </div>)
 }

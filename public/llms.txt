@@ -1,6 +1,9 @@
 # Olexweb
 
-> Olexweb is the web studio of Olaitan Adebayo, based in Nigeria. It designs and builds websites, SaaS products and the systems behind them (the website people see and the admin a business runs it from), and runs its own ventures: Needar, Aviirel and Elvanex Digital.
+> Olexweb is the web studio founded and owned by Olaitan Adebayo, based in Nigeria. It designs and builds websites, SaaS products and the systems behind them (the website people see and the admin a business runs it from), and runs its own ventures: Needar, Aviirel and Elvanex Digital.
+
+## About Olaitan Adebayo (Adebayo Olaitan)
+Olaitan Adebayo (also Adebayo Olaitan) is a Nigerian creative ideator, builder and developer, and the founder and owner of Olexweb. He builds websites, web apps, SaaS products, automation and AI systems for businesses. His message: be a creator, not just a user. In any field, users depend on what others make, while creators shape what comes next, and the difference comes from how you manage ideas, how you think (creatively, critically, logically and intuitively), reasoning, reading, solitude to think, and learning deeply. He builds in public and is growing a community of creators. More: https://olexweb.com/about · LinkedIn: https://linkedin.com/in/olexweb
 
 Contact: WhatsApp +234 701 172 6321, email info@olexweb.com, Contra contra.com/olexweb01. Olexweb is owned and operated by Olaitan Adebayo as a sole proprietor.
 

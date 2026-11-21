@@ -1,6 +1,7 @@
 'use client'
 // One news-side Directory post (Install 16): a tech update, a how-to or a safety alert. What it is, the key points, why it
 // matters, what to do (steps), the facts in the article's own words (credited), questions, sharing, and one next step.
+import { VERIFIED_HTML } from '@/lib/site/trust'   // Install 46
 import { useEffect } from 'react'
 import { DIR_CSS } from './dirStyles'
 import { ENTRY_CSS } from './DirEntry'
@@ -39,7 +40,7 @@ export default function DirPost({ e }) {
         <aside className="de-side"><div className="de-offer"><span className="dx-eb">Free from Olaitan</span><b>{e.offer.title}</b><p>{e.offer.line}</p><a className="dx-btn dx-g" href={e.offer.href + (e.offer.href.includes('?') ? '&' : '?') + 'from=' + PATH[e.kind] + '-' + e.slug} onClick={() => beacon(e.slug, true)}>{e.offer.kind === 'link' ? 'Join on WhatsApp' : 'Get it free'}</a></div></aside>
       </div>
       {(e.related || []).length ? <section className="de-sec"><span className="dx-eb">More {NAME[e.kind].toLowerCase()}s</span><div className="de-rel">{e.related.map((r) => <a key={r.slug} href={'/' + PATH[e.kind] + '/' + r.slug} className="dx-card"><b>{r.name}</b><p>{r.one}</p></a>)}</div></section> : null}
-      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/tools">The Directory</a> · <a href="/privacy">Privacy</a></span></footer>
+      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/tools">The Directory</a> · <a href="/privacy">Privacy</a></span><span style={{ flexBasis: '100%' }} dangerouslySetInnerHTML={{ __html: VERIFIED_HTML }} /></footer>
     </div>
   </div>)
 }

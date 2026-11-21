@@ -1,5 +1,6 @@
 'use client'
 // One Directory page: checked facts (each with the site's own words), your Short, how to start, verdict, alternatives, one next step.
+import { VERIFIED_HTML } from '@/lib/site/trust'   // Install 46
 import { useEffect, useRef, useState } from 'react'
 import { DIR_CSS, PRICE } from './dirStyles'
 import DirShare from './DirShare'
@@ -49,7 +50,7 @@ export default function DirEntry({ e }) {
         <aside className="de-side"><div className="de-offer dx-rv"><span className="dx-eb">Free from Olaitan</span><b>{e.offer.title}</b><p>{e.offer.line}</p><a className="dx-btn dx-g" href={e.offer.href + (e.offer.href.includes('?') ? '&' : '?') + 'from=tools-' + e.slug} onClick={() => beacon(e.slug, true)}>{e.offer.kind === 'link' ? 'Join on WhatsApp' : 'Get it free'}<Ico n="arrow" /></a></div></aside>
       </div>
       {(e.related || []).length ? <section className="dx-rv de-sec"><span className="dx-eb">Alternatives and similar tools</span><div className="de-rel">{e.related.map((r) => <a key={r.slug} href={'/tools/' + r.slug} className="dx-card"><span className={'dx-badge dx-' + (r.price || 'unknown')}>{PRICE[r.price || 'unknown']}</span><b>{r.name}</b><p>{r.one}</p></a>)}</div></section> : null}
-      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/tools">All tools</a> · <a href="/privacy">Privacy</a></span></footer>
+      <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/tools">All tools</a> · <a href="/privacy">Privacy</a></span><span style={{ flexBasis: '100%' }} dangerouslySetInnerHTML={{ __html: VERIFIED_HTML }} /></footer>
     </div>
   </div>)
 }

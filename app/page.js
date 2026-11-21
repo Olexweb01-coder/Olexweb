@@ -5,11 +5,12 @@ import HomeReviews from '@/components/site/HomeReviews'
 import { getTestimonials, getWall } from '@/lib/site/data'
 import { renderHomeReviews } from '@/lib/site/render'
 import { pageMetadata } from '@/lib/seo'
+import { integratedHtml } from '@/lib/site/trust'
 export const revalidate = 3600
 export const metadata = pageMetadata('home')
 export default async function Home() {
   const [quotes, wall] = await Promise.all([getTestimonials(), getWall()])
-  return (<><V2Html html={withWall(parts[0] + renderHomeReviews(quotes) + parts[1], wall)} />{quotes.length > 1 ? <HomeReviews /> : null}</>)
+  return (<><V2Html html={withWall(parts[0] + renderHomeReviews(quotes) + parts[1], wall).replace('<section class="sec intro-sec"', integratedHtml() + '<section class="sec intro-sec"')} />{quotes.length > 1 ? <HomeReviews /> : null}</>)
 }
 
 // Install 28: live projects added from a link join the sliding wall. Each new one takes a place in a different column
