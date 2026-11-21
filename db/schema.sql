@@ -749,3 +749,6 @@ alter table li_settings alter column series set default 'Creator, not user: idea
 update li_settings set series = 'Creator, not user: ideas, deep thinking and building in public' where series = 'Raw truth about websites, apps and building in public';
 alter table li_posts add column if not exists photo bytea;
 alter table li_posts add column if not exists photo_type text;
+-- Install 48: your photo library for LinkedIn (up to 10), each read once by AI for its mood, used now and then where it fits
+create table if not exists li_photos (id serial primary key, bytes bytea not null, type text not null, mood text, what text, used int not null default 0, last_used timestamptz, created_at timestamptz not null default now());
+alter table li_posts add column if not exists photo_id int;

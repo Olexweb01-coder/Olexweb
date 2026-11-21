@@ -8,7 +8,7 @@ export default function LinkedInPanel({ data: d0, back }) {
   async function act(action, extra = {}) {
     setBusy(action); setMsg('')
     try { const r = await fetch('/admin/api/linkedin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action, ...extra }) }), j = await r.json().catch(() => ({}))
-      if (!r.ok) throw new Error(j.error || 'That didn’t work.'); setD(j); setMsg({ post: 'Posted to LinkedIn.', write: 'Written: read it below.', save: 'Saved.', approve: 'Approved: it goes out at its time.', skip: 'Skipped: a new one is written.', voice: 'Your voice is saved.', note: 'Saved: the next post is built on it.' }[action] || '') } catch (e) { setMsg(e.message) } finally { setBusy('') }
+      if (!r.ok) throw new Error(j.error || 'That didn’t work.'); setD(j); setMsg({ post: 'Posted to LinkedIn.', write: 'Written: read it below.', save: 'Saved.', approve: 'Approved: it goes out at its time.', skip: 'Skipped: a new one is written.', voice: 'Your voice is saved.', note: 'Saved: the next post is built on it.', reset: 'Started again: your comeback post is written next.', removePhoto: 'Removed.' }[action] || '') } catch (e) { setMsg(e.message) } finally { setBusy('') }
   }
   const days = Math.max(0, Math.round((new Date(d.expires_at) - Date.now()) / 864e5))
   const card = { border: '1px solid var(--line)', borderRadius: 14, padding: '16px 18px', marginBottom: 14 }
@@ -30,6 +30,15 @@ export default function LinkedInPanel({ data: d0, back }) {
       <h2 style={{ fontSize: 18 }}>Next post</h2>
       {(d.posts || []).filter((p) => p.status !== 'posted').map((p) => <Draft key={p.id} p={p} act={act} busy={busy} card={card} />)}
       {!(d.posts || []).some((p) => p.status !== 'posted') ? <section style={card}><p style={{ marginTop: 0 }}>{d.intro_done ? `Day ${(d.days || 0) + 1}/100 is written by itself shortly before its time.` : 'Your first post (you’re back, and the 100 days start) is written next, and waits for your OK.'}</p><button className="btn" disabled={!!busy} onClick={() => act('write')}>{busy === 'write' ? 'Writing…' : 'Write it now'}</button></section> : null}
+      <h2 style={{ fontSize: 18 }}>Your photos (up to 10, optional)</h2>
+      <section style={card}>
+        <p style={{ marginTop: 0, fontSize: 14, opacity: 0.8 }}>Add up to 10 photos of yourself. About twice a week, one goes with a post it truly fits, never a smiling photo on a serious post, and never the same photo within 10 days.</p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>{(d.photos || []).map((ph) => <div key={ph.id} style={{ width: 110, fontSize: 12 }}><img src={`/admin/api/linkedin?photo=${ph.id}`} alt="" style={{ width: 110, height: 110, objectFit: 'cover', borderRadius: 10, display: 'block' }} /><div style={{ margin: '4px 0' }}>{ph.mood}</div><button type="button" className="btn" style={{ padding: '4px 8px', fontSize: 12 }} disabled={!!busy} onClick={() => act('removePhoto', { id: ph.id })}>Remove</button></div>)}</div>
+        {(d.photos || []).length < 10 ? <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); fd.append('mode', 'library'); setBusy('library'); setMsg(''); try { const r = await fetch('/admin/api/linkedin', { method: 'POST', credentials: 'same-origin', body: fd }), j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); setD(j); setMsg('Photos added.') } catch (er) { setMsg(er.message) } finally { setBusy('') } }}>
+          <input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required style={{ display: 'block', marginBottom: 10 }} />
+          <button className="btn" disabled={!!busy}>{busy === 'library' ? 'Adding…' : 'Add photos'}</button>
+        </form> : null}
+      </section>
       <h2 style={{ fontSize: 18 }}>A special post with your photo (optional)</h2>
       <section style={card}>
         <p style={{ marginTop: 0, fontSize: 14, opacity: 0.8 }}>Choose a photo and write the idea in a sentence or two. The post is written around it and waits for your OK; the photo goes out exactly as it is.</p>
@@ -44,6 +53,11 @@ export default function LinkedInPanel({ data: d0, back }) {
         <p style={{ marginTop: 0, fontSize: 14, opacity: 0.8 }}>A client, a bug, a win, a mistake, a question someone asked: write it in a few lines, the way you'd tell a friend. The next post is built on it, true to what you wrote. {d.notes ? `${d.notes} note${d.notes === 1 ? '' : 's'} waiting.` : ''}</p>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} style={{ width: '100%' }} placeholder="e.g. A bakery owner told me her old site took 9 seconds to load on her phone. We rebuilt it and orders through WhatsApp doubled in a month." />
         <button className="btn" disabled={!!busy || note.trim().length < 15} onClick={async () => { await act('note', { note }); setNote('') }}>{busy === 'note' ? '…' : 'Save the note'}</button>
+      </section>
+      <h2 style={{ fontSize: 18 }}>Start the series again</h2>
+      <section style={card}>
+        <p style={{ marginTop: 0, fontSize: 14, opacity: 0.8 }}>Clears the drafts and starts again from the comeback post (Day 0). What's already on LinkedIn stays there.</p>
+        <button className="btn" disabled={!!busy} onClick={() => { if (window.confirm('Start the 100 days again from the comeback post?')) act('reset') }}>{busy === 'reset' ? '…' : 'Start again'}</button>
       </section>
       <h2 style={{ fontSize: 18 }}>Your voice</h2>
       <section style={card}>
