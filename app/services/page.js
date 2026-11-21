@@ -1,5 +1,5 @@
 // Install 30: olexweb.com/services: every service and guide in one place (the hub that links them all)
-import { VERIFIED_HTML, integratedHtml } from '@/lib/site/trust'   // Install 46
+import { VERIFIED_HTML } from '@/lib/site/trust'   // Install 46
 import { DIR_CSS } from '@/components/dirStyles'
 import JsonLd from '@/components/JsonLd'
 import { LANDINGS } from '@/lib/site/landings'
@@ -18,7 +18,6 @@ export default function Page() {
     <div className="dx-w"><header className="dx-bar"><a className="dx-mark" href="/" aria-label="Olexweb, home"><img src="/studio/mark.png" alt="" width="21" height="24" />Olexweb</a><nav className="dx-nav"><a href="/portfolio">Portfolio</a><a href="/tools">Directory</a></nav></header>
       <section className="sv-hero"><span className="dx-eb">Services</span><h1 className="dx-h1">What Olexweb builds, and how it helps you get found</h1>
         <p className="dx-lede">Websites, online shops and the systems behind them, AI that takes real work off your desk, and the work of being found on Google and in AI answers. Pick what fits; every page says plainly what you get.</p></section>
-      <div dangerouslySetInnerHTML={{ __html: integratedHtml() }} />
       {GROUPS.map(([h, keys]) => (<section key={h} className="sv-g"><h2>{h}</h2><div className="sv-list">{keys.map((k) => (<a key={k} href={LANDINGS[k].path} className="sv-card"><b>{LANDINGS[k].h1}</b><span>{LANDINGS[k].lede}</span></a>))}</div></section>))}
       <footer className="dx-foot"><span>© {new Date().getFullYear()} Olexweb · Olaitan Adebayo</span><span><a href="/">olexweb.com</a> · <a href="/privacy">Privacy</a></span><span style={{ flexBasis: '100%' }} dangerouslySetInnerHTML={{ __html: VERIFIED_HTML }} /></footer></div></div>)
 }
