@@ -46,7 +46,9 @@ function calLinks(m) {
   return { google: 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: m.title, dates: `${z(t)}/${z(t + (m.minutes || 60) * 60e3)}`, details: 'Join the meeting: ' + url, location: url }), ics: '/api/meet?calendar=1&code=' + m.code }
 }
 
-export default function MeetHome({ user, providers, meetings: initial, notice, faq = [], emailOn = false, morePast = 0, pricing = null }) {
+export default function MeetHome({ user, providers, meetings: initial, notice, faq = [], emailOn = false, morePast = 0, pricing = null, spotlight = null }) {
+  // an invite link (?ref=…): remembered for 30 days so the new account is linked to whoever invited them
+  useEffect(() => { const r = new URLSearchParams(location.search).get('ref'); if (r && /^[a-z0-9]{4,12}$/.test(r)) document.cookie = `meet_ref=${r}; Max-Age=${30 * 86400}; Path=/; SameSite=Lax; Secure` }, [])
   const [ready, setReady] = useState(false), [list, setList] = useState(initial || []), [code, setCode] = useState(''), [menu, setMenu] = useState(false)
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [toast, setToast] = useState(notice || ''), [install, setInstall] = useState(null), [ios, setIos] = useState(false)
   const menuRef = useRef(null), [att, setAtt] = useState(null), [notesFor, setNotesFor] = useState(null), [local, setLocal] = useState({})
@@ -84,7 +86,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
     if (!Number.isFinite(startsAt.getTime())) { setToast('Choose a date and time.'); return }
     setBusy('schedule')
     try {
-      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video' }), form: s.form && s.form.on ? s.form : { on: false } }
+      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video', private: !!s.private }), form: s.form && s.form.on ? s.form : { on: false } }
       const r = s.edit ? await call({ action: 'update', code: s.edit.code, ...body }) : await call({ action: 'create', ...body })
       const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes }
       setSheet({ ...s, done: m }); refresh()
@@ -154,6 +156,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
       </section> : null}
 
       {morePast ? <p className="mh-fine">{morePast} older meeting{morePast === 1 ? '' : 's'} and {morePast === 1 ? 'its transcript' : 'their transcripts'} are kept for you. Pro shows them all.</p> : null}
+      {spotlight ? <section className="md-pricing pf-spot"><h2>🏆 Hosts of the month</h2><ul className="pf-list">{Object.values(spotlight.winners).map((w) => <li key={w.label}><b>{w.label}</b><span><a href={'/meet/h/' + w.handle}>{w.name}</a></span></li>)}</ul><p className="md-dim"><a href="/meet/leaders">See the leaderboard</a></p></section> : null}
       <MeetPricing pricing={pricing} />
       <section className="mh-features" aria-label="What you get">
         {[[ICON.wave, 'Clear on weak networks', 'Voice is protected first; video adjusts by itself. Data saver turns cameras off.'],
@@ -199,6 +202,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
             <label className="mh-f"><span>Time ({ready ? tzName() : 'your time'})</span><input type="time" value={sheet.time} step={300} onChange={(e) => setSheet({ ...sheet, time: e.target.value })} /></label>
             <label className="mh-f"><span>Length</span><select value={sheet.minutes} onChange={(e) => setSheet({ ...sheet, minutes: Number(e.target.value) })}>{[15, 30, 45, 60, 90, 120, 180].map((m) => <option key={m} value={m}>{m < 60 ? m + ' minutes' : m === 60 ? '1 hour' : m / 60 + ' hours'}</option>)}</select></label>
           </div>
+          {!sheet.edit ? <label className="mt-consent"><input type="checkbox" checked={!!sheet.private} onChange={(e) => setSheet({ ...sheet, private: e.target.checked })} /><span>End-to-end encrypted: only people in the meeting can see and hear it, not even our servers. Needs an up-to-date browser.</span></label> : null}
           {!sheet.edit ? <div className="mh-f"><span>Type</span><div className="mh-seg" role="group" aria-label="Meeting type">
             <button type="button" aria-pressed={(sheet.mode || 'video') === 'video'} onClick={() => setSheet({ ...sheet, mode: 'video' })}>Video meeting</button>
             <button type="button" aria-pressed={sheet.mode === 'audio'} onClick={() => setSheet({ ...sheet, mode: 'audio' })}>Audio call</button></div></div> : null}

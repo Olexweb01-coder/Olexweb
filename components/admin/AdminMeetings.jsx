@@ -67,7 +67,7 @@ const link = (code) => (BASE ? `${BASE}/${code}` : `${typeof window === 'undefin
 
 export default function AdminMeetings({ data }) {
   BASE = data.base || null
-  const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [mode, setMode] = useState('video'), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
+  const router = useRouter(), [title, setTitle] = useState(''), [speakers, setSpeakers] = useState('everyone'), [mode, setMode] = useState('video'), [secret, setSecret] = useState(false), [busy, setBusy] = useState(''), [fresh, setFresh] = useState(null)
   const [local, setLocal] = useState({}), [job, setJob] = useState(null), [view, setView] = useState(null), [focus, setFocus] = useState('')
   const [first] = useState(() => lagosParts(nextSlot())), [sched, setSched] = useState('now'), [date, setDate] = useState(first[0]), [time, setTime] = useState(first[1]), [minutes, setMinutes] = useState(60), [rem, setRem] = useState(null)
   const [edit, setEdit] = useState(null), [tab, setTab] = useState('meetings'), [askForm, setAskForm] = useState({ ...DEFAULT_FORM }), [att, setAtt] = useState(null)
@@ -106,7 +106,7 @@ export default function AdminMeetings({ data }) {
     e.preventDefault()
     const later = sched === 'later', startsAt = later ? toIso(date, time) : null
     if (later && !startsAt) { toast('Choose a date and time.'); return }
-    const j = await act({ action: 'create', title, speakers, mode, ...(askForm.on ? { form: askForm } : {}), ...(later ? { startsAt, minutes, ...(rem ? { reminders: rem } : {}) } : {}) }, later ? 'Meeting scheduled.' : 'Meeting created.')
+    const j = await act({ action: 'create', title, speakers, mode, private: secret, ...(askForm.on ? { form: askForm } : {}), ...(later ? { startsAt, minutes, ...(rem ? { reminders: rem } : {}) } : {}) }, later ? 'Meeting scheduled.' : 'Meeting created.')
     if (j && j.code) { setFresh(j.code); setTitle(''); setRem(null); setAskForm({ ...DEFAULT_FORM }) }
   }
   async function invite(m) {
@@ -158,6 +158,7 @@ export default function AdminMeetings({ data }) {
         <button type="button" aria-pressed={mode === 'video'} onClick={() => setMode('video')}>Video meeting</button>
         <button type="button" aria-pressed={mode === 'audio'} onClick={() => setMode('audio')}>Audio call</button>
       </div>
+      <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', margin: '8px 0' }}><input type="checkbox" checked={secret} onChange={(e) => setSecret(e.target.checked)} /><span>End-to-end encrypted (only people in the meeting can see and hear it; needs an up-to-date browser)</span></label>
       <p className="mg-lab" id="mg-who">Who can speak</p>
       <div className="seg" role="group" aria-labelledby="mg-who">
         <button type="button" aria-pressed={speakers === 'everyone'} onClick={() => setSpeakers('everyone')}>Everyone</button>

@@ -168,7 +168,17 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
 
   async function connect(info) {
     const lk = lkRef.current || (lkRef.current = await import('livekit-client'))
+    // end-to-end encrypted meetings: voices, video and screens are locked on each device with the meeting's key, so the
+    // video servers only ever pass on scrambled data. Browsers that can't do this are told before they try.
+    let e2ee
+    if (info.e2eeKey) {
+      if (!lk.isE2EESupported()) throw new Error('This meeting is end-to-end encrypted. Open it in an up-to-date Chrome, Edge, Safari or Firefox to join.')
+      const keyProvider = new lk.ExternalE2EEKeyProvider()
+      await keyProvider.setKey(info.e2eeKey)
+      e2ee = { keyProvider, worker: new Worker(new URL('livekit-client/e2ee-worker', import.meta.url), { type: 'module' }) }
+    }
     const room = new lk.Room({
+      ...(e2ee ? { e2ee } : {}),
       adaptiveStream: true, dynacast: true,                       // small tiles get small video; nobody sends layers nobody watches
       videoCaptureDefaults: { resolution: lk.VideoPresets.h360.resolution },
       audioCaptureDefaults: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -176,6 +186,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
         audioPreset: lk.AudioPresets.speech, red: true, dtx: true },   // voice first: redundancy against lost packets, silence costs nothing
     })
     roomRef.current = room
+    if (e2ee) await room.setE2EEEnabled(true)
     const E = lk.RoomEvent, cam = lk.Track.Source.Camera
     // when this person's mic or camera starts, their chosen effects go on it (on their own device)
     room.on(E.LocalTrackPublished, (pub) => {
@@ -533,7 +544,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
 
   return (<div className={'mt mt-in-room' + (panel ? ' mt-panel-on' : '')} data-noise={fxLive.noise ? 'on' : 'off'} data-blur={fxLive.blur ? 'on' : 'off'} onPointerDown={(e) => { if (pop && !e.target.closest('.mt-popwrap')) setPop(null) }}>
     <header className="mt-top">
-      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className={'mt-recbadge' + (recPaused ? ' mt-paused' : '')} role="status"><i aria-hidden="true" />{recPaused ? 'Recording paused' : 'Recording'}</span> : null}{notesOn ? <span className="mt-recbadge mt-notesbadge" role="status"><i aria-hidden="true" />AI notes</span> : null}</div>
+      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className={'mt-recbadge' + (recPaused ? ' mt-paused' : '')} role="status"><i aria-hidden="true" />{recPaused ? 'Recording paused' : 'Recording'}</span> : null}{notesOn ? <span className="mt-recbadge mt-notesbadge" role="status"><i aria-hidden="true" />AI notes</span> : null}{joinInfo.current && joinInfo.current.e2eeKey ? <span className="mt-recbadge mt-notesbadge" title="Only people in this meeting can see and hear it" role="status">🔒 Encrypted</span> : null}</div>
       <div className="mt-top-end">
         <span className="mt-count" title="People in the meeting">{I.people}{all.length}</span>
         <button className="mt-btn mt-sm" onClick={copyLink}>{I.link}<span>Copy link</span></button>
@@ -770,13 +781,13 @@ function AfterMeeting({ code, info }) {
   async function send(e) {
     e.preventDefault(); if (!stars) { setErr('Choose 1 to 5 stars.'); return }
     setBusy(true); setErr('')
-    try { await post('/api/meet/rate', { code, identity: info.identity, key: info.rateKey, stars, review: text }); setSent(true) } catch (x) { setErr(x.message) } finally { setBusy(false) }
+    try { const r = await post('/api/meet/rate', { code, identity: info.identity, key: info.rateKey, stars, review: text }); setSent(r.rewarded ? 'gift' : true) } catch (x) { setErr(x.message) } finally { setBusy(false) }
   }
   return (<div className="mt-after">
-    {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.</p> : <form onSubmit={send} className="mt-rate">
+    {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.{sent === 'gift' ? ' Here’s a week of Pro, free: it’s in your account.' : ''}</p> : <form onSubmit={send} className="mt-rate">
       <p className="mt-lab">How was this meeting?</p>
       <div className="mt-stars" role="radiogroup" aria-label="Your rating">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={n + (n === 1 ? ' star' : ' stars')} className={n <= stars ? 'on' : ''} onClick={() => setStars(n)}>★</button>)}</div>
-      {stars ? <><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
+      {stars ? <><small className="mt-hint">Signed in to Olexweb Meet? A written review gets you a week of Pro, free.</small><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
         <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
       {err ? <p className="mt-err" role="alert">{err}</p> : null}
     </form>) : null}

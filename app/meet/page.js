@@ -7,6 +7,7 @@ import { TITLE, DESCRIPTION, FAQ, homeUrl, structuredData } from '@/lib/meet/seo
 import MeetHome from '@/components/meet/MeetHome'
 import { emailSignInReady } from '@/lib/meet/emailauth'
 import { pricing, planOf } from '@/lib/meet/plans'
+import { spotlight } from '@/lib/meet/community'
 export const dynamic = 'force-dynamic'
 export async function generateMetadata() {
   const url = homeUrl(), image = (meetBase() ? meetBase() : mainOrigin()) + '/meet/og.png?v=2'
@@ -24,6 +25,6 @@ export default async function MeetHomePage({ searchParams }) {
   const meetings = free ? all.filter((m) => !m.endedAt || past.indexOf(m) < 3) : all, morePast = free ? Math.max(0, past.length - 3) : 0
   return (<>
     {structuredData().map((d, i) => <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d).replace(/</g, '\\u003c') }} />)}
-    <MeetHome user={user} providers={providers()} emailOn={emailSignInReady()} meetings={meetings} morePast={morePast} pricing={plans} faq={FAQ} notice={typeof searchParams.signin === 'string' ? searchParams.signin.slice(0, 200) : ''} />
+    <MeetHome user={user} providers={providers()} emailOn={emailSignInReady()} meetings={meetings} morePast={morePast} pricing={plans} spotlight={await spotlight().catch(() => null)} faq={FAQ} notice={typeof searchParams.signin === 'string' ? searchParams.signin.slice(0, 200) : ''} />
   </>)
 }

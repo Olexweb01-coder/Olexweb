@@ -15,7 +15,7 @@ export async function POST(request) {
   if (!ownerOnly(u)) return refuse('Only Olaitan can do this.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   return respond(async () => {
-    if (b.action === 'create') return M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, startsAt: b.startsAt, minutes: b.minutes, reminders: b.reminders, form: b.form || null }, u)
+    if (b.action === 'create') return M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, private: !!b.private, startsAt: b.startsAt, minutes: b.minutes, reminders: b.reminders, form: b.form || null }, u)
     if (b.action === 'update') { const f = {}; for (const k of ['title', 'speakers', 'startsAt', 'minutes', 'reminders', 'form']) if (k in b) f[k] = b[k]; return M.updateMeeting(b.code, f) }
     if (b.action === 'end') return M.endMeeting(b.code)
     if (b.action === 'delete') return M.deleteMeeting(b.code)

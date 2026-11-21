@@ -11,6 +11,13 @@ const nextConfig = {
   experimental: { serverComponentsExternalPackages: ['@node-rs/argon2', 'pg', 'sharp'], outputFileTracingIncludes: { '/api/li-card/[id]': ['./lib/fonts/**'] } },   // Install 44: the LinkedIn pictures' font
   // pdf.js (reading PDFs in the admin) mentions a Node-only package it never uses in the browser
   webpack: (config) => { config.resolve.alias = { ...(config.resolve.alias || {}), canvas: false }; return config },
+  // Meet's protection: no other site can frame it (stops click-tricks), browsers don't guess file types, always HTTPS,
+  // and camera, microphone and screen sharing only for Meet itself
+  async headers() {
+    const SAFE = [{ key: 'X-Frame-Options', value: 'DENY' }, { key: 'X-Content-Type-Options', value: 'nosniff' }, { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }, { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), display-capture=(self), geolocation=()' }]
+    return [{ source: '/:path*', has: [MEET_HOST], headers: SAFE }, { source: '/meet', headers: SAFE }, { source: '/meet/:path*', headers: SAFE }, { source: '/api/meet/:path*', headers: SAFE }]
+  },
   // the old About address keeps working and passes its search ranking to /about
   // meet.olexweb.com (the Meet app): only Meet's pages live there; anything else goes to the main site
   async redirects() { return [{ source: '/olaitan', destination: '/about', permanent: true },

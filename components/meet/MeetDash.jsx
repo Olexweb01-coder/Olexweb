@@ -75,6 +75,8 @@ export default function MeetDash({ user }) {
 
     {d.news.length ? <div className="md-news"><span className="md-lab">What’s new</span>{d.news.slice(0, 3).map((n) => <div key={n.id} className="md-newsitem"><b>{n.title}</b>{n.body ? <p>{n.body}</p> : null}<small>{day(n.at)}</small></div>)}</div> : null}
 
+    <Community />
+
     <div className="md-help">
       {!help ? <button className="mh-btn mh-sm" onClick={() => setHelp({ q: '', phone: d.phone })}>Need help? Ask Olex AI</button>
         : help.sent ? <p className="md-ok">Sent to the Olexweb team. You’ll get the reply here and by email{help.phone ? ' or WhatsApp' : ''}.</p>
@@ -106,4 +108,39 @@ export function MeetPricing({ pricing }) {
       <div className="md-planbox"><b>Big meetings</b><strong>{naira(p.extra)}<small>/person</small></strong><span>for every 30 minutes, only past 100 people</span><ul><li>The host chooses to let more in</li><li>Up to 500 people</li><li>One invoice when the meeting ends</li></ul></div>
     </div>
   </section>)
+}
+
+// achievements, streak, this month, invite link, public profile and the leaderboard (Install C)
+function Community() {
+  const [c, setC] = useState(null), [edit, setEdit] = useState(null), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false)
+  async function load() { try { const r = await fetch('/api/meet/community', { cache: 'no-store', credentials: 'same-origin' }); if (r.ok) setC(await r.json()) } catch {} }
+  useEffect(() => { load() }, [])
+  if (!c) return null
+  const month = new Date(c.recap.month + '-01T12:00:00Z').toLocaleDateString(undefined, { month: 'long' })
+  const recapText = `My ${month} on Olexweb Meet: ${c.recap.meetings} meeting${c.recap.meetings === 1 ? '' : 's'}, ${c.recap.people} people${c.recap.rating ? `, ${c.recap.rating}★` : ''}.${c.streak >= 2 ? ` ${c.streak} weeks in a row 🔥` : ''} Free audio and video meetings, no time limit: ${c.invite}`
+  async function share(text) { try { if (navigator.share) await navigator.share({ text }); else { await navigator.clipboard.writeText(text); setMsg('Copied.') } } catch {} }
+  async function save(e) {
+    e.preventDefault(); setBusy(true); setMsg('')
+    try { const r = await fetch('/api/meet/community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'profile', ...edit }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); setEdit(null); setMsg('Profile saved.'); load() }
+    catch (x) { setMsg(x.message) } finally { setBusy(false) }
+  }
+  const top = (k) => (c.leaderboard[k] || [])[0]
+  return (<div className="mc">
+    <div className="mc-row"><span className="md-lab">Your {month}</span>{c.streak ? <b>{c.streak} week{c.streak === 1 ? '' : 's'} in a row 🔥</b> : <small className="md-dim">Host this week to start a streak</small>}</div>
+    <div className="mc-row"><span>{c.recap.meetings} meetings · {c.recap.people} people{c.recap.rating ? ` · ${c.recap.rating}★` : ''}</span><button className="mh-btn mh-sm" onClick={() => share(recapText)}>Share my month</button></div>
+    <div><span className="md-lab">Badges ({c.badges.filter((b) => b.earned).length} of {c.badges.length}) · every 5 badges = a month of Pro</span>
+      <div className="pf-badges" style={{ marginTop: 8 }}>{c.badges.map((b) => <span key={b.id} className={'pf-badge' + (b.earned ? '' : ' off')} title={b.desc}>{b.earned ? '🏅' : '🔒'} {b.name}</span>)}</div></div>
+    <div><span className="md-lab">Invite friends: when they host their first meeting, you both get a month of Pro</span>
+      <div className="mc-invite" style={{ marginTop: 8 }}><input className="md-in" readOnly value={c.invite} onFocus={(e) => e.target.select()} /><button className="mh-btn mh-sm mh-go" onClick={() => share(`Free audio and video meetings with no time limit. Join me on Olexweb Meet: ${c.invite}`)}>Share invite</button></div></div>
+    <div className="mc-row"><span><span className="md-lab">This month’s leaders</span><br /><small className="md-dim">{top('hours') ? `Most hours: ${top('hours').name}` : 'No leaders yet this month'}{top('rated') ? ` · Best rated: ${top('rated').name}` : ''}</small></span><a className="mh-btn mh-sm" href="/meet/leaders">Leaderboard</a></div>
+    {!edit ? <div className="mc-row"><span><span className="md-lab">Public profile</span><br /><small className="md-dim">{c.public && c.handle ? <>Shown at <a href={'/meet/h/' + c.handle}>/meet/h/{c.handle}</a> · {c.followers} follower{c.followers === 1 ? '' : 's'}</> : 'Off: you’re not on the leaderboard and nobody can follow you.'}</small></span>
+      <button className="mh-btn mh-sm" onClick={() => setEdit({ handle: c.handle, bio: c.bio, public: c.public })}>Edit</button></div>
+      : <form onSubmit={save} className="md-ask">
+        <label className="md-lab" htmlFor="mc-h">Profile name (your address: /meet/h/name)</label><input id="mc-h" className="md-in" maxLength={30} value={edit.handle} onChange={(e) => setEdit({ ...edit, handle: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} placeholder="e.g. ada-teaches" />
+        <label className="md-lab" htmlFor="mc-b">About you (optional)</label><textarea id="mc-b" className="md-in" rows={2} maxLength={300} value={edit.bio} onChange={(e) => setEdit({ ...edit, bio: e.target.value })} />
+        <label className="mt-consent"><input type="checkbox" checked={edit.public} onChange={(e) => setEdit({ ...edit, public: e.target.checked })} /><span>Show me publicly: my profile, ratings and reviews, the leaderboard, and people can follow me.</span></label>
+        <div className="md-acts"><button className="mh-btn mh-go mh-sm" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button><button type="button" className="mh-btn mh-sm mh-quiet" onClick={() => setEdit(null)}>Cancel</button></div>
+      </form>}
+    {msg ? <small className="md-dim">{msg}</small> : null}
+  </div>)
 }

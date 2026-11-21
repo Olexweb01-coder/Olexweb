@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import './meet.css'
 export async function generateMetadata() {
   const onMeet = String(headers().get('x-forwarded-host') || headers().get('host') || '').startsWith('meet.')
-  return { title: { default: 'Olexweb Meet', template: '%s | Olexweb Meet' }, description: 'Free video meetings that keep working on a weak connection. Join with a link, no account needed.',
+  return { title: { default: 'Olexweb Meet', template: '%s | Olexweb Meet' }, description: 'Free audio and video meetings with no time limit. Join with a link, no account needed.',
     applicationName: 'Olexweb Meet', ...(onMeet ? { manifest: '/manifest.webmanifest' } : {}),
     appleWebApp: { capable: true, title: 'Meet', statusBarStyle: 'black-translucent' }, other: { 'mobile-web-app-capable': 'yes' } }
 }

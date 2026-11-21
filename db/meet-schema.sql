@@ -86,6 +86,7 @@ alter table meet_users add column if not exists pro_until timestamptz;          
 alter table meet_users add column if not exists phone text;                          -- optional, for support replies on WhatsApp
 alter table meetings add column if not exists pro boolean not null default false;    -- Pro bought for this one meeting
 alter table meetings add column if not exists extra_ok boolean not null default false; -- the host let more than 100 people in (paid per person)
+alter table meetings add column if not exists e2ee_key text;                -- end-to-end encrypted meetings: the key (only given to people let in)
 alter table meet_usage add column if not exists extra boolean not null default false;  -- joined when the meeting already had 100 people
 create table if not exists meet_payments (id bigserial primary key, reference text not null unique, user_id int, kind text not null, code text, invoice_id bigint,
   amount int not null, status text not null default 'pending', created_at timestamptz not null default now(), paid_at timestamptz);
@@ -102,3 +103,19 @@ create table if not exists meet_tickets (id bigserial primary key, user_id int, 
 -- bank transfer (your account, you confirm each one) and which platform a payment went through
 alter table meet_settings add column if not exists bank jsonb not null default '{}';
 alter table meet_payments add column if not exists provider text not null default 'paystack';
+-- Install C: protection, community and rewards
+create table if not exists meet_limits (k text not null, win bigint not null, n int not null default 1, primary key (k, win));   -- request limits (stops floods)
+alter table meet_users add column if not exists handle text;                 -- their public profile address: /meet/h/<handle>
+alter table meet_users add column if not exists bio text;
+alter table meet_users add column if not exists public boolean not null default false;   -- profile and leaderboard: only when they agree
+alter table meet_users add column if not exists ref_code text;               -- their invite link
+alter table meet_users add column if not exists referred_by int;
+alter table meet_users add column if not exists ref_done boolean not null default false;
+create unique index if not exists meet_users_handle on meet_users (lower(handle)) where handle is not null;
+create unique index if not exists meet_users_ref on meet_users (ref_code) where ref_code is not null;
+create table if not exists meet_follows (follower int not null, host int not null, created_at timestamptz not null default now(), primary key (follower, host));
+create index if not exists meet_follows_host on meet_follows (host);
+create table if not exists meet_badges (user_id int not null, badge text not null, earned_at timestamptz not null default now(), primary key (user_id, badge));
+create table if not exists meet_rewards (user_id int not null, ref text not null, days int not null, created_at timestamptz not null default now(), primary key (user_id, ref));   -- each reward once
+alter table meet_ratings add column if not exists user_id int;               -- the signed-in person who rated (for the review reward)
+alter table meet_settings add column if not exists awards jsonb not null default '{}';   -- each month's winners (the spotlight)
