@@ -23,6 +23,7 @@ export default async function HostProfile({ params }) {
     <main className="pf">
       <div className="pf-head">{p.picture ? <img src={p.picture} alt="" width="84" height="84" referrerPolicy="no-referrer" /> : <i>{(p.name || '?').slice(0, 1)}</i>}
         <div><h1>{p.name}</h1>{p.bio ? <p>{p.bio}</p> : null}<small>{p.followers} follower{p.followers === 1 ? '' : 's'} · hosting since {day(p.since)}</small></div>
+        {p.booking ? <a className="mh-btn mh-go mh-sm" href={`/meet/h/${p.handle}/book`}>Book a session</a> : null}
         {!p.mine ? <Follow handle={p.handle} following={p.following} signedIn={!!me} home={home()} /> : <a className="mh-btn mh-sm" href={home() + '#dashboard'}>Edit in your dashboard</a>}</div>
       <div className="md-grid pf-stats">
         <div className="md-card"><span className="md-lab">Rating</span><b>{p.stats.rating ? '★ ' + p.stats.rating.toFixed(1) : '–'}</b><small>{p.stats.ratings} ratings</small></div>

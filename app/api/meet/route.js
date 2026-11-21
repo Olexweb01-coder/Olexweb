@@ -2,7 +2,7 @@
 // POST { code, name } returns a signed join token. Signed in as the owner = the host. Same-site requests only.
 import { currentUser, sameOrigin } from '@/lib/admin/auth'
 import { respond, refuse, readJson } from '@/lib/admin/respond'
-import { meetingState, joinMeeting, calendarFile, hostOf } from '@/lib/site/meet'
+import { meetingState, joinMeeting, moveRoom, calendarFile, hostOf } from '@/lib/site/meet'
 import { currentMeetUser } from '@/lib/meet/auth'
 export const dynamic = 'force-dynamic'
 export async function GET(request) {
@@ -18,5 +18,6 @@ export async function POST(request) {
   if (!sameOrigin(request)) return refuse('Request refused.', 403)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   const u = await currentUser().catch(() => null), mu = await currentMeetUser()
-  return respond(() => joinMeeting(b.code, b.name, u, mu, b.details && typeof b.details === 'object' ? b.details : null))
+  if (b.room != null) return respond(() => moveRoom(b.code, b.name, b.as, b.seat, b.room))     // Install D: breakout rooms
+  return respond(() => joinMeeting(b.code, b.name, u, mu, b.details && typeof b.details === 'object' ? b.details : null, typeof b.pass === 'string' ? b.pass : null))
 }

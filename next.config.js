@@ -3,12 +3,14 @@
 const MEET_HOST = { type: 'host', value: 'meet\\..+' }
 const MAIN_ORIGIN = (process.env.MAIN_ORIGIN || 'https://olexweb.com').replace(/\/$/, '')
 const CODE = '[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}'
-const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', 'book$', CODE + '$'].join('|')
+// Install D: personal rooms (meet.olexweb.com/<profile name>), never the main site's own top-level pages
+const ROOM = '(?!(?:about|aoc|cookies|doc|guides|insights|me|media|olex-ai|olex-runner|portfolio|preview|privacy|review|services|start|stories|terms|tools|updates|ventures|work-with-me|alerts|studio|blog|admin|api|meet|book|feed\\.xml|robots\\.txt|sitemap\\.xml)$)[a-z0-9][a-z0-9-]{1,28}[a-z0-9]'
+const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', 'book$', CODE + '$', ROOM + '$'].join('|')
 const nextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
   // native (compiled) packages are loaded on the server as they are, not bundled
-  experimental: { serverComponentsExternalPackages: ['@node-rs/argon2', 'pg', 'sharp'], outputFileTracingIncludes: { '/api/li-card/[id]': ['./lib/fonts/**'] } },   // Install 44: the LinkedIn pictures' font
+  experimental: { serverComponentsExternalPackages: ['@node-rs/argon2', 'pg', 'sharp'], outputFileTracingIncludes: { '/api/li-card/[id]': ['./lib/fonts/**'], '/api/meet/flyer/[code]': ['./lib/fonts/**'], '/api/meet/cert': ['./lib/fonts/**'] } },   // Install 44: the LinkedIn pictures' font
   // pdf.js (reading PDFs in the admin) mentions a Node-only package it never uses in the browser
   webpack: (config) => { config.resolve.alias = { ...(config.resolve.alias || {}), canvas: false }; return config },
   // Meet's protection: no other site can frame it (stops click-tricks), browsers don't guess file types, always HTTPS,
@@ -26,7 +28,8 @@ const nextConfig = {
   async rewrites() { return { beforeFiles: [
     { source: '/', has: [MEET_HOST], destination: '/meet' },
     { source: `/:code(${CODE})`, has: [MEET_HOST], destination: '/meet/:code' },
-    { source: '/book', has: [MEET_HOST], destination: '/meet/book' },          // "Book a call with Olaitan" (Olex Sales)
+    { source: '/book', has: [MEET_HOST], destination: '/meet/book' },
+    { source: `/:handle(${ROOM})`, has: [MEET_HOST], destination: '/meet/r/:handle' },   // Install D: personal rooms          // "Book a call with Olaitan" (Olex Sales)
     { source: '/manifest.webmanifest', has: [MEET_HOST], destination: '/meet/app.webmanifest' },
     { source: '/sw.js', has: [MEET_HOST], destination: '/meet/sw.js' },
     { source: '/favicon.ico', has: [MEET_HOST], destination: '/meet/favicon-32.png' },

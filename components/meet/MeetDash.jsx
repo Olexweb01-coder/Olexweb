@@ -76,6 +76,7 @@ export default function MeetDash({ user }) {
     {d.news.length ? <div className="md-news"><span className="md-lab">What’s new</span>{d.news.slice(0, 3).map((n) => <div key={n.id} className="md-newsitem"><b>{n.title}</b>{n.body ? <p>{n.body}</p> : null}<small>{day(n.at)}</small></div>)}</div> : null}
 
     <Community />
+    {p.on ? <Earn /> : null}
 
     <div className="md-help">
       {!help ? <button className="mh-btn mh-sm" onClick={() => setHelp({ q: '', phone: d.phone })}>Need help? Ask Olex AI</button>
@@ -141,6 +142,38 @@ function Community() {
         <label className="mt-consent"><input type="checkbox" checked={edit.public} onChange={(e) => setEdit({ ...edit, public: e.target.checked })} /><span>Show me publicly: my profile, ratings and reviews, the leaderboard, and people can follow me.</span></label>
         <div className="md-acts"><button className="mh-btn mh-go mh-sm" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button><button type="button" className="mh-btn mh-sm mh-quiet" onClick={() => setEdit(null)}>Cancel</button></div>
       </form>}
+    {msg ? <small className="md-dim">{msg}</small> : null}
+  </div>)
+}
+
+// earning on Meet (Install D): your bank, one-on-one sessions people book, and what you've sold
+function Earn() {
+  const [e, setE] = useState(null), [banks, setBanks] = useState(null), [pay, setPay] = useState(null), [bk, setBk] = useState(null), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false)
+  const call = async (body) => { const r = await fetch('/api/meet/earn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j }
+  async function load() { try { const r = await fetch('/api/meet/earn', { cache: 'no-store', credentials: 'same-origin' }); if (r.ok) setE(await r.json()) } catch {} }
+  useEffect(() => { load() }, [])
+  async function run(fn, ok) { setBusy(true); setMsg(''); try { await fn(); setMsg(ok); await load(); return true } catch (x) { setMsg(x.message); return false } finally { setBusy(false) } }
+  async function openPay() { setPay({ bankCode: '', accountNumber: '' }); if (!banks) { try { setBanks((await call({ action: 'banks' })).banks) } catch (x) { setMsg(x.message) } } }
+  if (!e) return null
+  const D = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [7, 'Sun']]
+  return (<div className="mc">
+    <div className="mc-row"><span className="md-lab">Earn on Meet · paid meetings and one-on-one sessions · Olexweb keeps {e.fee}%</span>{e.sales ? <b>{naira(e.net)} earned</b> : null}</div>
+    {!pay ? <div className="mc-row"><span>{e.payout ? <>Payouts go to <b>{e.payout.accountName}</b> · {e.payout.bankName} ••{e.payout.last4}</> : 'Add your bank so ticket and session money reaches you.'}</span><button className="mh-btn mh-sm" onClick={openPay}>{e.payout ? 'Change bank' : 'Add my bank'}</button></div>
+      : <form className="md-ask" onSubmit={(x) => { x.preventDefault(); run(() => call({ action: 'payout', ...pay }), 'Bank saved.').then((k) => k && setPay(null)) }}>
+        <label className="md-lab" htmlFor="ea-b">Bank</label><select id="ea-b" className="md-in" value={pay.bankCode} onChange={(x) => setPay({ ...pay, bankCode: x.target.value })}><option value="">{banks ? 'Choose your bank' : 'Loading banks…'}</option>{(banks || []).map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}</select>
+        <label className="md-lab" htmlFor="ea-n">Account number</label><input id="ea-n" className="md-in" inputMode="numeric" maxLength={10} value={pay.accountNumber} onChange={(x) => setPay({ ...pay, accountNumber: x.target.value.replace(/\D/g, '') })} />
+        <div className="md-acts"><button className="mh-btn mh-go mh-sm" disabled={busy}>{busy ? 'Checking…' : 'Save'}</button><button type="button" className="mh-btn mh-sm mh-quiet" onClick={() => setPay(null)}>Cancel</button></div></form>}
+    {!bk ? <div className="mc-row"><span>{e.booking.on ? <>One-on-one sessions are open: <a href={'/meet/h/' + e.handle + '/book'}>your booking page</a></> : 'One-on-one sessions (mentorship): let people book and pay for your time.'}</span><button className="mh-btn mh-sm" onClick={() => setBk({ ...e.booking })}>{e.booking.on ? 'Change' : 'Set up'}</button></div>
+      : <form className="md-ask" onSubmit={(x) => { x.preventDefault(); run(() => call({ action: 'booking', ...bk }), 'Saved.').then((k) => k && setBk(null)) }}>
+        <label className="md-lab" htmlFor="ea-t">What people book</label><input id="ea-t" className="md-in" maxLength={80} value={bk.title} onChange={(x) => setBk({ ...bk, title: x.target.value })} />
+        <span className="md-lab">Days</span><div className="md-acts">{D.map(([d, l]) => <button key={d} type="button" className={'mh-btn mh-sm' + (bk.days.includes(d) ? ' mh-go' : '')} onClick={() => setBk({ ...bk, days: bk.days.includes(d) ? bk.days.filter((y) => y !== d) : [...bk.days, d] })}>{l}</button>)}</div>
+        <div className="md-acts"><label className="md-lab">From <input className="md-in" type="time" value={bk.from} onChange={(x) => setBk({ ...bk, from: x.target.value })} /></label><label className="md-lab">To <input className="md-in" type="time" value={bk.to} onChange={(x) => setBk({ ...bk, to: x.target.value })} /></label>
+          <label className="md-lab">Session <select className="md-in" value={bk.minutes} onChange={(x) => setBk({ ...bk, minutes: Number(x.target.value) })}>{[15, 30, 45, 60, 90].map((m) => <option key={m} value={m}>{m} min</option>)}</select></label>
+          <label className="md-lab">Price (₦, 0 = free) <input className="md-in" type="number" min={0} value={bk.price} onChange={(x) => setBk({ ...bk, price: x.target.value })} /></label></div>
+        <small className="md-dim">Times are Lagos time. Booked sessions become private, encrypted meetings in your list.</small>
+        <label className="mt-consent"><input type="checkbox" checked={!!bk.on} onChange={(x) => setBk({ ...bk, on: x.target.checked })} /><span>Open my booking page</span></label>
+        <div className="md-acts"><button className="mh-btn mh-go mh-sm" disabled={busy}>Save</button><button type="button" className="mh-btn mh-sm mh-quiet" onClick={() => setBk(null)}>Cancel</button></div></form>}
+    {e.upcoming.length ? <div><span className="md-lab">Coming sessions</span><ul className="pf-list" style={{ marginTop: 6 }}>{e.upcoming.map((u) => <li key={u.code}><b>{u.name}</b><span>{new Date(u.at).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</span></li>)}</ul></div> : null}
     {msg ? <small className="md-dim">{msg}</small> : null}
   </div>)
 }

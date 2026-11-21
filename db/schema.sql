@@ -661,6 +661,12 @@ alter table meetings add column if not exists video_at timestamptz;
 alter table meetings add column if not exists pro boolean not null default false;
 alter table meetings add column if not exists extra_ok boolean not null default false;
 alter table meetings add column if not exists e2ee_key text;                -- end-to-end encrypted meetings: the key (only given to people let in)
+alter table meetings add column if not exists certs boolean not null default false;      -- Install D: certificates of attendance (Pro)
+alter table meetings add column if not exists followup boolean not null default false;   -- Install D: AI notes emailed to attendees (Pro)
+alter table meetings add column if not exists followup_at timestamptz;
+alter table meetings add column if not exists personal boolean not null default false;   -- Install D: the host's personal room (/<their name>)
+alter table meetings add column if not exists breakout jsonb;                -- Install D: breakout rooms while they're open
+alter table meetings add column if not exists price int not null default 0;     -- Install D: paid meetings (a ticket price in naira; Olexweb keeps 5%)
 -- ratings: 1 to 5 stars and an optional review from anyone who was in the meeting (host = the host's own rating)
 create table if not exists meet_ratings (id bigserial primary key, code text not null, identity text not null, host boolean not null default false,
   stars int not null check (stars between 1 and 5), review text, created_at timestamptz not null default now(), unique (code, identity));

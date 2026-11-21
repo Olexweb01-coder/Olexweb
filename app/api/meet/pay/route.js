@@ -8,7 +8,8 @@ const home = () => (meetBase() ? meetBase() + '/' : mainOrigin() + '/meet')
 export async function GET(request) {
   const ref = new URL(request.url).searchParams.get('reference') || ''
   const r = await confirmPayment(ref).catch(() => ({ ok: false }))
-  const to = r.ok && r.kind === 'meeting' && r.code ? `${home().replace(/\/$/, '')}/${r.code}` : `${home()}?paid=${r.ok ? '1' : '0'}#dashboard`
+  const base = home().replace(/\/$/, '')
+  const to = r.ok && r.kind === 'ticket' && r.code && r.pass ? `${base}/${r.code}?pass=${r.pass}` : r.ok && r.kind === 'meeting' && r.code ? `${base}/${r.code}` : `${home()}?paid=${r.ok ? '1' : '0'}#dashboard`
   return NextResponse.redirect(to, 303)
 }
 export async function POST(request) {

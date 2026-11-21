@@ -5,6 +5,7 @@
 // layers on its own, only the people on screen get video, and Data saver turns other people's cameras off entirely.
 // LiveKit's library loads after the page appears, so the first load stays light.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLive, PollCard, PollMaker, QAPanel } from './Live'                // Install D: polls, quizzes, webinar Q&A
 import { MeetRecorder, canMp3, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
 import { keepWords, NotesPanel } from './Guests'
 import { MiniWindow, canMini, callControls, callState } from './pip'
@@ -69,7 +70,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
+export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -93,6 +94,14 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
   const [fxLive, setFxLive] = useState({ noise: false, blur: false })   // what's actually running (data-noise / data-blur)
   const [fx, setFx] = useState({ noise: true, blur: false }), [blurOk, setBlurOk] = useState(false), fxRef = useRef(fx)   // noise cancellation and background blur
   const [iosTip, setIosTip] = useState(false)
+  // paid meetings (Install D): a ticket's key comes back from Paystack in the link (?pass=) and is kept on this device
+  const [needTicket, setNeedTicket] = useState(false), [buyer, setBuyer] = useState(''), [buying, setBuying] = useState(false)
+  const passKey = 'meet-pass:' + code
+  useEffect(() => { try { const p = new URLSearchParams(location.search).get('pass'); if (p) { localStorage.setItem(passKey, p); history.replaceState(null, '', location.pathname) } } catch {} }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  async function buyTicket() {
+    setBuying(true); setError('')
+    try { const r = await post('/api/meet/earn', { action: 'ticket', code, name, email: buyer }); location.assign(r.url) } catch (e) { setError(e.message); setBuying(false) }
+  }
   // audio call or video meeting (chosen before it started). An audio call can switch to video, but records sound only.
   const [videoOk, setVideoOk] = useState(videoOn !== false), audioStart = mode === 'audio'
   // the calm stage: the host first, then people who are talking (in the order they started), then everyone else
@@ -125,6 +134,10 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     try { await post('/api/meet/report', { code, reason, note, name }); setReporting(false); toast('Thanks. Your report was sent to Olexweb.') } catch (e) { toast(e.message) }
   }
   const toast = useCallback((text) => { const id = Math.random(); setToasts((t) => [...t.slice(-1), { id, text }]); setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 5000) }, [])
+  const live = useLive({ roomRef, boss, toast }), liveRef = useRef(live), [pollMake, setPollMake] = useState(false)
+  liveRef.current = live
+  // breakout rooms (Install D): which small room I'm in (0 = the main room), and the rooms' plan from the host
+  const [br, setBr] = useState(null), [inRoom, setInRoom] = useState(0), [brMake, setBrMake] = useState(false), movingRef = useRef(false), metaRef = useRef(null)
 
   // ---------- lobby camera preview ----------
   async function previewOn(on) {
@@ -147,7 +160,9 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     setError(''); setPhase('joining')
     try { localStorage.setItem(SAVED_NAME, n) } catch {}
     try {
-      const j = await post('/api/meet', { code, name: n, ...(asks ? { details: det } : {}) })
+      let pass = null; try { pass = localStorage.getItem(passKey) } catch {}
+      const j = await post('/api/meet', { code, name: n, ...(asks ? { details: det } : {}), ...(pass ? { pass } : {}) })
+      if (j.state === 'ticket') { setNeedTicket(true); setPhase('lobby'); setError('This is a paid meeting. Get your ticket to join.'); return }
       if (j.state === 'waiting') { setPhase('waiting'); return }
       if (j.state === 'ended') { setPhase('ended'); return }
       if (j.state === 'unavailable') { setPhase('unavailable'); return }
@@ -201,17 +216,14 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     }
     const holdVideo = (pub) => { if (saverRef.current && pub && pub.source === cam && pub.kind === 'video') pub.setSubscribed(false) }
     room
-      .on(E.ParticipantConnected, bump).on(E.ParticipantDisconnected, bump).on(E.TrackSubscribed, (t, pub) => { holdVideo(pub); bump() }).on(E.TrackUnsubscribed, bump)
+      .on(E.ParticipantConnected, (p) => { setTimeout(() => liveRef.current.onJoin(p), 1500); bump() }).on(E.ParticipantDisconnected, bump).on(E.TrackSubscribed, (t, pub) => { holdVideo(pub); bump() }).on(E.TrackUnsubscribed, bump)
       .on(E.TrackPublished, (pub) => { holdVideo(pub); bump() }).on(E.TrackUnpublished, bump).on(E.TrackUnmuted, bump)
       .on(E.TrackMuted, (pub, p) => {                                     // muted by the host (not by their own tap): the mic button turns off and they're told
         if (p === room.localParticipant && pub && pub.source === lk.Track.Source.Microphone && Date.now() - selfMic.current > 2000) { setMicOn(false); toast('The host muted your microphone. Tap the mic to speak again.') }
         bump()
       })
       .on(E.LocalTrackPublished, bump).on(E.LocalTrackUnpublished, bump).on(E.ParticipantNameChanged, bump)
-      .on(E.RoomMetadataChanged, (md) => {
-        let v = false; try { v = !!JSON.parse(md || '{}').video } catch {}
-        if (v) { setVideoOk(true); toast('Video is on. This meeting started as an audio call, so only its sound can be recorded.') }
-      })
+      .on(E.RoomMetadataChanged, (md) => metaRef.current && metaRef.current(md))
       .on(E.ActiveSpeakersChanged, (list) => { const now = Date.now(); for (const p of list) spoke.current.set(p.identity, now); bump() })
       .on(E.ParticipantAttributesChanged, (changed, p) => {
         if ((info.host || cohostRef.current || isBoss(p)) && p !== room.localParticipant && 'hand' in changed && changed.hand) toast(isHostId(p.identity) ? 'The host raised a hand.' : `${p.name || 'Someone'}${isCoId(p) ? ' (co-host)' : ''} raised a hand.`)   // the host's and co-hosts' hands: everyone is told
@@ -244,6 +256,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       .on(E.Reconnecting, () => setConn((c) => ({ ...c, reconnecting: true }))).on(E.Reconnected, () => setConn((c) => ({ ...c, reconnecting: false })))
       .on(E.AudioPlaybackStatusChanged, () => setConn((c) => ({ ...c, audioBlocked: !room.canPlaybackAudio })))
       .on(E.DataReceived, (payload, p, kind, topic) => {
+        if (p && (topic === 'poll' || topic === 'qa')) { let m; try { m = JSON.parse(new TextDecoder().decode(payload)) } catch { return } liveRef.current.onData(topic, m, { identity: p.identity, name: p.name, isBoss: isBoss(p) }); return }
         if (!p || (topic !== 'chat' && topic !== 'react')) return
         let m; try { m = JSON.parse(new TextDecoder().decode(payload)) } catch { return }
         if (topic === 'react') { if (m && REACTIONS.includes(m.e)) float(m.e, p.name || 'Someone'); return }
@@ -253,6 +266,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       })
       .on(E.Disconnected, (reason) => {
         const R = lk.DisconnectReason
+        if (movingRef.current) { roomRef.current = null; levelEls.current.clear(); if (miniRef.current) miniRef.current.close(); controlsOff.current(); awayOff.current(); return }   // moving to another room, not leaving
         roomRef.current = null; levelEls.current.clear()
         if (miniRef.current) miniRef.current.close(); controlsOff.current()
         if (recRef.current && !closing.current) { const r = recRef.current; recRef.current = null; setRec(null); r.stop().then((f) => { if (f) { toast('Recording saved: ' + f.name); if (f.notes && canNotes) setNotesReady(true) } }).catch(() => toast('The recording couldn’t be saved. Reopen this page to try again.')) }
@@ -284,7 +298,8 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       if (camOn && !saverRef.current) await room.localParticipant.setCameraEnabled(true).catch((e) => { setCamOn(false); toast(deviceError(e, 'camera')) })
     }
     room.startAudio().catch(() => {}); bump()
-    if (info.host && canRecord() && !recRef.current) setAskRec(true)
+    if (metaRef.current && room.metadata) metaRef.current(room.metadata, true)
+    if (info.host && !info.moved && canRecord() && !recRef.current) setAskRec(true)
     if (!info.host && [...room.remoteParticipants.values()].some((p) => isBoss(p) && p.attributes && p.attributes.rec)) toast('This meeting is being recorded.')
   }
   useEffect(() => {
@@ -343,6 +358,17 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     }
   })
 
+  useEffect(() => {
+    if (!br) return
+    const t = setInterval(() => {
+      const left = br.until - Date.now()
+      if (left < 0 && boss && !inRoomRef.current && host) { clearInterval(t); breakoutEnd() }
+      else if (left < -20_000 && inRoomRef.current) { clearInterval(t); moveTo(0) }
+      bump()
+    }, 1000)
+    return () => clearInterval(t)
+  }, [br, boss, host]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ---------- controls ----------
   useEffect(() => { callState(micOn, camOn) }, [micOn, camOn])
   const room = roomRef.current, me = room && room.localParticipant
@@ -398,6 +424,34 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
   async function checkPro() {
     try { const r = await post('/api/meet/dash', { action: 'pro-check', code }); if (r.pro) { setProNow(true); setPaying(''); toast('Pro is on for this meeting.') } else toast('Not paid yet. Finish the payment, then check again.') } catch (e) { toast(e.message) }
   }
+  // the room's shared settings changed: video switched on, breakout rooms opened or closed
+  metaRef.current = (md, first) => {
+    let o = {}; try { o = JSON.parse(md || '{}') } catch {}
+    if (o.video) setVideoOk((was) => { if (!was && !first) toast('Video is on. This meeting started as an audio call, so only its sound can be recorded.'); return true })
+    if (o.back) { if (inRoomRef.current) { toast('Breakout rooms are closed. Back to the main room.'); moveTo(0) } return }
+    if ('breakout' in o) {
+      setBr(o.breakout)
+      const j = joinInfo.current, k = o.breakout && j && o.breakout.assign ? Number(o.breakout.assign[j.identity]) || 0 : 0
+      if (k && !inRoomRef.current && !first) { toast(`Breakout rooms are open. Taking you to Room ${k}.`); moveTo(k) }
+    }
+  }
+  const inRoomRef = useRef(0); inRoomRef.current = inRoom
+  async function moveTo(k) {
+    const j0 = joinInfo.current, r = roomRef.current
+    if (!j0 || movingRef.current || (k === inRoomRef.current && r)) return
+    movingRef.current = true
+    try {
+      const j = await post('/api/meet', { code, name: (r && r.localParticipant.name) || name, room: k, as: j0.identity, seat: j0.seat })
+      if (recRef.current) await stopRec()
+      if (r) await r.disconnect()
+      joinInfo.current = { ...j0, url: j.url, token: j.token, speaker: j.speaker, room: k, moved: true }
+      setInRoom(k); await connect(joinInfo.current)
+    } catch (e) { toast(e.message || 'Couldn’t move rooms. Try again.') } finally { movingRef.current = false }
+  }
+  async function breakout(rooms, minutes) {
+    try { const r = await post('/api/meet/host', { action: 'breakout', code, rooms, minutes, ...seat() }); setBrMake(false); toast(`${r.people} people are going into ${r.rooms} rooms.`) } catch (e) { toast(e.message) }
+  }
+  async function breakoutEnd() { try { await post('/api/meet/host', { action: 'breakout-end', code, ...seat() }); setBr(null); if (inRoomRef.current) moveTo(0) } catch (e) { toast(e.message) } }
   async function switchToVideo() {
     setPop(null)
     if (!window.confirm('Switch this call to video? Everyone can then turn on their camera. It started as an audio call, so only its sound can be recorded.')) return
@@ -477,7 +531,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
         : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
-        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
+        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}{startsAt && new Date(startsAt) > new Date() ? <RegisterBox code={code} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
           {pending.length ? <div className="mt-pending" role="status">
@@ -517,6 +571,9 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
           </div> : <div className="mt-toggles"><button type="button" className="mt-chip" aria-pressed={saver} onClick={() => setSaver((s) => !s)}>{I.leaf}Data saver</button></div>}
           {saver ? <p className="mt-hint">Data saver: you’ll hear everyone and see shared screens, but not cameras. Best on a weak or costly connection.</p> : null}
           {error ? <p className="mt-err" role="alert">{error}</p> : null}
+          {(needTicket || (price > 0 && !host)) ? <div className="mt-asks"><p className="mt-lab">Ticket: ₦{Number(price).toLocaleString('en-NG')}{needTicket ? '' : ' (if you already have one, just join)'}</p>
+            <input className="mt-in" type="email" maxLength={200} value={buyer} onChange={(e) => setBuyer(e.target.value)} placeholder="Your email (for your ticket)" autoComplete="email" />
+            <button type="button" className="mt-btn" disabled={buying || !name.trim() || !buyer.trim()} onClick={buyTicket}>{buying ? 'Opening Paystack…' : `Buy a ticket (₦${Number(price).toLocaleString('en-NG')})`}</button></div> : null}
           <button type="submit" className="mt-btn mt-go" disabled={phase === 'joining'}>{phase === 'joining' ? 'Joining…' : host ? 'Start the meeting' : 'Join the meeting'}</button>
         </form>}
       {phase === 'ended' || phase === 'left' ? <AfterMeeting code={code} info={joinInfo.current} /> : null}
@@ -556,6 +613,10 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     {boss && !extraOk && all.length >= ((joinInfo.current && joinInfo.current.full) || 100) ? <p className="mt-banner mt-warn" role="status">Your meeting is full ({all.length} people), so new people can’t get in.
       {joinInfo.current && joinInfo.current.pricing ? <> <button className="mt-link" onClick={allowExtra}>Let more people in</button> ({'₦' + joinInfo.current.extraPrice} per extra person for every 30 minutes, one invoice after the meeting), or</> : null} <a className="mt-link" href={location.pathname.startsWith('/meet/') ? '/meet' : '/'} target="_blank" rel="noopener">start a new meeting</a> and share its link with them.</p> : null}
     {boss && all.length > 100 ? <p className="mt-banner" role="status">{Array.from({ length: Math.ceil(all.length / 100) }, (_, i) => `Room ${i + 1}: ${Math.min(100, all.length - i * 100)}`).join(' · ')}{extraOk ? ' · extra people are billed after the meeting' : ''}</p> : null}
+    {br || inRoom ? <div className="mt-banner mt-brbar" role="status">
+      <span>{inRoom ? <b>Room {inRoom}</b> : <b>Breakout rooms are open</b>}{br ? ` · ${Math.max(0, Math.floor((br.until - Date.now()) / 60000))}:${String(Math.max(0, Math.floor((br.until - Date.now()) / 1000) % 60)).padStart(2, '0')} left` : ''}</span>
+      {boss && br ? <span className="mt-brrooms">{inRoom ? <button className="mt-link" onClick={() => moveTo(0)}>Main room</button> : null}{Array.from({ length: br.n }, (_, i) => i + 1).filter((k) => k !== inRoom).map((k) => <button key={k} className="mt-link" onClick={() => moveTo(k)}>Room {k}</button>)}
+        {host ? <button className="mt-link" onClick={breakoutEnd}>Bring everyone back</button> : null}</span> : null}</div> : null}
     {boss && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <button className="mt-link" onClick={() => setShowNotes(true)}>Make AI notes</button><button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
@@ -563,6 +624,7 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
       <main ref={stageRef} className={'mt-stage' + (share ? ' mt-sharing' : '')} aria-label="People in the meeting">
         <div className="mt-floats" aria-hidden="true">{floats.map((f) => <span key={f.id} className="mt-float" style={{ left: f.x + '%' }}><b>{f.e}</b><small>{f.who}</small></span>)}</div>
         {share ? <Shared pub={share.pub} who={share.p} local={share.p === me} /> : null}
+        <PollCard live={live} boss={boss} />
         <div ref={gridRef} className="mt-grid" data-n={Math.min(tiles.length + (hidden > 0 || listeners.length ? 1 : 0), limit)}>
           {tiles.map((p) => <Tile key={p.identity} p={p} me={p === me} lk={lk} saver={saver} levelEls={levelEls} />)}
           {hidden > 0 || listeners.length ? <button className="mt-tile mt-more" onClick={() => setPanel('people')}>
@@ -570,8 +632,8 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
         </div>
       </main>
       {panel ? <aside className="mt-panel" aria-label={panel === 'chat' ? 'Chat' : 'People'}>
-        <div className="mt-panel-h"><h2>{panel === 'chat' ? 'Chat' : `People (${all.length})`}</h2><button className="mt-x" onClick={() => setPanel(null)} aria-label="Close">{I.close}</button></div>
-        {panel === 'chat' ? <Chat messages={messages} send={sendChat} myId={me.identity} />
+        <div className="mt-panel-h"><h2>{panel === 'chat' ? 'Chat' : panel === 'qa' ? 'Questions' : `People (${all.length})`}</h2><button className="mt-x" onClick={() => setPanel(null)} aria-label="Close">{I.close}</button></div>
+        {panel === 'qa' ? <QAPanel live={live} boss={boss} myId={me.identity} /> : panel === 'chat' ? <Chat messages={messages} send={sendChat} myId={me.identity} />
           : <><People all={all} me={me} host={host} boss={boss} hands={hands} speaksNow={speaksNow} hostDo={hostDo} lk={lk} />{!host ? <button className="mt-report-link" onClick={() => setReporting(true)}>Report this meeting</button> : null}</>}
       </aside> : null}
     </div>
@@ -603,6 +665,9 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
           {blurOk ? <button role="menuitemcheckbox" aria-checked={fx.blur} onClick={() => { setPop(null); toggleFx('blur') }}>{I.blur}Blur background{fx.blur ? ': on' : ''}</button> : null}
           {boss ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={hand} onClick={() => { setPop(null); toggleHand() }}>{I.hand}{hand ? 'Lower hand' : 'Raise hand'}</button> : null}
           {boss && canRecord() ? <button className="mt-narrow" role="menuitemcheckbox" aria-checked={noting} onClick={() => { setPop(null); toggleNotes() }}>{I.notes}{noting ? 'Stop AI notes' : 'AI notes'}</button> : null}
+          {boss ? <button role="menuitem" onClick={() => { setPop(null); setPollMake(true) }}>{I.people}Poll or quiz</button> : null}
+          {host && !br ? <button role="menuitem" onClick={() => { setPop(null); setBrMake(true) }}>{I.people}Breakout rooms</button> : null}
+          {speakers === 'invited' ? <button className="mt-narrow" role="menuitem" onClick={() => { setPop(null); setPanel('qa') }}>{I.chat}Questions</button> : null}
           {boss && !videoOk ? <button role="menuitem" onClick={switchToVideo}>{I.cam}Switch to video</button> : null}
           {!host ? <button role="menuitem" onClick={() => { setPop(null); setReporting(true) }}>{I.close}Report this meeting</button> : null}
         </span> : null}
@@ -633,6 +698,8 @@ export default function MeetRoom({ code, title, speakers, mode = 'video', videoO
     </div> : null}
 
     {showNotes ? <NotesPanel code={code} title={title} make who={seat()} onClose={() => setShowNotes(false)} /> : null}
+    {pollMake ? <PollMaker live={live} onClose={() => setPollMake(false)} /> : null}
+    {brMake ? <BreakoutMaker count={all.length - 1} onStart={breakout} onClose={() => setBrMake(false)} /> : null}
     {reporting ? <ReportBox onSend={sendReport} onClose={() => setReporting(false)} /> : null}
 
     {leaving ? <div className="mt-modal" role="dialog" aria-modal="true" aria-label="Leave the meeting" onClick={(e) => { if (e.target === e.currentTarget) setLeaving(false) }}>
@@ -791,6 +858,7 @@ function AfterMeeting({ code, info }) {
         <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
       {err ? <p className="mt-err" role="alert">{err}</p> : null}
     </form>) : null}
+    {info && info.certs && info.rateKey ? <a className="mt-btn mt-go" href={`/api/meet/cert?code=${encodeURIComponent(code)}&id=${encodeURIComponent(info.identity)}&k=${encodeURIComponent(info.rateKey)}`} download>Get your certificate</a> : null}
     {tip ? <div className="mt-install">
       <b>Keep Olexweb Meet on your home screen</b>
       {tip === 'ios' ? <ol><li>Tap the Share button (the square with an arrow) at the bottom of Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>
@@ -800,4 +868,32 @@ function AfterMeeting({ code, info }) {
         <button className="mt-btn mt-ghost" onClick={closeTip}>{installEvent ? 'Not now' : 'Got it'}</button></div>
     </div> : null}
   </div>)
+}
+
+// sign up for a scheduled meeting: reminders by email before it starts (and the notes after, if the host chose it)
+function RegisterBox({ code }) {
+  const [f, setF] = useState({ name: '', email: '' }), [done, setDone] = useState(false), [err, setErr] = useState(''), [busy, setBusy] = useState(false)
+  if (done) return <p className="mt-p mt-thanks">You’re signed up. We’ll email you before it starts.</p>
+  return (<form className="mt-reg" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setErr(''); try { await post('/api/meet/register', { code, ...f }); setDone(true) } catch (x) { setErr(x.message) } finally { setBusy(false) } }}>
+    <p className="mt-lab">Get a reminder by email</p>
+    <input className="mt-in" maxLength={60} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Your name" autoComplete="name" />
+    <input className="mt-in" type="email" maxLength={200} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="you@example.com" autoComplete="email" />
+    {err ? <p className="mt-err" role="alert">{err}</p> : null}
+    <button className="mt-btn" disabled={busy}>{busy ? 'Signing up…' : 'Remind me'}</button>
+  </form>)
+}
+
+// the host chooses how many breakout rooms and for how long
+function BreakoutMaker({ count, onStart, onClose }) {
+  const [n, setN] = useState(Math.min(20, Math.max(2, Math.round(count / 4) || 2))), [mins, setMins] = useState(10), [busy, setBusy] = useState(false)
+  return (<div className="mt-modal" role="dialog" aria-modal="true" aria-labelledby="br-h" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <form className="mt-card mt-dialog lv-make" onSubmit={async (e) => { e.preventDefault(); setBusy(true); await onStart(n, mins); setBusy(false) }}>
+      <h2 className="mt-h2" id="br-h">Breakout rooms</h2>
+      <p className="mt-p">Everyone except you and your co-hosts is shared out at random. They come back by themselves when time is up, or when you bring everyone back. You can visit any room.</p>
+      <label className="mt-lab" htmlFor="br-n">Rooms</label><input id="br-n" className="mt-in" type="number" min={2} max={20} value={n} onChange={(e) => setN(Number(e.target.value))} />
+      <small className="mt-hint">{count > 0 ? `About ${Math.max(1, Math.round(count / Math.max(2, n)))} people in each room.` : 'Nobody else is here yet.'}</small>
+      <label className="mt-lab" htmlFor="br-m">For how long</label>
+      <select id="br-m" className="mt-in" value={mins} onChange={(e) => setMins(Number(e.target.value))}>{[5, 10, 15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m} minutes</option>)}</select>
+      <div className="mt-col"><button className="mt-btn mt-go" disabled={busy || count < 1}>{busy ? 'Opening…' : 'Open the rooms'}</button><button type="button" className="mt-btn mt-ghost" onClick={onClose}>Cancel</button></div>
+    </form></div>)
 }

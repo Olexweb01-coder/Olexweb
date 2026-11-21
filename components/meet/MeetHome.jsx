@@ -70,6 +70,11 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
 
   function join(e) { e.preventDefault(); if (found) location.assign(pathFor(found)); else setToast('That isn’t a meeting code. It looks like abc-defg-hij.') }
   function needAccount(next) { setMenu(false); setSheet({ kind: 'signin', next }) }
+  async function openRoom() {                                              // Install D: their personal room
+    setMenu(false); if (!user) return needAccount('/?then=start')
+    try { const r = await call({ action: 'room' }); try { await navigator.clipboard.writeText(location.origin + (onMeetApp() ? '/' : '/meet/r/') + r.handle) } catch {} location.assign(pathFor(r.code)) }
+    catch (e) { setToast(e.message) }
+  }
   async function startNow(mode = 'video') {                               // audio or video is chosen before it starts
     setMenu(false); if (!user) return needAccount(mode === 'audio' ? '/?then=start-audio' : '/?then=start')
     setBusy('start')
@@ -86,9 +91,13 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
     if (!Number.isFinite(startsAt.getTime())) { setToast('Choose a date and time.'); return }
     setBusy('schedule')
     try {
-      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video', private: !!s.private }), form: s.form && s.form.on ? s.form : { on: false } }
+      const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video', private: !!s.private, certs: !!s.certs, followup: !!s.followup }), form: s.form && s.form.on ? s.form : { on: false } }
       const r = s.edit ? await call({ action: 'update', code: s.edit.code, ...body }) : await call({ action: 'create', ...body })
       const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes }
+      if (s.price != null && s.price !== '') {                                // Install D: a ticket price (paid meetings)
+        const pr = await fetch('/api/meet/earn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'price', code, price: Number(s.price) || 0 }) })
+        if (!pr.ok) setToast(((await pr.json().catch(() => ({}))).error) || 'The ticket price wasn’t saved.')
+      }
       setSheet({ ...s, done: m }); refresh()
     } catch (err) { setToast(err.message) } finally { setBusy('') }
   }
@@ -126,6 +135,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
             <button className="mh-btn mh-go" aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu((x) => !x)} disabled={busy === 'start'}>{ICON.plus}{busy === 'start' ? 'Starting…' : 'New meeting'}</button>
             {menu ? <div className="mh-menu" role="menu">
               <button role="menuitem" onClick={() => startNow('video')}>{ICON.bolt}<span><b>Start a video meeting now</b><small>Cameras and voices. Get a link and go in</small></span></button>
+              <button role="menuitem" onClick={openRoom}>{ICON.key}<span><b>Open my room</b><small>Your own link that never changes: share it once</small></span></button>
               <button role="menuitem" onClick={() => startNow('audio')}>{ICON.bolt}<span><b>Start an audio call now</b><small>Voices only, light on data. Screen sharing still works</small></span></button>
               <button role="menuitem" onClick={() => openSchedule()}>{ICON.cal}<span><b>Schedule a meeting</b><small>Pick a time, share the invite</small></span></button>
             </div> : null}
@@ -147,6 +157,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
           <div className="mh-li-acts">
             <a className="mh-btn mh-go mh-sm" href={pathFor(m.code)}>{m.startedAt ? 'Join' : 'Start'}</a>
             <button className="mh-btn mh-sm" onClick={() => copy(m)}>{m.startsAt ? 'Copy invite' : 'Copy link'}</button>
+            {m.startsAt ? <a className="mh-btn mh-sm" href={`/api/meet/flyer/${m.code}?download`} download>Flyer</a> : null}
             {!m.startedAt ? <button className="mh-btn mh-sm" onClick={() => openSchedule(m)}>{m.startsAt ? 'Change' : 'Schedule'}</button> : null}
             <button className="mh-btn mh-sm mh-quiet" disabled={!!busy} onClick={() => act(m, 'end')}>End</button>
           </div></li>)}</ul>
@@ -202,6 +213,8 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
             <label className="mh-f"><span>Time ({ready ? tzName() : 'your time'})</span><input type="time" value={sheet.time} step={300} onChange={(e) => setSheet({ ...sheet, time: e.target.value })} /></label>
             <label className="mh-f"><span>Length</span><select value={sheet.minutes} onChange={(e) => setSheet({ ...sheet, minutes: Number(e.target.value) })}>{[15, 30, 45, 60, 90, 120, 180].map((m) => <option key={m} value={m}>{m < 60 ? m + ' minutes' : m === 60 ? '1 hour' : m / 60 + ' hours'}</option>)}</select></label>
           </div>
+          {!sheet.edit ? <label className="mt-consent"><input type="checkbox" checked={!!sheet.certs} onChange={(e) => setSheet({ ...sheet, certs: e.target.checked })} /><span>Certificates of attendance: everyone who stays at least half the meeting can download one{pricing && pricing.on ? ' (Pro)' : ''}.</span></label> : null}
+          {!sheet.edit ? <label className="mt-consent"><input type="checkbox" checked={!!sheet.followup} onChange={(e) => setSheet({ ...sheet, followup: e.target.checked })} /><span>AI follow-up: once you make AI notes, everyone who signed up gets the summary and next steps by email{pricing && pricing.on ? ' (Pro)' : ''}.</span></label> : null}
           {!sheet.edit ? <label className="mt-consent"><input type="checkbox" checked={!!sheet.private} onChange={(e) => setSheet({ ...sheet, private: e.target.checked })} /><span>End-to-end encrypted: only people in the meeting can see and hear it, not even our servers. Needs an up-to-date browser.</span></label> : null}
           {!sheet.edit ? <div className="mh-f"><span>Type</span><div className="mh-seg" role="group" aria-label="Meeting type">
             <button type="button" aria-pressed={(sheet.mode || 'video') === 'video'} onClick={() => setSheet({ ...sheet, mode: 'video' })}>Video meeting</button>
@@ -210,6 +223,7 @@ export default function MeetHome({ user, providers, meetings: initial, notice, f
             <button type="button" aria-pressed={sheet.speakers === 'everyone'} onClick={() => setSheet({ ...sheet, speakers: 'everyone' })}>Everyone</button>
             <button type="button" aria-pressed={sheet.speakers === 'invited'} onClick={() => setSheet({ ...sheet, speakers: 'invited' })}>Only people I let speak</button></div></div>
           <FormSettings value={sheet.form} onChange={(f) => setSheet({ ...sheet, form: f })} />
+          {pricing && pricing.on ? <label className="mh-f"><span>Ticket price (₦, leave empty for free)</span><input type="number" min={0} value={sheet.price ?? ''} onChange={(e) => setSheet({ ...sheet, price: e.target.value })} placeholder="Free" /><small className="md-dim">People pay before they join. It goes to your bank (add it in your dashboard); Olexweb keeps 5%.</small></label> : null}
           <div className="mh-row"><button className="mh-btn mh-go" disabled={busy === 'schedule'}>{busy === 'schedule' ? 'Saving…' : sheet.edit ? 'Save' : 'Schedule'}</button><button type="button" className="mh-btn mh-quiet" onClick={() => setSheet(null)}>Cancel</button></div>
         </form>}
       </div>

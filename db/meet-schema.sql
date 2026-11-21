@@ -87,6 +87,12 @@ alter table meet_users add column if not exists phone text;                     
 alter table meetings add column if not exists pro boolean not null default false;    -- Pro bought for this one meeting
 alter table meetings add column if not exists extra_ok boolean not null default false; -- the host let more than 100 people in (paid per person)
 alter table meetings add column if not exists e2ee_key text;                -- end-to-end encrypted meetings: the key (only given to people let in)
+alter table meetings add column if not exists certs boolean not null default false;      -- Install D: certificates of attendance (Pro)
+alter table meetings add column if not exists followup boolean not null default false;   -- Install D: AI notes emailed to attendees (Pro)
+alter table meetings add column if not exists followup_at timestamptz;
+alter table meetings add column if not exists personal boolean not null default false;   -- Install D: the host's personal room (/<their name>)
+alter table meetings add column if not exists breakout jsonb;                -- Install D: breakout rooms while they're open
+alter table meetings add column if not exists price int not null default 0;     -- Install D: paid meetings (a ticket price in naira; Olexweb keeps 5%)
 alter table meet_usage add column if not exists extra boolean not null default false;  -- joined when the meeting already had 100 people
 create table if not exists meet_payments (id bigserial primary key, reference text not null unique, user_id int, kind text not null, code text, invoice_id bigint,
   amount int not null, status text not null default 'pending', created_at timestamptz not null default now(), paid_at timestamptz);
@@ -119,3 +125,18 @@ create table if not exists meet_badges (user_id int not null, badge text not nul
 create table if not exists meet_rewards (user_id int not null, ref text not null, days int not null, created_at timestamptz not null default now(), primary key (user_id, ref));   -- each reward once
 alter table meet_ratings add column if not exists user_id int;               -- the signed-in person who rated (for the review reward)
 alter table meet_settings add column if not exists awards jsonb not null default '{}';   -- each month's winners (the spotlight)
+-- Install D: names in the usage log (for certificates), and sign-ups for reminders before a scheduled meeting
+alter table meet_usage add column if not exists name text;
+create table if not exists meet_regs (id bigserial primary key, code text not null, name text not null, email text not null, created_at timestamptz not null default now(), sent jsonb not null default '[]');
+create unique index if not exists meet_regs_one on meet_regs (code, lower(email));
+-- Install D: hosts get paid (a Paystack subaccount: their bank; Olexweb keeps 5%), tickets, and mentorship bookings
+alter table meet_users add column if not exists payout jsonb;                  -- {code, bankName, accountName, last4}
+alter table meet_users add column if not exists booking jsonb;                 -- mentorship: {on, days, from, to, minutes, price, title}
+alter table meet_payments add column if not exists buyer_name text;
+alter table meet_payments add column if not exists buyer_email text;
+alter table meet_payments add column if not exists pass text;                  -- a ticket's key (lets that person in)
+alter table meet_payments add column if not exists booking_id bigint;
+create unique index if not exists meet_payments_pass on meet_payments (pass) where pass is not null;
+create table if not exists meet_bookings (id bigserial primary key, mentor int not null, mentee int not null, starts_at timestamptz not null, minutes int not null,
+  code text, status text not null default 'pending', created_at timestamptz not null default now());
+create unique index if not exists meet_bookings_slot on meet_bookings (mentor, starts_at) where status <> 'cancelled';

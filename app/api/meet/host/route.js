@@ -14,7 +14,7 @@ export async function POST(request) {
   return respond(async () => {
     const h = await mustHost(b.code, u, mu, { as: b.as, seat: b.seat })                 // the host, or a co-host proving their seat
     if (b.action === 'end') { if (h.cohost) throw new Refused('Only the host can end the meeting for everyone.', 403); return endMeeting(b.code) }
-    if (['allow-speak', 'stop-speak', 'remove', 'mute', 'make-cohost', 'unmake-cohost', 'video-on', 'allow-extra'].includes(b.action)) return hostAction(b.code, b.action, b.identity, h)
+    if (['allow-speak', 'stop-speak', 'remove', 'mute', 'make-cohost', 'unmake-cohost', 'video-on', 'allow-extra', 'breakout', 'breakout-end'].includes(b.action)) return hostAction(b.code, b.action, b.identity, h, { rooms: b.rooms, minutes: b.minutes })
     throw new Refused('Unknown action.')
   })
 }

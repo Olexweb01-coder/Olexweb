@@ -12,6 +12,7 @@ export async function POST(request) {
   const mu = await currentMeetUser(); if (!mu) return refuse('Sign in to create or schedule meetings.', 401)
   const b = await readJson(request); if (!b) return refuse('Request refused.', 400)
   return respond(async () => {
+    if (b.action === 'room') return (await import('@/lib/meet/pro')).myRoom(mu)    // Install D: their personal room
     if (b.action === 'list') {
       const all = await M.myMeetings(mu), p = await pricing()
       if (!p.on || (await planOf(mu)).pro) return { meetings: all }
@@ -22,7 +23,7 @@ export async function POST(request) {
       const owner = mu.role === 'owner'
       if (!owner) await mustNotOwe(mu.id)                                    // an unpaid invoice pauses new meetings
       await canCreate(owner)                                              // paused near the monthly limit (not for Olaitan)
-      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, private: !!b.private, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
+      const r = await M.createMeeting({ title: b.title, speakers: b.speakers, mode: b.mode, private: !!b.private, certs: !!b.certs, followup: !!b.followup, startsAt: b.startsAt, minutes: b.minutes, form: b.form || null, ...(owner && Array.isArray(b.reminders) ? { reminders: b.reminders } : {}) }, null, { hostUser: mu.id, pushes: owner })
       return { ...r, link: M.meetLink(r.code) }
     }
     if (!['update', 'end', 'delete'].includes(b.action)) throw new Refused('Unknown action.')
