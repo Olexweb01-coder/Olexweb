@@ -204,3 +204,8 @@ update meet_settings set news58 = true where id = 1;
 -- Install 58f: referral commission (30% for 12 months) can be paid out 14 days after the payment; a fixed Ambassador prize
 alter table meet_credits add column if not exists available_at timestamptz not null default now();
 alter table meet_settings add column if not exists ambassador_prize int not null default 5000;   -- naira; set in Admin → Meet → Money
+-- Install 58h: the Paystack collection limit (Starter business) and the upgrade, noticed by itself
+alter table meet_settings add column if not exists ps_limit int not null default 8000000;          -- naira; what Paystack shows on your dashboard (₦8M for a Starter business)
+alter table meet_settings add column if not exists ps_registered boolean not null default false;  -- upgraded to a Registered business: no limit
+alter table meet_settings add column if not exists ps_limit_hit_at timestamptz;                    -- the last time Paystack refused a payment over the limit
+alter table meet_settings add column if not exists ps_manual boolean not null default false;     -- the admin said it themselves: don't guess

@@ -39,6 +39,7 @@ export async function POST(request) {
     if (b.action === 'transfer') return confirmTransfer(b.id, !!b.yes)
     if (b.action === 'give-pro') return D.givePro(b.email, b.days)
     if (b.action === 'payouts-now') return (await import('@/lib/meet/payouts')).mondayPayouts(true)   // Install 58: send what's waiting now (not only on Monday)
+    if (b.action === 'ps-limit') return (await import('@/lib/meet/payouts')).setLimit(b)          // Install 58h
     if (b.action === 'ambassador-prize') return (await import('@/lib/meet/payouts')).setPrize(b.naira)
     if (b.action === 'money') return (await import('@/lib/meet/payouts')).ledger()   // Install 58b: balance, set aside, yours, payouts
     if (b.action === 'renewals-now') return (await import('@/lib/meet/members')).renewals()
