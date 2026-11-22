@@ -24,7 +24,7 @@ export default async function MeetHomePage({ searchParams }) {
   const free = user && plans.on && !(await planOf(user)).pro, past = all.filter((m) => m.endedAt)   // Free (pricing on): the last 3 ended meetings
   const meetings = free ? all.filter((m) => !m.endedAt || past.indexOf(m) < 3) : all, morePast = free ? Math.max(0, past.length - 3) : 0
   return (<>
-    {structuredData().map((d, i) => <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d).replace(/</g, '\\u003c') }} />)}
-    <MeetHome user={user} providers={providers()} emailOn={emailSignInReady()} meetings={meetings} morePast={morePast} pricing={plans} spotlight={await spotlight().catch(() => null)} faq={FAQ} notice={typeof searchParams.signin === 'string' ? searchParams.signin.slice(0, 200) : ''} />
+    {structuredData('app').map((d, i) => <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d).replace(/</g, '\\u003c') }} />)}
+    <MeetHome user={user} providers={providers()} emailOn={emailSignInReady()} meetings={meetings} morePast={morePast} pricing={plans} spotlight={await spotlight().catch(() => null)} faq={FAQ} base={mh ? '' : '/meet'} notice={typeof searchParams.signin === 'string' ? searchParams.signin.slice(0, 200) : ''} />
   </>)
 }

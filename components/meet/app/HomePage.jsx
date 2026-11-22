@@ -26,7 +26,7 @@ export default function HomePage({ ctx }) {
     { done: s.meetings > 0, t: 'Host your first meeting', d: 'Any length. Start one now.', xp: 50, go: () => startNow('video') },
     { done: comm.public && !!comm.handle, t: 'Show your profile', d: 'Join the leaderboard and let people follow you.', xp: 100, go: () => nav('profile') },
     { done: comm.badges.filter((b) => b.earned).length >= 5, t: 'Earn 5 badges', d: `${comm.badges.filter((b) => b.earned).length} of 5. Every 5 badges is a month of Pro.`, xp: 500, go: () => nav('profile'), pct: Math.min(100, comm.badges.filter((b) => b.earned).length * 20) },
-    { done: false, t: 'Invite a friend', d: 'Earn 3% of their first Pro payment.', xp: 0, go: async () => { await copyText(comm.invite); setToast('Invite link copied.') } },
+    { done: false, t: 'Invite a friend', d: 'Earn 30% of their Pro payments for a year.', xp: 0, go: async () => { await copyText(comm.invite); setToast('Invite link copied.') } },
   ]
   const winners = comm.spotlight ? Object.values(comm.spotlight.winners || {}) : []
   return (<div className="wrap">

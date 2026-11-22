@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import './meet.css'
 import './pub.css'
 import './app.css'
+import './site.css'
 export async function generateMetadata() {
   const onMeet = String(headers().get('x-forwarded-host') || headers().get('host') || '').startsWith('meet.')
   return { title: { default: 'Olexweb Meet', template: '%s | Olexweb Meet' }, description: 'Free audio and video meetings with no time limit. Join with a link, no account needed.',

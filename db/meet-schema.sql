@@ -201,3 +201,6 @@ alter table meet_settings add column if not exists news58 boolean not null defau
 insert into meet_news (title, body) select 'The new Olexweb Meet is here', 'A new home with a menu on every screen, levels and celebrations, your profile with a photo and banner, and new ways to earn: memberships, course bundles, Find a mentor, paid certificates and invite rewards. Every fee is shown before you earn.'
   where not (select news58 from meet_settings where id = 1);
 update meet_settings set news58 = true where id = 1;
+-- Install 58f: referral commission (30% for 12 months) can be paid out 14 days after the payment; a fixed Ambassador prize
+alter table meet_credits add column if not exists available_at timestamptz not null default now();
+alter table meet_settings add column if not exists ambassador_prize int not null default 5000;   -- naira; set in Admin → Meet → Money

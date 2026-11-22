@@ -4,8 +4,8 @@ const MEET_HOST = { type: 'host', value: 'meet\\..+' }
 const MAIN_ORIGIN = (process.env.MAIN_ORIGIN || 'https://olexweb.com').replace(/\/$/, '')
 const CODE = '[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}'
 // Install D: personal rooms (meet.olexweb.com/<profile name>), never the main site's own top-level pages
-const ROOM = '(?!(?:about|aoc|cookies|doc|guides|insights|me|media|olex-ai|olex-runner|portfolio|preview|privacy|review|services|start|stories|terms|tools|updates|ventures|work-with-me|alerts|studio|blog|admin|api|meet|book|mentors|feed\\.xml|robots\\.txt|sitemap\\.xml)$)[a-z0-9][a-z0-9-]{1,28}[a-z0-9]'
-const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', 'book$', 'mentors$', 'v/', 'l/', CODE + '$', ROOM + '$'].join('|')
+const ROOM = '(?!(?:about|aoc|cookies|doc|guides|insights|me|media|olex-ai|olex-runner|portfolio|preview|privacy|review|services|start|stories|terms|tools|updates|ventures|work-with-me|alerts|studio|blog|admin|api|meet|book|mentors|features|for|earn|pricing|help|leaders|feed\\.xml|robots\\.txt|sitemap\\.xml)$)[a-z0-9][a-z0-9-]{1,28}[a-z0-9]'
+const MEET_KEEP = ['meet(?:/|$)', 'api/', '_next/', 'sw\\.js$', 'manifest\\.webmanifest$', 'favicon\\.ico$', 'robots\\.txt$', 'sitemap\\.xml$', 'apple-touch-icon\\.png$', 'book$', 'mentors$', 'features$', 'for$', 'earn$', 'pricing$', 'help$', 'about$', 'leaders$', 'v/', 'l/', CODE + '$', ROOM + '$'].join('|')
 const nextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
@@ -31,6 +31,7 @@ const nextConfig = {
     { source: `/:code(${CODE})`, has: [MEET_HOST], destination: '/meet/:code' },
     { source: '/book', has: [MEET_HOST], destination: '/meet/book' },
     { source: '/mentors', has: [MEET_HOST], destination: '/meet/mentors' },           // Install 58: Find a mentor
+    { source: '/:page(features|for|earn|pricing|help|about|leaders)', has: [MEET_HOST], destination: '/meet/:page' },   // Install 58g: the website's pages
     { source: '/v/:serial', has: [MEET_HOST], destination: '/meet/v/:serial' },       // Install 58: certificate check
     { source: '/l/:slug', has: [MEET_HOST], destination: '/meet/l/:slug' },           // Install 58: tracked links
     { source: `/:handle(${ROOM})`, has: [MEET_HOST], destination: '/meet/r/:handle' },   // Install D: personal rooms          // "Book a call with Olaitan" (Olex Sales)

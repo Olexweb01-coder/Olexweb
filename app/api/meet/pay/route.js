@@ -23,6 +23,10 @@ export async function POST(request) {
   if (!paystackSigned(raw, request.headers.get('x-paystack-signature'))) return NextResponse.json({ error: 'Not signed.' }, { status: 401 })
   let ev = {}; try { ev = JSON.parse(raw) } catch {}
   if (ev.event === 'charge.success' && ev.data && ev.data.reference) await confirmPayment(ev.data.reference).catch(() => {})
+  if (ev.event === 'refund.processed' && ev.data && ev.data.transaction_reference) {   // Install 58f: a refunded Pro payment cancels its unpaid commission
+    const { one } = await import('@/lib/meet/db'); const p = await one('select id from meet_payments where reference = $1', [String(ev.data.transaction_reference).slice(0, 100)]).catch(() => null)
+    if (p) await (await import('@/lib/meet/payouts')).inviteRefunded(p.id).catch(() => {})
+  }
   if (/^transfer\.(success|failed|reversed)$/.test(ev.event || '') && ev.data && ev.data.reference) await (await import('@/lib/meet/payouts')).transferEvent(ev.data.reference).catch(() => {})   // Monday payouts
   return NextResponse.json({ ok: true })
 }

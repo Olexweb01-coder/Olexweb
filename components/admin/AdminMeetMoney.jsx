@@ -9,6 +9,11 @@ async function act(body) {
   const r = await fetch('/admin/api/meetings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) })
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); return j
 }
+function Prize({ now, done }) {
+  const [v, setV] = useState(String(now ?? 5000)), [m, setM] = useState('')
+  return (<div className="mm-row"><label className="mg-dim">Prize (₦) <input className="mg-in" style={{ width: 130 }} type="number" min={0} value={v} onChange={(e) => setV(e.target.value)} /></label>
+    <button className="btn" onClick={async () => { try { await act({ action: 'ambassador-prize', naira: Number(v) }); setM('Saved.'); done() } catch (e) { setM(e.message) } }}>Save</button>{m ? <span className="mg-dim">{m}</span> : null}</div>)
+}
 export default function AdminMeetMoney() {
   const [d, setD] = useState(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false), [msg, setMsg] = useState('')
   const load = () => act({ action: 'money' }).then(setD, (e) => setErr(e.message))
@@ -36,11 +41,16 @@ export default function AdminMeetMoney() {
       {msg ? <p>{msg}</p> : null}
     </section>
     <section className="mg-box">
+      <h2>Ambassador of the month</h2>
+      <p className="mg-dim">A fixed cash prize for the top inviter each month. It’s paid only when what Meet kept from their invitees that month is at least twice the prize, so it can never cost you more than half of what they brought in. Otherwise they get a week of Pro.</p>
+      <Prize now={d.prize} done={load} />
+    </section>
+    <section className="mg-box">
       <h2>What Meet earned</h2>
       <div className="mm-grid">
         <div className="mc-kpi"><span>Plans (Pro, invoices)</span><b>{k(i.plans)}</b><small className="mg-dim">{k(i.plansMonth)} this month</small></div>
         <div className="mc-kpi"><span>Your share of hosts’ sales</span><b>{k(i.shares)}</b><small className="mg-dim">{k(i.sharesMonth)} this month</small></div>
-        <div className="mc-kpi"><span>Rewards paid out</span><b>{k(i.paidOut)}</b><small className="mg-dim">Invites and ambassador</small></div>
+        <div className="mc-kpi"><span>Rewards paid out</span><b>{k(i.paidOut)}</b><small className="mg-dim">Referral commission and ambassador</small></div>
       </div>
       {i.byKind.length ? <ul className="mc-list">{i.byKind.map((x) => <li key={x.kind}><span>{KIND[x.kind] || x.kind}</span><small className="mg-dim">{x.n} · {k(x.kobo)}</small></li>)}</ul> : null}
     </section>

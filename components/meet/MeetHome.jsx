@@ -3,7 +3,7 @@
 // The old home's actions all live on in the new app (components/meet/app).
 import MeetApp from './app/MeetApp'
 import Landing from './app/Landing'
-export default function MeetHome({ user, providers, meetings, notice, faq = [], emailOn = false, morePast = 0, pricing = null, spotlight = null }) {
+export default function MeetHome({ user, providers, meetings, notice, faq = [], emailOn = false, morePast = 0, pricing = null, spotlight = null, base = '/meet' }) {
   return user ? <MeetApp user={user} meetings={meetings} pricing={pricing} morePast={morePast} notice={notice} />
-    : <Landing providers={providers} emailOn={emailOn} pricing={pricing} faq={faq} spotlight={spotlight} notice={notice} />
+    : <Landing providers={providers} emailOn={emailOn} spotlight={spotlight} notice={notice} base={base} />
 }
