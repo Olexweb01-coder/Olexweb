@@ -209,3 +209,11 @@ alter table meet_settings add column if not exists ps_limit int not null default
 alter table meet_settings add column if not exists ps_registered boolean not null default false;  -- upgraded to a Registered business: no limit
 alter table meet_settings add column if not exists ps_limit_hit_at timestamptz;                    -- the last time Paystack refused a payment over the limit
 alter table meet_settings add column if not exists ps_manual boolean not null default false;     -- the admin said it themselves: don't guess
+-- Install 58k: bonus Pro (gifts from Olexweb and the welcome bonus), each with its reason, its own dates, and cancellable
+create table if not exists meet_pro_grants (id bigserial primary key, user_id int not null references meet_users (id) on delete cascade, kind text not null default 'gift',
+  days int not null, reason text not null default '', starts_at timestamptz not null, ends_at timestamptz not null, created_at timestamptz not null default now(),
+  cancelled_at timestamptz, cancel_reason text);
+create index if not exists meet_pro_grants_user on meet_pro_grants (user_id);
+alter table meet_settings add column if not exists welcome_days int not null default 0;            -- Pro for every new account (0 = off)
+alter table meet_settings add column if not exists welcome_reason text not null default '';
+alter table meet_settings add column if not exists welcome_until timestamptz;                       -- the offer ends (null = no end)

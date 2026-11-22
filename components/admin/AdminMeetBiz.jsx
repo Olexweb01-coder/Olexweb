@@ -1,4 +1,5 @@
 'use client'
+import AdminBonus from './AdminBonus'
 // Admin → Meetings → Business (Install B): the pricing switch and prices, announcements for every Meet user, support
 // requests Olex AI couldn't solve (reply by email and in their dashboard, or open WhatsApp), invoices, and gifting Pro.
 import { useEffect, useState } from 'react'
@@ -16,7 +17,7 @@ const wa = (phone, text) => 'https://wa.me/' + String(phone || '').replace(/[^\d
 export default function AdminMeetBiz({ only = null }) {
   const show = (k) => !only || only.includes(k)                              // the console shows these in different tabs
   const [d, setD] = useState(null), [err, setErr] = useState(''), [msg, setMsg] = useState(''), [busy, setBusy] = useState('')
-  const [bank, setBank] = useState(null), [prices, setPrices] = useState(null), [news, setNews] = useState({ title: '', body: '' }), [replies, setReplies] = useState({}), [gift, setGift] = useState({ email: '', days: 30 })
+  const [bank, setBank] = useState(null), [prices, setPrices] = useState(null), [news, setNews] = useState({ title: '', body: '' }), [replies, setReplies] = useState({})
   async function load() { try { const j = await act({ action: 'biz' }); setD(j); setPrices(j.pricing.prices); setBank((b) => b || { on: false, bankName: '', accountName: '', accountNumber: '', note: '', ...j.bank }) } catch (e) { setErr(e.message) } }
   useEffect(() => { load() }, [])
   async function run(key, body, done) {
@@ -84,13 +85,7 @@ export default function AdminMeetBiz({ only = null }) {
       {d.news.length ? <ul className="mb-list">{d.news.map((n) => <li key={n.id}><span><b>{n.title}</b> · {when(n.created_at)}</span><button className="btn btn-line" disabled={!!busy} onClick={() => run('nd' + n.id, { action: 'news-delete', id: n.id })}>Delete</button></li>)}</ul> : null}
     </section> : null}
 
-    {show('gift') ? <section className="mg-box">
-      <h2>Give Pro</h2>
-      <p className="mg-dim">A gift or a thank-you: type an email, or <b>all</b> for every Meet account.</p>
-      <div className="mb-prices"><label><span className="mg-lab">Email (or all)</span><input className="input" value={gift.email} onChange={(e) => setGift({ ...gift, email: e.target.value })} /></label>
-        <label><span className="mg-lab">Days</span><input className="input" type="number" min={1} value={gift.days} onChange={(e) => setGift({ ...gift, days: e.target.value })} /></label></div>
-      <button className="btn btn-line" disabled={!!busy || !gift.email.trim()} onClick={() => run('g', { action: 'give-pro', ...gift }, (j) => `Pro given to ${j.people} account${j.people === 1 ? '' : 's'}. They were told in their dashboard.`)}>Give Pro</button>
-    </section> : null}
+    {show('gift') ? <AdminBonus /> : null}
     <style dangerouslySetInnerHTML={{ __html: `.mb{display:grid;gap:16px}.mb h2{margin:0 0 8px;display:flex;align-items:center;gap:10px}.mb-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mb-prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}.mb-prices label{display:grid;gap:4px}
 .mb-pill{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(239,122,106,.15);color:#ef7a6a}

@@ -37,7 +37,10 @@ export async function POST(request) {
     if (b.action === 'invoice-paid') return D.markInvoicePaid(b.id)
     if (b.action === 'bank') return D.saveBank(b)
     if (b.action === 'transfer') return confirmTransfer(b.id, !!b.yes)
-    if (b.action === 'give-pro') return D.givePro(b.email, b.days)
+    if (b.action === 'give-pro') return D.givePro(b.email, b.days, b.reason)
+    if (b.action === 'bonus-list') return (await import('@/lib/meet/bonus')).bonusList()                 // Install 58k
+    if (b.action === 'bonus-cancel') return (await import('@/lib/meet/bonus')).cancelGrant(b.id, b.reason)
+    if (b.action === 'welcome-bonus') return (await import('@/lib/meet/bonus')).setWelcome(b)
     if (b.action === 'payouts-now') return (await import('@/lib/meet/payouts')).mondayPayouts(true)   // Install 58: send what's waiting now (not only on Monday)
     if (b.action === 'setup') return { items: (await import('@/lib/meet/setup')).setupChecklist() }   // Install 58i
     if (b.action === 'ps-limit') return (await import('@/lib/meet/payouts')).setLimit(b)          // Install 58h
