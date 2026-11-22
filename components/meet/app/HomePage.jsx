@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { I } from './icons'
 import { pathFor, linkFor, copyText, Avatar, day, JoinBox } from './ui'
+import { ProLocked } from './ProLock'
 
 function Countdown({ at }) {
   const [t, setT] = useState(null)
@@ -47,6 +48,7 @@ export default function HomePage({ ctx }) {
       <button className="tile t4" onClick={() => nav('earn')}><span className="ti"><I n="wallet" /></span><span><b>Earn</b><small>Paid meetings, members, mentoring</small></span></button>
     </div>
 
+    <ProLocked h={h} nav={nav} />
     <div className="two">
       <section className="card"><div className="ch"><h3>Coming up</h3><a href="#meetings">All meetings</a></div>
         {upcoming.length ? upcoming.slice(0, 5).map((m) => { const d = m.startsAt ? new Date(m.startsAt) : null

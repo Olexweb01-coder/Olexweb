@@ -84,3 +84,17 @@ export default function AdminMeetMoney() {
     <style>{'.mm-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));margin:10px 0}.mm-yours{color:var(--green,#8fe36a)}.mm-warn{padding:10px 14px;border-radius:12px;background:rgba(239,122,106,.12);border:1px solid rgba(239,122,106,.35)}.mm-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}'}</style>
   </>)
 }
+
+// Install 58i: what is connected on the live server, and what each piece unlocks (never shows a key)
+export function AdminMeetSetup() {
+  const [d, setD] = useState(null), [err, setErr] = useState('')
+  useEffect(() => { act({ action: 'setup' }).then((r) => setD(r.items), (e) => setErr(e.message)) }, [])
+  if (err) return <section className="mg-box"><p className="mg-dim">{err}</p></section>
+  if (!d) return <section className="mg-box"><p className="mg-dim">Checking…</p></section>
+  const off = d.filter((x) => !x.ok), must = off.filter((x) => x.need)
+  return (<section className="mg-box"><h2>Setup check</h2>
+    <p className={must.length ? 'mm-warn' : 'mg-dim'}>{must.length ? `${must.length} needed piece${must.length === 1 ? ' is' : 's are'} missing: ${must.map((x) => x.label).join(', ')}.` : off.length ? `Everything needed is connected. ${off.length} optional piece${off.length === 1 ? ' is' : 's are'} off.` : 'Everything is connected.'}</p>
+    {[...new Set(d.map((x) => x.group))].map((g) => <div key={g}><h3 style={{ margin: '18px 0 6px', fontSize: 15 }}>{g}</h3><ul className="mc-list">{d.filter((x) => x.group === g).map((x) => (
+      <li key={x.label} style={{ alignItems: 'flex-start' }}><span><b style={{ color: x.ok ? '#3aa655' : x.need ? '#e5533d' : '#c98a1b' }}>{x.ok ? '✓ ' : x.need ? '✗ ' : '○ '}</b><b>{x.label}</b><br /><small className="mg-dim">{x.unlocks}</small>{x.ok ? null : <><br /><small className="mg-dim">To turn on: {x.how}</small></>}</span><small className="mg-dim">{x.ok ? 'On' : x.need ? 'Needed' : 'Off'}</small></li>))}</ul></div>)}
+  </section>)
+}

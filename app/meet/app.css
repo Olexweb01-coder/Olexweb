@@ -443,3 +443,10 @@ html.ma-lock{overflow:hidden}
 .ma .ld-nav .brand,.ma .top .brand{flex:none}.ma .ld-nav .right{flex-wrap:nowrap;min-width:0;flex:none}.ma .top{min-width:0}.ma .top>*{flex-shrink:0}.ma .top .grow{flex:1 1 0;min-width:0}
 @media (max-width:420px){.ma .ld-nav .signin{display:none}.ma .ld-nav{gap:8px}.ma .top{gap:6px;padding-left:12px;padding-right:12px}}
 @media (max-width:360px){.ma .ld-nav .right .ib,.ma .top .theme-btn{display:none}.ma .ld-nav .brand:after{font-size:16px}.ma .ld-nav .brand img,.ma .top .brand img{width:30px;height:30px}.ma .ld-nav .btn.go.sm{padding:8px 12px}}
+/* Install 58j: what Free is missing */
+.ma .prolock{border:1px solid rgba(233,196,106,.45);background:linear-gradient(160deg,rgba(233,196,106,.10),transparent 60%),var(--card)}
+.ma .probadge{display:inline-block;margin-right:8px;padding:2px 8px;border-radius:999px;background:#e9c46a;color:#2a1f00;font-size:11px;font-weight:900;letter-spacing:.06em;vertical-align:middle}
+.ma .plist{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:8px 16px}
+.ma .plist li{display:flex;gap:8px;align-items:center;min-width:0;color:var(--dim,inherit);opacity:.85}.ma .plist li svg{width:16px;height:16px;flex:none;color:#c9a44a}
+.ma .plist s,.ma .lockline s{text-decoration-thickness:1.5px;text-decoration-color:rgba(201,164,74,.8);overflow-wrap:anywhere}
+.ma .lockline{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:14px;opacity:.9}.ma .lockline svg{width:16px;height:16px;flex:none;color:#c9a44a}.ma .lockline .probadge{margin:0 0 0 4px}

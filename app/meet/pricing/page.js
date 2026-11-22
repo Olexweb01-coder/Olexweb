@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export const generateMetadata = () => pageMeta('/pricing', 'Pricing', 'Olexweb Meet is free with no time limit for up to 100 people. Pro adds video recording, all your past meetings and transcripts, memberships and paid certificates.')
 
 const ROWS = [['No time limit', 1, 1], [`Up to ${FREE_PEOPLE} people`, 1, 1], ['Audio and video, screen sharing, chat', 1, 1], ['Free MP3 recordings', 1, 1], ['AI meeting notes', 1, 1], ['Polls, Q&A and breakout rooms', 1, 1],
-  ['End-to-end encryption', 1, 1], ['Tickets, bundles and one-on-one sessions', 1, 1], ['Video recording', 0, 1], ['All your past meetings and transcripts', 'Last 3', 1], ['Memberships', 0, 1], ['Paid certificates', 0, 1]]
+  ['End-to-end encryption', 1, 1], ['Sell tickets to paid meetings', 1, 1], ['Invite and earn', 1, 1], ['Free one-on-one sessions', 1, 1], ['Video recording', 0, 1], ['All your past meetings and transcripts', 'Last 3', 1], ['Course bundles', 0, 1], ['Paid one-on-one sessions', 0, 1], ['Listed in Find a mentor', 0, 1], ['Memberships', 0, 1], ['Paid certificates', 0, 1]]
 const QS = [['Is the free plan really free?', `Yes. Meetings of up to ${FREE_PEOPLE} people with no time limit, for as long as you like. No card needed.`],
   ['Do my guests pay anything?', 'No. Guests join free from their browser. Only the host chooses a plan.'],
   ['Can I get Pro for just one meeting?', 'Yes. Buy Pro for a single meeting when you need video recording or certificates once.'],
@@ -24,10 +24,10 @@ export default async function Pricing() {
       {!pr.on ? <div className="soon rv"><b style={{ color: 'var(--fg)' }}>Right now, everything is free.</b> Every feature on this page works without paying. If that changes, you will see the prices here and in the app first.</div> : null}
       <div className="plans">
         <div className="plan rv"><b style={{ fontSize: 20 }}>Free</b><div className="price">₦0<small> forever</small></div>
-          <ul><li>No time limit</li><li>Up to {FREE_PEOPLE} people</li><li>Audio and video, screen sharing</li><li>MP3 recordings and AI notes</li><li>Polls, Q&amp;A, breakout rooms</li><li>Sell tickets and sessions</li></ul><a className="btn" href={startHref(base)}>Start free</a></div>
+          <ul><li>No time limit</li><li>Up to {FREE_PEOPLE} people</li><li>Audio and video, screen sharing</li><li>MP3 recordings and AI notes</li><li>Polls, Q&amp;A, breakout rooms</li><li>Sell tickets, invite and earn</li></ul><a className="btn" href={startHref(base)}>Start free</a></div>
         <div className="plan pro rv d1"><b style={{ fontSize: 20 }}>Pro</b><div className="price">{p.month ? naira(p.month) : '–'}<small> / month</small></div>
           {p.year ? <small style={{ color: 'var(--dim)', marginTop: -8 }}>or {naira(p.year)} a year{save > 0 ? `, saving ${naira(save)}` : ''}</small> : null}
-          <ul><li>Everything in Free</li><li>Video recording</li><li>All past meetings and transcripts</li><li>Memberships for your community</li><li>Paid certificates</li></ul><a className="btn go" href={startHref(base)}>Go Pro</a></div>
+          <ul><li>Everything in Free</li><li>Video recording</li><li>All past meetings and transcripts</li><li>Course bundles and paid sessions</li><li>Listed in Find a mentor</li><li>Memberships and paid certificates</li></ul><a className="btn go" href={startHref(base)}>Go Pro</a></div>
       </div>
       <div className="ways" style={{ maxWidth: 920, margin: '14px auto 0', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
         <div className="way rv"><h3>Pro for one meeting</h3><p>{p.meeting ? naira(p.meeting) : '–'} for a single meeting, when you need Pro just once.</p></div>

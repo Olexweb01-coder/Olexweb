@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { I } from './icons'
 import { api, naira, kobo, day, when, copyText, Sheet, Field, Empty, Fees, split } from './ui'
+import { ProLocked, LockLine, lockedFor } from './ProLock'
 
 const TABS = [['overview', 'Overview'], ['sell', 'Sell'], ['members', 'Members'], ['mentor', 'Mentoring'], ['certs', 'Certificates'], ['invite', 'Invite and rewards']]
 const KIND = { ticket: 'Ticket', booking: 'Session', bundle: 'Bundle', membership: 'Membership', cert: 'Certificate' }
@@ -14,7 +15,7 @@ const NICHES = ['Design', 'Tech and coding', 'Business', 'Marketing', 'Careers',
 const earnApi = (body) => api('/api/meet/earn', body)
 
 export default function EarnPage({ ctx }) {
-  const { h, setToast, reload } = ctx
+  const { h, setToast, reload, nav } = ctx, locked = lockedFor(h)
   const [e, setE] = useState(null), [tab, setTab] = useState('overview'), [busy, setBusy] = useState(''), [sheet, setSheet] = useState(null), [banks, setBanks] = useState(null)
   async function load() { try { setE(await api('/api/meet/earn')) } catch (x) { setToast(x.message) } }
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -41,10 +42,11 @@ export default function EarnPage({ ctx }) {
     </> : null}
 
     {tab === 'sell' ? <>
+      <ProLocked h={h} nav={nav} title="Sell more with Pro" text="Tickets for paid meetings and tracked links are free for everyone. Pro adds:" items={['Sell course bundles', 'Paid one-on-one sessions', 'Memberships for your community', 'Paid certificates']} />
       <div className="ways">
         <div className="way"><span className="st live">Live</span><b>Paid meetings</b><p>Set a ticket price when you schedule a meeting. Nobody gets in without one.</p><a className="btn sm" href="#meetings">Schedule one</a></div>
         <div className="way"><span className="st live">Live</span><b>Closed sessions</b><p>One-on-one or a private group. Make a tracked link and see who opens, starts paying and pays.</p><button className="btn sm" onClick={() => setSheet({ kind: 'link', label: '', what: 'meeting', target: '' })}>Make a link</button></div>
-        <div className="way"><span className="st new">New</span><b>Course bundles</b><p>Several sessions as one ticket, with early-bird and group prices.</p><button className="btn sm go" onClick={() => setSheet({ kind: 'bundle', title: '', blurb: '', codes: [], price: '', earlyPrice: '', earlyUntil: '', groupSize: '', groupPrice: '' })}>New bundle</button></div>
+        <div className="way"><span className="st new">{locked ? 'Pro' : 'New'}</span><b>Course bundles</b><p>Several sessions as one ticket, with early-bird and group prices.</p>{locked ? <LockLine>Sell course bundles</LockLine> : null}<button className="btn sm go" disabled={locked} onClick={() => setSheet({ kind: 'bundle', title: '', blurb: '', codes: [], price: '', earlyPrice: '', earlyUntil: '', groupSize: '', groupPrice: '' })}>New bundle</button></div>
       </div>
       <section className="card"><div className="ch"><h3>Bundles</h3></div>
         {e.bundles.length ? e.bundles.map((b) => <div key={b.id} className="mrow wrap-sm"><span className="ni bg-o"><I n="gift" /></span><div className="t"><b>{b.title}</b><span>{naira(b.now)}{b.now < b.price ? ` early-bird (then ${naira(b.price)})` : ''}{b.groupSize ? ` · ${b.groupSize} for ${naira(b.groupPrice)}` : ''} · {b.codes.length} session{b.codes.length === 1 ? '' : 's'} · {b.seats} sold{b.onSale ? '' : ' · not on sale'}</span></div>
@@ -58,7 +60,7 @@ export default function EarnPage({ ctx }) {
     </> : null}
 
     {tab === 'members' ? <Members e={e} pro={pro} pricingOn={pricingOn} busy={busy} run={run} reload={reload} /> : null}
-    {tab === 'mentor' ? <Mentor e={e} h={h} busy={busy} run={run} /> : null}
+    {tab === 'mentor' ? <Mentor e={e} h={h} busy={busy} run={run} locked={locked} nav={nav} /> : null}
     {tab === 'certs' ? <Certs e={e} pro={pro} busy={busy} run={run} setToast={setToast} /> : null}
     {tab === 'invite' ? <Invite e={e} h={h} setToast={setToast} /> : null}
 
@@ -120,7 +122,7 @@ function Members({ e, pro, pricingOn, busy, run, reload }) {
   </>)
 }
 
-function Mentor({ e, h, busy, run }) {
+function Mentor({ e, h, busy, run, locked, nav }) {
   const [bk, setBk] = useState({ ...e.booking }), [L, setL] = useState({ on: !!e.listing.on, niche: e.listing.niche || '', headline: e.listing.headline || '', help: (e.listing.help || []).join('\n'), city: e.listing.city || '', years: e.listing.years || '', tags: (e.listing.tags || []).join(', ') })
   const pv = split(bk.price, 'booking'), pd = split(bk.price, 'directory')
   return (<>
@@ -130,11 +132,13 @@ function Mentor({ e, h, busy, run }) {
         <div className="fld"><span>Days</span><div className="row-btns">{D.map(([d, l]) => <button key={d} type="button" className={'btn sm' + (bk.days.includes(d) ? ' go' : '')} aria-pressed={bk.days.includes(d)} onClick={() => setBk({ ...bk, days: bk.days.includes(d) ? bk.days.filter((y) => y !== d) : [...bk.days, d] })}>{l}</button>)}</div></div>
         <div className="grid3"><Field label="From (Lagos time)"><input className="in" type="time" value={bk.from} onChange={(x) => setBk({ ...bk, from: x.target.value })} /></Field><Field label="To"><input className="in" type="time" value={bk.to} onChange={(x) => setBk({ ...bk, to: x.target.value })} /></Field>
           <Field label="Session"><select className="in" value={bk.minutes} onChange={(x) => setBk({ ...bk, minutes: Number(x.target.value) })}>{[15, 30, 45, 60, 90].map((m) => <option key={m} value={m}>{m} min</option>)}</select></Field></div>
-        <Field label="Price (₦, 0 = free)"><input className="in" type="number" min={0} inputMode="numeric" value={bk.price} onChange={(x) => setBk({ ...bk, price: x.target.value })} /></Field>
+        {locked ? <LockLine>Charge for sessions</LockLine> : null}
+        <Field label={locked ? 'Price (free on the Free plan)' : 'Price (₦, 0 = free)'}><input className="in" type="number" min={0} inputMode="numeric" disabled={locked} value={locked ? 0 : bk.price} onChange={(x) => setBk({ ...bk, price: x.target.value })} /></Field>
         {pv ? <div className="two-fees"><div><small className="dim">From your own links</small><Fees {...pv} /></div><div><small className="dim">From Find a mentor</small><Fees {...pd} why="Olexweb (we brought the client)" /></div></div> : null}
         <label className="check"><input type="checkbox" checked={!!bk.on} onChange={(x) => setBk({ ...bk, on: x.target.checked })} /><span>Open my booking page</span></label>
         <div className="row-btns"><button className="btn go" disabled={busy === 'bk'}>Save</button></div></form></section>
-    <section className="card"><div className="ch"><h3>Find a mentor listing</h3><a href="/meet/mentors">See the directory</a></div>
+    {locked ? <ProLocked h={h} nav={nav} title="Get found by new clients" text="Find a mentor lists Pro hosts. Free sessions on your own booking page work on Free." items={['Be listed in Find a mentor', 'Paid one-on-one sessions']} /> : null}
+    {locked ? null : <section className="card"><div className="ch"><h3>Find a mentor listing</h3><a href="/meet/mentors">See the directory</a></div>
       <p className="dim" style={{ marginTop: 0 }}>Be listed in the public directory. Bookings that come from it: Olexweb keeps 10% (we brought you the client). Your ratings, people taught and sessions held are counted by Meet.</p>
       <form className="stack" onSubmit={(x) => { x.preventDefault(); run('ls', () => earnApi({ action: 'listing', on: L.on, niche: L.niche, headline: L.headline, help: L.help.split('\n'), city: L.city, years: L.years, tags: L.tags.split(',') }), 'Listing saved.') }}>
         <div className="grid3"><Field label="Main area"><select className="in" value={L.niche} onChange={(x) => setL({ ...L, niche: x.target.value })}><option value="">Choose</option>{NICHES.map((n) => <option key={n}>{n}</option>)}</select></Field>
@@ -143,7 +147,7 @@ function Mentor({ e, h, busy, run }) {
         <Field label="How you can help (one per line, up to 4)"><textarea className="in" rows={3} value={L.help} onChange={(x) => setL({ ...L, help: x.target.value })} placeholder={'Review your portfolio\nPlan a career switch'} /></Field>
         <Field label="Skills (comma separated)"><input className="in" value={L.tags} onChange={(x) => setL({ ...L, tags: x.target.value })} placeholder="Figma, UX research" /></Field>
         <label className="check"><input type="checkbox" checked={L.on} onChange={(x) => setL({ ...L, on: x.target.checked })} /><span>List me in Find a mentor</span></label>
-        <div className="row-btns"><button className="btn go" disabled={busy === 'ls'}>Save</button></div></form></section>
+        <div className="row-btns"><button className="btn go" disabled={busy === 'ls'}>Save</button></div></form></section>}
     {e.upcoming.length ? <section className="card"><div className="ch"><h3>Coming sessions</h3></div>{e.upcoming.map((u) => <div key={u.code} className="mrow"><span className="ni bg-o"><I n="clock" /></span><div className="t"><b>{u.name}</b><span>{when(u.at)}</span></div></div>)}</section> : null}
   </>)
 }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { I } from './icons'
 import { api, naira, day, Field, Empty } from './ui'
+import { PRO_LIST } from './ProLock'
 
 export default function HelpPage({ ctx }) {
   const { h, setToast, reload } = ctx
@@ -48,7 +49,9 @@ export function SettingsPage({ ctx }) {
     <section className="card"><div className="ch"><h3>Your plan</h3></div>
       <div className="plan"><b className="big">{d.plan.pro ? 'Pro' : 'Free'}</b><p className="dim">{d.plan.owner ? 'Everything, always.' : d.plan.pro ? `Pro until ${day(d.plan.proUntil)}.` : 'Unlimited hours, audio and video up to 100 people, MP3 recording, AI notes, screen sharing.'}</p></div>
       {p.on && !d.plan.pro && d.payReady ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => pay({ kind: 'month' })}>{busy === 'month' ? 'Opening…' : `Pro ${naira(p.prices.month)}/month`}</button><button className="btn" disabled={!!busy} onClick={() => pay({ kind: 'year' })}>{busy === 'year' ? 'Opening…' : `${naira(p.prices.year)}/year`}</button></div> : null}
-      {p.on && !d.plan.pro ? <p className="dim sm">Pro adds video recording, all your past meetings and transcripts, memberships and paid certificates. Only need it once? Get Pro for one meeting ({naira(p.prices.meeting)}) from inside the meeting.</p> : null}
+      {d.plan.pro && !d.plan.owner ? <p className="dim sm">Pro doesn’t renew by itself and your card is never charged again without you. It simply ends on {day(d.plan.proUntil)}, so there’s nothing to cancel. Pay again any time to add more time.</p> : null}
+      {p.on && !d.plan.pro ? <ul className="plist">{PRO_LIST.map((x) => <li key={x}><I n="lock" /><s>{x}</s></li>)}</ul> : null}
+      {p.on && !d.plan.pro ? <p className="dim sm">Your Free plan keeps everything you use now. Only need Pro once? Get Pro for one meeting ({naira(p.prices.meeting)}) from inside the meeting.</p> : null}
       {choose ? <div className="row-btns"><span className="dim">How would you like to pay?</span>{d.payOptions.map((o) => <button key={o.id} className="btn sm go" onClick={() => pay(choose, o.id)}>{o.name}</button>)}<button className="btn sm quiet" onClick={() => setChoose(null)}>Cancel</button></div> : null}</section>
     {d.transfers.length || due.length ? <section className="card"><div className="ch"><h3>Payments due</h3></div>
       {d.transfers.map((t) => <div key={t.ref} className="due"><span><b>Bank transfer: {naira(t.amount)}</b>{t.bank ? <> to <b>{t.bank.accountNumber}</b> · {t.bank.accountName}{t.bank.bankName ? ' · ' + t.bank.bankName : ''}</> : null}. Use <b>{t.ref}</b> as the narration.{t.bank && t.bank.note ? ' ' + t.bank.note : ''}{t.claimed ? ' Olexweb is checking it.' : ''}</span>

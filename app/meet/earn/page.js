@@ -11,10 +11,10 @@ export const generateMetadata = () => pageMeta('/earn', 'Earn', 'Get paid for wh
 
 const WAYS = [
   ['video', 'bg-g', 'Paid meetings', 'Set a ticket price when you schedule. Nobody gets in without one. See who opened your link, started paying and paid.'],
-  ['gift', 'bg-o', 'Course bundles', 'Several sessions as one ticket. Early-bird prices until a date, and group prices with one link per person.'],
-  ['users', 'bg-y', 'Memberships', 'People pay you monthly for members-only meetings. If you hold none in a month, members are not charged for the next one.'],
-  ['mic', 'bg-b', 'One-on-one sessions', 'Open your booking page with your hours and price. List yourself in Find a mentor to be discovered.'],
-  ['cert', 'bg-y', 'Certificates', 'Charge for certificates in five designs, with your academy’s name, your signature and a code anyone can check.'],
+  ['gift', 'bg-o', 'Course bundles · Pro', 'Several sessions as one ticket. Early-bird prices until a date, and group prices with one link per person.'],
+  ['users', 'bg-y', 'Memberships · Pro', 'People pay you monthly for members-only meetings. If you hold none in a month, members are not charged for the next one.'],
+  ['mic', 'bg-b', 'One-on-one sessions · Pro', 'Open your booking page with your hours and price, and be listed in Find a mentor. Free sessions work on any plan.'],
+  ['cert', 'bg-y', 'Paid certificates · Pro', 'Charge for certificates in five designs, with your academy’s name, your signature and a code anyone can check.'],
 ]
 export default async function Earn() {
   const base = siteBase('/earn')
