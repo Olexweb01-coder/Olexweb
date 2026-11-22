@@ -30,12 +30,14 @@ export function Ring({ pct = 0, level, name, picture, big = false }) {
 }
 // a dialog: closes on Escape and on a tap outside; focus moves into it
 export function Sheet({ title, onClose, children, wide = false }) {
-  const box = useRef(null)
+  const box = useRef(null), close = useRef(onClose)
+  close.current = onClose                                                        // the latest close, without re-running the effect on every keystroke
   useEffect(() => {
-    const k = (e) => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', k)
-    const f = box.current && box.current.querySelector('input,select,textarea,button'); if (f) f.focus({ preventScroll: true })
+    const k = (e) => { if (e.key === 'Escape') close.current() }; document.addEventListener('keydown', k)
+    const b = box.current, f = b && (b.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=file]),select,textarea') || b.querySelector('button'))
+    if (f) f.focus({ preventScroll: true })                                      // focus once, when it opens
     document.documentElement.classList.add('ma-lock'); return () => { document.removeEventListener('keydown', k); document.documentElement.classList.remove('ma-lock') }
-  }, [onClose])
+  }, [])
   return (<div className="sheet on" role="dialog" aria-modal="true" aria-label={title} onPointerDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
     <div ref={box} className={wide ? 'wide' : ''}><div className="sh-h"><h3>{title}</h3><button type="button" className="ib sm" aria-label="Close" onClick={onClose}>✕</button></div>{children}</div></div>)
 }

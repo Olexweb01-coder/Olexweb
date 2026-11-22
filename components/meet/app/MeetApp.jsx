@@ -1,7 +1,7 @@
 'use client'
 // The signed-in Olexweb Meet app (Install 58): a menu on every screen (a drawer on phones), the bell top-right,
 // light and dark, celebrations for every milestone, What's new, and the pages. Everything comes from /api/meet/home.
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { I } from './icons'
 import { api, homePath, pathFor, linkFor, onMeetApp, Ring, Sheet, JoinBox } from './ui'
 import HomePage from './HomePage'
@@ -115,7 +115,8 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
 }
 
 function Notifications({ h, onClose, nav }) {
-  useEffect(() => { const k = (e) => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k) }, [onClose])
+  const close = useRef(onClose); close.current = onClose
+  useEffect(() => { const k = (e) => { if (e.key === 'Escape') close.current() }; document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k) }, [])
   if (!h) return null
   const icon = { soon: ['clock', 'bg-o'], streak: ['flame', 'bg-y'], best: ['rocket', 'bg-g'], rank: ['trophy', 'bg-y'], spot: ['star', 'bg-v'], public: ['user', 'bg-b'] }
   return (<div className="np on" role="dialog" aria-label="Notifications">
