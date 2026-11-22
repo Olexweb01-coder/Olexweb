@@ -10,7 +10,8 @@ const nextConfig = {
   reactStrictMode: true,
   images: { unoptimized: true },
   // native (compiled) packages are loaded on the server as they are, not bundled
-  experimental: { serverComponentsExternalPackages: ['@node-rs/argon2', 'pg', 'sharp'], outputFileTracingIncludes: { '/api/li-card/[id]': ['./lib/fonts/**'], '/api/meet/flyer/[code]': ['./lib/fonts/**'], '/api/meet/cert': ['./lib/fonts/**'] } },   // Install 44: the LinkedIn pictures' font
+  serverExternalPackages: ['@node-rs/argon2', 'pg', 'sharp'],   // Next 15: moved out of experimental
+  outputFileTracingIncludes: { '/api/li-card/[id]': ['./lib/fonts/**'], '/api/meet/flyer/[code]': ['./lib/fonts/**'], '/api/meet/cert': ['./lib/fonts/**'], '/api/meet/card': ['./lib/fonts/**', './public/meet/logo-96.png'] },   // Install 44: the LinkedIn pictures' font
   // pdf.js (reading PDFs in the admin) mentions a Node-only package it never uses in the browser
   webpack: (config) => { config.resolve.alias = { ...(config.resolve.alias || {}), canvas: false }; return config },
   // Meet's protection: no other site can frame it (stops click-tricks), browsers don't guess file types, always HTTPS,

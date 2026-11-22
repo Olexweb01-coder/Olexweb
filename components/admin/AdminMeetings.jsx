@@ -9,6 +9,7 @@ import { FormSettings, Attendance, formFrom, DEFAULT_FORM } from '@/components/m
 import AdminMeetApp from './AdminMeetApp'
 import AdminMeetUsage from './AdminMeetUsage'
 import AdminMeetBiz from './AdminMeetBiz'
+import AdminMeetMoney from './AdminMeetMoney'
 import AdminMeetConsole, { Kpis, useConsole, CONSOLE_CSS } from './AdminMeetConsole'
 
 // Dates are formatted here, not by the system's date library: the server's and the browser's disagree on punctuation
@@ -77,7 +78,7 @@ export default function AdminMeetings({ data }) {
   useEffect(() => {
     refreshLocal()
     const h = window.location.hash.slice(1), old = { business: 'support' }   // (old links: #business went to support requests)
-    if (['meetings', 'usage', 'accounts', 'revenue', 'support', 'business'].includes(h)) setTab(old[h] || h)
+    if (['meetings', 'usage', 'accounts', 'revenue', 'money', 'support', 'business'].includes(h)) setTab(old[h] || h)
     const m = /^#(?:notes|meet)-([a-z-]{12})$/.exec(window.location.hash)          // arrived from "Make AI notes" or a reminder
     if (m) { setTab('meetings'); setFocus(m[1]); setTimeout(() => { const el = document.getElementById('mg-' + m[1]); if (el) el.scrollIntoView({ block: 'center' }) }, 50) }
   }, [refreshLocal])
@@ -143,10 +144,11 @@ export default function AdminMeetings({ data }) {
     <div className="mc-head"><div><h1 className="d">Olexweb Meet</h1><p>Free audio and video meetings · your SaaS console</p></div>
       <a className="btn btn-line" href={meetHome()} target="_blank" rel="noopener">Open Meet ↗</a></div>
     <Kpis d={con} />
-    <div className="mc-tabs" role="tablist" aria-label="Meet sections">{[['overview', 'Overview'], ['meetings', 'Meetings'], ['accounts', 'Accounts'], ['revenue', 'Revenue', con && con.k.transfers + con.k.invoices], ['support', 'Support', con && con.k.tickets], ['usage', 'Usage and servers']].map(([k, l, n]) =>
+    <div className="mc-tabs" role="tablist" aria-label="Meet sections">{[['overview', 'Overview'], ['meetings', 'Meetings'], ['accounts', 'Accounts'], ['revenue', 'Revenue', con && con.k.transfers + con.k.invoices], ['money', 'Money and payouts'], ['support', 'Support', con && con.k.tickets], ['usage', 'Usage and servers']].map(([k, l, n]) =>
       <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => go(k)}>{l}{n ? <i>{n}</i> : null}</button>)}</div>
     {tab === 'overview' ? <AdminMeetConsole d={con} err={conErr} go={go} /> : null}
     {tab === 'revenue' ? <AdminMeetBiz only={['pricing', 'bank', 'invoices', 'gift']} /> : null}
+    {tab === 'money' ? <AdminMeetMoney /> : null}
     {tab === 'support' ? <AdminMeetBiz only={['tickets', 'news']} /> : null}
     {tab === 'usage' ? (data.ready ? <AdminMeetUsage /> : <section className="mg-box"><p className="mg-dim">Usage shows once the video service is connected.</p></section>) : null}
     {tab === 'accounts' ? <AdminMeetApp /> : null}
