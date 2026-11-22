@@ -71,7 +71,7 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null }) {
+export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null, kind = 'meeting', regRequired = false }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -100,6 +100,9 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const [membersOf, setMembersOf] = useState(null)
   const [needTicket, setNeedTicket] = useState(false), [buyer, setBuyer] = useState(''), [buying, setBuying] = useState(false)
   const passKey = 'meet-pass:' + code
+  // Install 58l: registration and entry codes. A typed code is kept on this device like a ticket's key.
+  const [needReg, setNeedReg] = useState(false), [entryIn, setEntryIn] = useState(''), [myEntry, setMyEntry] = useState('')
+  useEffect(() => { try { const p = localStorage.getItem(passKey); if (p && p.length === 22) post('/api/meet/earn', { action: 'my-entry', code, pass: p }).then((r) => r.entry && setMyEntry(r.entry)).catch(() => {}); else if (p) setMyEntry(p) } catch {} }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { try { const p = new URLSearchParams(location.search).get('pass'); if (p) { localStorage.setItem(passKey, p); history.replaceState(null, '', location.pathname) } } catch {} }, []) // eslint-disable-line react-hooks/exhaustive-deps
   async function buyTicket() {
     setBuying(true); setError('')
@@ -163,8 +166,9 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
     setError(''); setPhase('joining')
     try { localStorage.setItem(SAVED_NAME, n) } catch {}
     try {
-      let pass = null; try { pass = localStorage.getItem(passKey) } catch {}
+      let pass = null; try { if (entryIn.trim()) localStorage.setItem(passKey, entryIn.trim().toUpperCase()); pass = localStorage.getItem(passKey) } catch { pass = entryIn.trim() || null }
       const j = await post('/api/meet', { code, name: n, ...(asks ? { details: det } : {}), ...(pass ? { pass } : {}) })
+      if (j.state === 'register') { setNeedReg(true); setPhase('lobby'); setError(entryIn.trim() ? 'That entry code isn’t right for this meeting. Check it, or register below.' : 'Register to join. You’ll get your own entry code.'); return }
       if (j.state === 'ticket') { setNeedTicket(true); setPhase('lobby'); setError('This is a paid meeting. Get your ticket to join.'); return }
       if (j.state === 'members') { setMembersOf(j); setPhase('lobby'); setError(j.signedIn ? `This meeting is for members of ${j.host || 'the host'}’s community.` : `This meeting is for members of ${j.host || 'the host'}’s community. Sign in to join.`); return }
       if (j.state === 'waiting') { setPhase('waiting'); return }
@@ -536,7 +540,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
         : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
-        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}{startsAt && new Date(startsAt) > new Date() ? <RegisterBox code={code} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
+        : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}{regRequired && !host ? (myEntry ? <p className="mt-p mt-thanks">You’re registered. Your entry code: <b className="mt-code">{myEntry.length === 8 ? myEntry.slice(0, 4) + '-' + myEntry.slice(4) : myEntry}</b></p> : <RegisterBox code={code} required onEntry={(e) => { try { localStorage.setItem(passKey, e.replace('-', '')) } catch {} setMyEntry(e) }} />) : startsAt && new Date(startsAt) > new Date() ? <RegisterBox code={code} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
           <div className="mt-gl">
@@ -582,6 +586,9 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
           </div> : null}
           {error ? <p className="mt-err" role="alert">{error}</p> : null}
           {membersOf ? <div className="mt-asks">{membersOf.handle ? <a className="mt-btn" href={`/meet/h/${membersOf.handle}/join`}>See the membership</a> : null}{!membersOf.signedIn ? <a className="mt-btn" href={`/meet?next=${encodeURIComponent('/meet/' + code)}#signin`}>Sign in</a> : null}</div> : null}
+          {!host && (regRequired || price > 0 || needReg) ? <div className="mt-asks"><label className="mt-lab" htmlFor="mt-entry">{myEntry ? `Your entry code: ${myEntry.length === 8 ? myEntry.slice(0, 4) + '-' + myEntry.slice(4) : myEntry}` : 'Have an entry code? (from your email)'}</label>
+            {!myEntry ? <input id="mt-entry" className="mt-in" value={entryIn} maxLength={12} autoCapitalize="characters" autoComplete="off" spellCheck="false" onChange={(e) => setEntryIn(e.target.value)} placeholder="ABCD-2345" /> : null}</div> : null}
+          {!host && (regRequired || needReg) && !myEntry ? <RegisterBox code={code} required name={name} onEntry={(e) => { try { localStorage.setItem(passKey, e.replace('-', '')) } catch {} setMyEntry(e); setError('') }} /> : null}
           {(needTicket || (price > 0 && !host)) ? <div className="mt-asks"><p className="mt-lab">Ticket: ₦{Number(price).toLocaleString('en-NG')}{needTicket ? '' : ' (if you already have one, just join)'}</p>
             <input className="mt-in" type="email" maxLength={200} value={buyer} onChange={(e) => setBuyer(e.target.value)} placeholder="Your email (for your ticket)" autoComplete="email" />
             <button type="button" className="mt-btn" disabled={buying || !name.trim() || !buyer.trim()} onClick={buyTicket}>{buying ? 'Opening Paystack…' : `Buy a ticket (₦${Number(price).toLocaleString('en-NG')})`}</button></div> : null}
@@ -884,10 +891,18 @@ function AfterMeeting({ code, info }) {
 }
 
 // sign up for a scheduled meeting: reminders by email before it starts (and the notes after, if the host chose it)
-function RegisterBox({ code }) {
-  const [f, setF] = useState({ name: '', email: '' }), [done, setDone] = useState(false), [err, setErr] = useState(''), [busy, setBusy] = useState(false)
-  if (done) return <p className="mt-p mt-thanks">You’re signed up. We’ll email you before it starts.</p>
-  return (<form className="mt-reg" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setErr(''); try { await post('/api/meet/register', { code, ...f }); setDone(true) } catch (x) { setErr(x.message) } finally { setBusy(false) } }}>
+function RegisterBox({ code, required = false, onEntry = null, name = '' }) {
+  const [f, setF] = useState({ name, email: '' }), [done, setDone] = useState(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false)
+  if (done) return <div className="mt-p mt-thanks">{done.entry ? <>You’re registered. Your entry code is <b className="mt-code">{done.entry}</b>. It’s just for you and works for the whole meeting.{done.emailed ? ' We emailed it to you too.' : ' Keep it safe.'}</> : done.again ? (done.emailed ? 'You’re already registered. We’ve emailed your entry code again.' : 'You’re already registered. Use the entry code you were given.') : 'You’re signed up. We’ll email you before it starts.'}</div>
+  const submit = async (e) => { e.preventDefault(); setBusy(true); setErr(''); try { const r = await post('/api/meet/register', { code, ...f }); setDone(r); if (r.entry && onEntry) onEntry(r.entry) } catch (x) { setErr(x.message) } finally { setBusy(false) } }
+  if (required) return (<div className="mt-reg" role="group" aria-label="Register">
+    <p className="mt-lab">Register to join</p>
+    <input className="mt-in" maxLength={60} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Your name" autoComplete="name" />
+    <input className="mt-in" type="email" maxLength={200} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="you@example.com" autoComplete="email" />
+    {err ? <p className="mt-err" role="alert">{err}</p> : null}
+    <button type="button" className="mt-btn" disabled={busy} onClick={submit}>{busy ? 'Registering…' : 'Register and get my code'}</button>
+  </div>)
+  return (<form className="mt-reg" onSubmit={submit}>
     <p className="mt-lab">Get a reminder by email</p>
     <input className="mt-in" maxLength={60} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Your name" autoComplete="name" />
     <input className="mt-in" type="email" maxLength={200} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="you@example.com" autoComplete="email" />

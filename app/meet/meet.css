@@ -414,3 +414,4 @@
 /* Install 58e: the room's top bar keeps Back and the brand whole; the code gives way first */
 .mt-top2>*{flex:none}.mt-top2 .mt-sp{flex:1 1 0;min-width:0}.mt-top2 .mt-code2{flex:0 1 auto;min-width:0;overflow:hidden}.mt-code2 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:440px){.mt-brand2 span{display:none}.mt-brand2:after{content:"Meet";font-size:17px;color:var(--paper)}}
+.mt-code{display:inline-block;padding:2px 10px;border-radius:8px;background:rgba(143,227,106,.14);color:#c9f2a8;letter-spacing:.12em;font-weight:800;font-variant-numeric:tabular-nums}

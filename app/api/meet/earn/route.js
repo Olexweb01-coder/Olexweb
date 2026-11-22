@@ -21,6 +21,7 @@ export async function POST(request) {
   const mu = await currentMeetUser()
   if (b.action === 'ticket') return respond(() => E.buyTicket(b, origin, mu, linkId()))
   if (b.action === 'bundle-buy') return respond(async () => (await import('@/lib/meet/bundles')).buyBundle(b, origin, mu, linkId()))
+  if (b.action === 'my-entry') return respond(async () => { const E2 = await import('@/lib/meet/entry'); const e = await E2.entryFor(String(b.code || ''), b.pass); return { entry: e && e.t === 'meet_passes' ? E2.showEntry(await E2.entryOfPass(e.id)) : null } })   // Install 58l: a ticket's entry code, for its holder
   if (b.action === 'cert-buy') return respond(async () => (await import('@/lib/meet/certs')).buyCert(b, origin))
   if (!mu) return refuse('Sign in first.', 401)
   return respond(async () => {

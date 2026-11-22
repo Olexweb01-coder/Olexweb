@@ -63,7 +63,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
   }
   async function startNow(mode = 'video') {
     setNewMenu(false)
-    try { const r = await api('/api/meet/mine', { action: 'create', mode, title: `${(user.name || '').split(' ')[0] || 'My'}’s ${mode === 'audio' ? 'call' : 'meeting'}` }); location.assign(pathFor(r.code)) }
+    try { const r = await api('/api/meet/mine', { action: 'create', mode, kind: 'instant', title: `${(user.name || '').split(' ')[0] || 'My'}’s ${mode === 'audio' ? 'call' : 'meeting'}` }); location.assign(pathFor(r.code)) }
     catch (e) { setToast(e.message) }
   }
   function nav(p) { if (p === 'room') return openRoom(); location.hash = p === 'home' ? 'home' : p }

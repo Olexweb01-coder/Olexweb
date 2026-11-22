@@ -450,3 +450,9 @@ html.ma-lock{overflow:hidden}
 .ma .plist li{display:flex;gap:8px;align-items:center;min-width:0;color:var(--dim,inherit);opacity:.85}.ma .plist li svg{width:16px;height:16px;flex:none;color:#c9a44a}
 .ma .plist s,.ma .lockline s{text-decoration-thickness:1.5px;text-decoration-color:rgba(201,164,74,.8);overflow-wrap:anywhere}
 .ma .lockline{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:14px;opacity:.9}.ma .lockline svg{width:16px;height:16px;flex:none;color:#c9a44a}.ma .lockline .probadge{margin:0 0 0 4px}
+/* Install 58l: branded link box */
+.ma .slugbox{display:flex;align-items:center;min-width:0;border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden}
+.ma .slugbox span{padding:0 4px 0 12px;color:var(--mute,#8a8a8a);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;flex:none}
+.ma .slugbox .in{border:0;background:none;min-width:0;flex:1;padding-left:2px}
+.ma .stack{grid-template-columns:minmax(0,1fr)}.ma .slugbox span{flex:0 1 auto}
+.ma .seg{border-radius:18px}

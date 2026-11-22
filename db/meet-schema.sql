@@ -217,3 +217,14 @@ create index if not exists meet_pro_grants_user on meet_pro_grants (user_id);
 alter table meet_settings add column if not exists welcome_days int not null default 0;            -- Pro for every new account (0 = off)
 alter table meet_settings add column if not exists welcome_reason text not null default '';
 alter table meet_settings add column if not exists welcome_until timestamptz;                       -- the offer ends (null = no end)
+-- Install 58l: meeting types, required registration with entry codes, branded links
+alter table meetings add column if not exists kind text not null default 'meeting';      -- 'meeting' | 'instant' | 'one' (one-on-one) | 'webinar'
+alter table meetings add column if not exists reg_required boolean not null default false;   -- people register first and join with their entry code
+alter table meetings add column if not exists slug text;                                    -- a branded link: meet.olexweb.com/<slug> (Pro)
+create unique index if not exists meetings_slug on meetings (lower(slug)) where slug is not null;
+alter table meet_regs add column if not exists entry text;                                  -- the person's entry code (one person at a time)
+alter table meet_regs add column if not exists live_identity text;
+create unique index if not exists meet_regs_entry on meet_regs (entry) where entry is not null;
+alter table meet_passes add column if not exists entry text;                                -- a ticket's short entry code
+alter table meet_passes add column if not exists live_identity text;
+create unique index if not exists meet_passes_entry on meet_passes (entry) where entry is not null;

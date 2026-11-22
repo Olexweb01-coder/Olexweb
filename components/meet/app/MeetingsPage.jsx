@@ -6,6 +6,7 @@ import { FormSettings, Attendance, formFrom, NotesPanel } from '../Guests'
 import { notesAudio } from '../recorder'
 import { I } from './icons'
 import { api, pathFor, linkFor, copyText, Sheet, Field, Empty, naira, split, kobo } from './ui'
+import { lockedFor, LockLine } from './ProLock'
 
 const tzName = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone.replace(/_/g, ' ') } catch { return 'your time' } }
 const fmt = (iso) => new Date(iso).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
@@ -19,7 +20,8 @@ function calLinks(m) {
 export default function MeetingsPage({ ctx, notes = false }) {
   const { list, refresh, setToast, h, pricing, morePast } = ctx
   const [sheet, setSheet] = useState(null), [busy, setBusy] = useState(''), [att, setAtt] = useState(null), [notesFor, setNotesFor] = useState(null), [local, setLocal] = useState({}), [ready, setReady] = useState(false)
-  const membersOn = !!(h && h.me && h.me.membersOn)
+  const membersOn = !!(h && h.me && h.me.membersOn), locked = lockedFor(h)
+  const host = typeof location !== 'undefined' ? (location.hostname.startsWith('meet.') ? location.host : location.host + '/meet/r') : 'meet.olexweb.com'
   useEffect(() => {
     setReady(true); notesAudio().then(setLocal).catch(() => {})
     const s = () => openSchedule(); window.addEventListener('meet:schedule', s); return () => window.removeEventListener('meet:schedule', s)
@@ -27,7 +29,7 @@ export default function MeetingsPage({ ctx, notes = false }) {
   const upcoming = list.filter((m) => !m.endedAt), past = list.filter((m) => m.endedAt)
   function openSchedule(m = null) {
     const [d, t] = m && m.startsAt ? (() => { const x = new Date(m.startsAt); return [`${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`, `${pad(x.getHours())}:${pad(x.getMinutes())}`] })() : nextSlot()
-    setSheet({ edit: m, title: m ? m.title : '', date: d, time: t, minutes: m ? m.minutes || 60 : 60, speakers: m ? m.speakers : 'everyone', form: formFrom(m && m.form), done: null, price: m && m.price ? m.price : '', membersOnly: !!(m && m.membersOnly) })
+    setSheet({ edit: m, title: m ? m.title : '', date: d, time: t, minutes: m ? m.minutes || 60 : 60, speakers: m ? m.speakers : 'everyone', form: formFrom(m && m.form), done: null, price: m && m.price ? m.price : '', membersOnly: !!(m && m.membersOnly), kind: m && m.kind && m.kind !== 'instant' ? m.kind : 'meeting', regRequired: !!(m && m.regRequired), slug: (m && m.slug) || '' })
   }
   async function earn(body) { return api('/api/meet/earn', body) }
   async function save(e) {
@@ -36,8 +38,10 @@ export default function MeetingsPage({ ctx, notes = false }) {
     setBusy('schedule')
     try {
       const body = { title: s.title, startsAt: startsAt.toISOString(), minutes: s.minutes, speakers: s.speakers, ...(s.edit ? {} : { mode: s.mode || 'video', private: !!s.private, certs: !!s.certs, followup: !!s.followup }), form: s.form && s.form.on ? s.form : { on: false } }
-      const r = s.edit ? await api('/api/meet/mine', { action: 'update', code: s.edit.code, ...body }) : await api('/api/meet/mine', { action: 'create', ...body })
-      const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes }
+      const opts = { kind: s.kind || 'meeting', regRequired: !!s.regRequired, slug: (s.slug || '').trim().toLowerCase() }   // Install 58l
+      if (s.edit) { const e0 = s.edit; if (opts.kind !== (e0.kind === 'instant' ? 'meeting' : e0.kind || 'meeting') || opts.regRequired !== !!e0.regRequired || opts.slug !== (e0.slug || '')) await api('/api/meet/mine', { action: 'options', code: e0.code, ...opts }) }
+      const r = s.edit ? await api('/api/meet/mine', { action: 'update', code: s.edit.code, ...body }) : await api('/api/meet/mine', { action: 'create', ...body, ...opts, slug: opts.slug || undefined })
+      const code = s.edit ? s.edit.code : r.code, m = { code, title: s.title || 'Meeting', startsAt: startsAt.toISOString(), minutes: s.minutes, link: opts.slug ? `${location.protocol}//${host}/${opts.slug}` : null }
       const warn = []
       if (pricing && pricing.on && String(s.price) !== String((s.edit && s.edit.price) || '')) await earn({ action: 'price', code, price: Number(s.price) || 0 }).catch((x) => warn.push(x.message))
       if (s.membersOnly !== !!(s.edit && s.edit.membersOnly)) await earn({ action: 'members-only', code, on: s.membersOnly }).catch((x) => warn.push(x.message))
@@ -51,7 +55,8 @@ export default function MeetingsPage({ ctx, notes = false }) {
     setBusy(action + m.code); try { await api('/api/meet/mine', { action, code: m.code }); await refresh(); setToast(action === 'end' ? 'Meeting ended.' : 'Deleted.') } catch (e) { setToast(e.message) } finally { setBusy('') }
   }
   async function copy(m) {
-    const text = m.startsAt ? `You’re invited: ${m.title}\n${fmtLong(m.startsAt)} (${tzName()} time)\nJoin: ${linkFor(m.code)}` : `Join my meeting: ${linkFor(m.code)}`
+    const L = m.link || linkFor(m.code)
+    const text = m.startsAt ? `You’re invited: ${m.title}\n${fmtLong(m.startsAt)} (${tzName()} time)\nJoin: ${L}` : `Join my meeting: ${L}`
     await copyText(text); setToast(m.startsAt ? 'Invite copied.' : 'Link copied.')
   }
   const tick = sheet && pricing && pricing.on && Number(sheet.price) >= 100 ? split(sheet.price, 'ticket') : null
@@ -78,7 +83,7 @@ export default function MeetingsPage({ ctx, notes = false }) {
     {sheet ? <Sheet title={sheet.done ? (sheet.edit ? 'Meeting updated' : 'Meeting scheduled') : sheet.edit ? 'Change the meeting' : 'Schedule a meeting'} onClose={() => setSheet(null)} wide>
       {sheet.done ? <div className="stack">
         <p><b>{sheet.done.title}</b><br />{fmtLong(sheet.done.startsAt)} ({tzName()} time)</p>
-        <div className="linkbox"><code>{linkFor(sheet.done.code)}</code></div>
+        <div className="linkbox"><code>{sheet.done.link || linkFor(sheet.done.code)}</code></div>
         <div className="row-btns"><button className="btn go" onClick={() => copy(sheet.done)}>Copy invite</button><a className="btn" href={calLinks(sheet.done).google} target="_blank" rel="noopener">Google Calendar</a><a className="btn" href={calLinks(sheet.done).ics} download="meeting.ics">Apple or Outlook</a></div>
         <p className="dim">Guests can add it to their calendar from the link too, with reminders built in.</p>
       </div> : <form onSubmit={save} className="stack">
@@ -86,6 +91,12 @@ export default function MeetingsPage({ ctx, notes = false }) {
         <div className="grid3"><Field label="Date"><input className="in" type="date" value={sheet.date} onChange={(e) => setSheet({ ...sheet, date: e.target.value })} /></Field>
           <Field label={`Time (${ready ? tzName() : 'your time'})`}><input className="in" type="time" value={sheet.time} step={300} onChange={(e) => setSheet({ ...sheet, time: e.target.value })} /></Field>
           <Field label="Length"><select className="in" value={sheet.minutes} onChange={(e) => setSheet({ ...sheet, minutes: Number(e.target.value) })}>{[15, 30, 45, 60, 90, 120, 180].map((m) => <option key={m} value={m}>{m < 60 ? m + ' minutes' : m === 60 ? '1 hour' : m / 60 + ' hours'}</option>)}</select></Field></div>
+        <div className="fld"><span>Type</span><div className="seg" role="group" aria-label="Kind of meeting">{[['meeting', 'Meeting'], ['one', 'One-on-one'], ['webinar', 'Webinar']].map(([k, l]) => <button key={k} type="button" aria-pressed={(sheet.kind || 'meeting') === k} disabled={k === 'webinar' && locked && (!sheet.edit || sheet.edit.kind !== 'webinar')} onClick={() => setSheet({ ...sheet, kind: k, ...(k === 'webinar' ? { speakers: 'invited', regRequired: true } : {}) })}>{l}{k === 'webinar' && locked ? ' · Pro' : ''}</button>)}</div>
+          <small className="dim">{sheet.kind === 'webinar' ? 'You and the people you invite speak; everyone else watches, chats and raises a hand. People register first.' : sheet.kind === 'one' ? 'Just you and one other person.' : 'Everyone can take part.'}</small>
+          {locked ? <LockLine>Webinars</LockLine> : null}</div>
+        <label className="check"><input type="checkbox" checked={!!sheet.regRequired} onChange={(e) => setSheet({ ...sheet, regRequired: e.target.checked })} /><span>People register first. Each person gets their own entry code by email, good for the whole meeting (one person at a time), and can add it to their calendar.</span></label>
+        <Field label="Branded link (optional)" hint={locked ? null : 'Letters, numbers and dashes, like design-class-3.'}><div className="slugbox"><span>{host}/</span><input className="in" maxLength={30} value={sheet.slug || ''} disabled={locked && !(sheet.edit && sheet.edit.slug)} onChange={(e) => setSheet({ ...sheet, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} placeholder="your-link" aria-label="Branded link" /></div></Field>
+        {locked ? <LockLine>Branded links</LockLine> : null}
         {!sheet.edit ? <div className="seg" role="group" aria-label="Meeting type"><button type="button" aria-pressed={(sheet.mode || 'video') === 'video'} onClick={() => setSheet({ ...sheet, mode: 'video' })}>Video meeting</button><button type="button" aria-pressed={sheet.mode === 'audio'} onClick={() => setSheet({ ...sheet, mode: 'audio' })}>Audio call</button></div> : null}
         <div className="seg" role="group" aria-label="Who can speak"><button type="button" aria-pressed={sheet.speakers === 'everyone'} onClick={() => setSheet({ ...sheet, speakers: 'everyone' })}>Everyone can speak</button><button type="button" aria-pressed={sheet.speakers === 'invited'} onClick={() => setSheet({ ...sheet, speakers: 'invited' })}>Only people I let speak</button></div>
         {!sheet.edit ? <><label className="check"><input type="checkbox" checked={!!sheet.certs} onChange={(e) => setSheet({ ...sheet, certs: e.target.checked })} /><span>Certificates: everyone who stays at least half the meeting gets one, with its own code anyone can check{pricing && pricing.on ? ' (Pro)' : ''}. Set a price and the design in Earn.</span></label>

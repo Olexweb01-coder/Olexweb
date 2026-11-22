@@ -2,6 +2,7 @@
 // that checks again every 15 seconds.
 import { redirect, notFound } from 'next/navigation'
 import { roomOf } from '@/lib/meet/pro'
+import { meetingBySlug } from '@/lib/site/meet'
 import { meetBase } from '@/lib/site/meet'
 export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }) {
@@ -10,7 +11,7 @@ export async function generateMetadata({ params }) {
 }
 export default async function Room({ params }) {
   const r = await roomOf(params.handle).catch(() => null)
-  if (!r) notFound()
+  if (!r) { const s = await meetingBySlug(params.handle).catch(() => null); if (s) redirect(meetBase() ? `/${s.code}` : `/meet/${s.code}`); notFound() }   // Install 58l: a branded link
   if (r.code) redirect(meetBase() ? `/${r.code}` : `/meet/${r.code}`)
   return (<div className="mt mt-solo">
     <meta httpEquiv="refresh" content="15" />
