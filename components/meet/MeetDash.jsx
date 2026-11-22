@@ -157,7 +157,7 @@ function Earn() {
   if (!e) return null
   const D = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [7, 'Sun']]
   return (<div className="mc">
-    <div className="mc-row"><span className="md-lab">Earn on Meet · paid meetings and one-on-one sessions · Olexweb keeps {e.fee}%</span>{e.sales ? <b>{naira(e.net)} earned</b> : null}</div>
+    <div className="mc-row"><span className="md-lab">Earn on Meet · paid meetings and one-on-one sessions · Olexweb keeps {e.fee}%</span>{e.sales_n ? <b>{naira(e.net)} earned</b> : null}</div>
     {!pay ? <div className="mc-row"><span>{e.payout ? <>Payouts go to <b>{e.payout.accountName}</b> · {e.payout.bankName} ••{e.payout.last4}</> : 'Add your bank so ticket and session money reaches you.'}</span><button className="mh-btn mh-sm" onClick={openPay}>{e.payout ? 'Change bank' : 'Add my bank'}</button></div>
       : <form className="md-ask" onSubmit={(x) => { x.preventDefault(); run(() => call({ action: 'payout', ...pay }), 'Bank saved.').then((k) => k && setPay(null)) }}>
         <label className="md-lab" htmlFor="ea-b">Bank</label><select id="ea-b" className="md-in" value={pay.bankCode} onChange={(x) => setPay({ ...pay, bankCode: x.target.value })}><option value="">{banks ? 'Choose your bank' : 'Loading banks…'}</option>{(banks || []).map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}</select>

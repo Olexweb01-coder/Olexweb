@@ -95,6 +95,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const [fx, setFx] = useState({ noise: true, blur: false }), [blurOk, setBlurOk] = useState(false), fxRef = useRef(fx)   // noise cancellation and background blur
   const [iosTip, setIosTip] = useState(false)
   // paid meetings (Install D): a ticket's key comes back from Paystack in the link (?pass=) and is kept on this device
+  const [membersOf, setMembersOf] = useState(null)
   const [needTicket, setNeedTicket] = useState(false), [buyer, setBuyer] = useState(''), [buying, setBuying] = useState(false)
   const passKey = 'meet-pass:' + code
   useEffect(() => { try { const p = new URLSearchParams(location.search).get('pass'); if (p) { localStorage.setItem(passKey, p); history.replaceState(null, '', location.pathname) } } catch {} }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -163,6 +164,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
       let pass = null; try { pass = localStorage.getItem(passKey) } catch {}
       const j = await post('/api/meet', { code, name: n, ...(asks ? { details: det } : {}), ...(pass ? { pass } : {}) })
       if (j.state === 'ticket') { setNeedTicket(true); setPhase('lobby'); setError('This is a paid meeting. Get your ticket to join.'); return }
+      if (j.state === 'members') { setMembersOf(j); setPhase('lobby'); setError(j.signedIn ? `This meeting is for members of ${j.host || 'the host'}’s community.` : `This meeting is for members of ${j.host || 'the host'}’s community. Sign in to join.`); return }
       if (j.state === 'waiting') { setPhase('waiting'); return }
       if (j.state === 'ended') { setPhase('ended'); return }
       if (j.state === 'unavailable') { setPhase('unavailable'); return }
@@ -571,6 +573,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
           </div> : <div className="mt-toggles"><button type="button" className="mt-chip" aria-pressed={saver} onClick={() => setSaver((s) => !s)}>{I.leaf}Data saver</button></div>}
           {saver ? <p className="mt-hint">Data saver: you’ll hear everyone and see shared screens, but not cameras. Best on a weak or costly connection.</p> : null}
           {error ? <p className="mt-err" role="alert">{error}</p> : null}
+          {membersOf ? <div className="mt-asks">{membersOf.handle ? <a className="mt-btn" href={`/meet/h/${membersOf.handle}/join`}>See the membership</a> : null}{!membersOf.signedIn ? <a className="mt-btn" href={`/meet?next=${encodeURIComponent('/meet/' + code)}#signin`}>Sign in</a> : null}</div> : null}
           {(needTicket || (price > 0 && !host)) ? <div className="mt-asks"><p className="mt-lab">Ticket: ₦{Number(price).toLocaleString('en-NG')}{needTicket ? '' : ' (if you already have one, just join)'}</p>
             <input className="mt-in" type="email" maxLength={200} value={buyer} onChange={(e) => setBuyer(e.target.value)} placeholder="Your email (for your ticket)" autoComplete="email" />
             <button type="button" className="mt-btn" disabled={buying || !name.trim() || !buyer.trim()} onClick={buyTicket}>{buying ? 'Opening Paystack…' : `Buy a ticket (₦${Number(price).toLocaleString('en-NG')})`}</button></div> : null}
@@ -858,7 +861,7 @@ function AfterMeeting({ code, info }) {
         <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
       {err ? <p className="mt-err" role="alert">{err}</p> : null}
     </form>) : null}
-    {info && info.certs && info.rateKey ? <a className="mt-btn mt-go" href={`/api/meet/cert?code=${encodeURIComponent(code)}&id=${encodeURIComponent(info.identity)}&k=${encodeURIComponent(info.rateKey)}`} download>Get your certificate</a> : null}
+    {info && info.certs && info.rateKey ? <a className="mt-btn mt-go" href={`/api/meet/cert?code=${encodeURIComponent(code)}&id=${encodeURIComponent(info.identity)}&k=${encodeURIComponent(info.rateKey)}`}>Get your certificate</a> : null}
     {tip ? <div className="mt-install">
       <b>Keep Olexweb Meet on your home screen</b>
       {tip === 'ios' ? <ol><li>Tap the Share button (the square with an arrow) at the bottom of Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>

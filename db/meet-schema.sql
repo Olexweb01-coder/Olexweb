@@ -140,3 +140,64 @@ create unique index if not exists meet_payments_pass on meet_payments (pass) whe
 create table if not exists meet_bookings (id bigserial primary key, mentor int not null, mentee int not null, starts_at timestamptz not null, minutes int not null,
   code text, status text not null default 'pending', created_at timestamptz not null default now());
 create unique index if not exists meet_bookings_slot on meet_bookings (mentor, starts_at) where status <> 'cancelled';
+-- Install 58: the money engine. Amounts in new columns are kobo (₦1 = 100 kobo) unless the name says naira.
+alter table meet_payments add column if not exists pct int;                    -- Olexweb's percent on this sale
+alter table meet_payments add column if not exists olex_kobo bigint;            -- Olexweb's share, set on Paystack as transaction_charge
+alter table meet_payments add column if not exists host_user int;               -- who the money is for (a host's sale)
+alter table meet_payments add column if not exists link_id bigint;              -- the tracked link it came through
+alter table meet_payments add column if not exists via text;                    -- 'directory' when the client came from Find a mentor
+alter table meet_payments add column if not exists ref_id bigint;               -- the bundle, membership or certificate it pays for
+alter table meet_payments add column if not exists seats int not null default 1;
+create index if not exists meet_payments_host on meet_payments (host_user, status, paid_at);
+alter table meet_users add column if not exists recipient text;                 -- Paystack transfer recipient (invite and ambassador cash)
+alter table meet_users add column if not exists mentor jsonb;                   -- Find a mentor listing: {on, niche, tags, help[], city, years}
+alter table meet_users add column if not exists membership jsonb;               -- {on, price, perMonth, perks:{free, discount}, line}
+alter table meet_users add column if not exists cert_brand jsonb;               -- {org, variant, signature}
+alter table meet_users add column if not exists ref_done_at timestamptz;
+alter table meet_users add column if not exists ref_five boolean not null default false;   -- already counted towards a "5 invites" reward
+-- tickets that let people in (one payment can buy several seats: group prices)
+create table if not exists meet_passes (pass text primary key, payment_id bigint not null, code text, bundle_id bigint, created_at timestamptz not null default now());
+create index if not exists meet_passes_code on meet_passes (code);
+-- course bundles: several of a host's meetings as one ticket
+create table if not exists meet_bundles (id bigserial primary key, host_user int not null references meet_users (id) on delete cascade, title text not null, blurb text not null default '', price int not null,
+  early_price int, early_until timestamptz, group_size int, group_price int, on_sale boolean not null default true, created_at timestamptz not null default now());
+create table if not exists meet_bundle_items (bundle_id bigint not null references meet_bundles (id) on delete cascade, code text not null, primary key (bundle_id, code));
+create index if not exists meet_bundle_items_code on meet_bundle_items (code);
+-- tracked links (closed sessions and anything sold): opened → started paying → paid
+create table if not exists meet_links (id bigserial primary key, host_user int not null references meet_users (id) on delete cascade, slug text not null unique, label text not null, kind text not null, target text not null,
+  opens int not null default 0, created_at timestamptz not null default now());
+-- memberships: members pay a host monthly; no members-only meeting in a month = no charge (paused)
+alter table meetings add column if not exists members_only boolean not null default false;
+create table if not exists meet_members (id bigserial primary key, host_user int not null references meet_users (id) on delete cascade, user_id int not null references meet_users (id) on delete cascade, status text not null default 'pending',
+  price int not null, period_start timestamptz, period_end timestamptz, auth_code text, auth_email text, cancel_at_end boolean not null default false,
+  charging_at timestamptz, created_at timestamptz not null default now(), unique (host_user, user_id));
+create index if not exists meet_members_due on meet_members (period_end) where status = 'active';
+-- money Olexweb pays out (3% invites, ambassador prize), sent every Monday by Paystack Transfer
+create table if not exists meet_credits (id bigserial primary key, user_id int not null references meet_users (id) on delete cascade, kind text not null, amount bigint not null, ref text not null unique, note text not null default '',
+  status text not null default 'pending', transfer_ref text, created_at timestamptz not null default now(), paid_at timestamptz);
+create index if not exists meet_credits_user on meet_credits (user_id, status);
+alter table meet_settings add column if not exists payouts jsonb not null default '{}';
+-- the spotlight beyond monthly winners (5 invites in 15 days): shown until "until"
+create table if not exists meet_spot (id bigserial primary key, user_id int not null references meet_users (id) on delete cascade, reason text not null, until timestamptz not null, created_at timestamptz not null default now());
+-- certificates: each one has its own code, checked at /v/<code>
+alter table meetings add column if not exists cert_price int not null default 0;  -- naira; 0 = free (Pro hosts only)
+alter table meetings add column if not exists cert_award text;                    -- e.g. 'Attendance', 'Completion', 'Excellence'
+create table if not exists meet_certs (serial text primary key, code text not null, identity text not null, name text not null, award text not null, issued_at timestamptz not null default now(),
+  payment_id bigint, revoked_at timestamptz, unique (code, identity));
+-- bookings that waited too long to be paid free their time again
+alter table meet_bookings add column if not exists via text;
+alter table meet_members add column if not exists renew_ref text;            -- the automatic charge in progress (never two at once)
+alter table meet_payments add column if not exists identity text;            -- a paid certificate: whose it is
+alter table meet_credits add column if not exists sent_at timestamptz;
+-- Install 58 (the new app): celebrations shown once, levels, What's new, photo and banner
+alter table meet_badges add column if not exists seen_at timestamptz;
+alter table meet_users add column if not exists level_seen int not null default 0;
+alter table meet_users add column if not exists news_seen bigint not null default 0;
+alter table meet_users add column if not exists welcomed boolean not null default false;   -- the first sign-in after Install 58 (past achievements unlocked)
+alter table meet_users add column if not exists banner jsonb;                -- {kind: 'pattern' | 'image' | 'bio', pattern}
+alter table meet_users add column if not exists photo_data text;             -- an uploaded photo (small JPEG, base64)
+alter table meet_users add column if not exists banner_data text;            -- an uploaded banner (JPEG, base64)
+alter table meet_settings add column if not exists news58 boolean not null default false;   -- the announcement below, posted once (delete it and it stays deleted)
+insert into meet_news (title, body) select 'The new Olexweb Meet is here', 'A new home with a menu on every screen, levels and celebrations, your profile with a photo and banner, and new ways to earn: memberships, course bundles, Find a mentor, paid certificates and invite rewards. Every fee is shown before you earn.'
+  where not (select news58 from meet_settings where id = 1);
+update meet_settings set news58 = true where id = 1;

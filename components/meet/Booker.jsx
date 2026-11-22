@@ -1,13 +1,13 @@
 'use client'
 // Choosing a time for a one-on-one session (times shown in the visitor's own time zone)
 import { useMemo, useState } from 'react'
-export default function Booker({ data, signedIn, home }) {
+export default function Booker({ data, signedIn, home, via = null }) {
   const [pick, setPick] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState(''), [done, setDone] = useState(null)
   const days = useMemo(() => { const g = new Map(); for (const s of data.slots) { const k = new Date(s).toDateString(); if (!g.has(k)) g.set(k, []); g.get(k).push(s) } return [...g.entries()] }, [data.slots])
   const naira = (n) => '₦' + Math.round(n).toLocaleString('en-NG')
   async function go() {
     setBusy(true); setErr('')
-    try { const r = await fetch('/api/meet/earn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'book', handle: data.mentor.handle, startsAt: pick }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); if (j.url) location.assign(j.url); else setDone(j) }
+    try { const r = await fetch('/api/meet/earn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'book', handle: data.mentor.handle, startsAt: pick, via }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); if (j.url) location.assign(j.url); else setDone(j) }
     catch (e) { setErr(e.message); setBusy(false) }
   }
   if (done) return <section className="md-card"><h1 className="pf-h1">You’re booked</h1><p>{new Date(pick).toLocaleString(undefined, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })} with {data.mentor.name}. It’s in your notifications, with the link.</p><a className="mh-btn mh-go" href={home + '#dashboard'}>Go to my dashboard</a></section>

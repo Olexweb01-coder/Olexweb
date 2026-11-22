@@ -9,5 +9,5 @@ export default function Follow({ handle, following: f0, signedIn, home }) {
     try { const r = await fetch('/api/meet/community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ action: 'follow', handle, on: !on }) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'That didn’t work.'); setOn(!on) }
     catch (e) { setErr(e.message) } finally { setBusy(false) }
   }
-  return <span><button className={'mh-btn mh-sm' + (on ? '' : ' mh-go')} disabled={busy} onClick={go}>{on ? 'Following' : 'Follow'}</button>{err ? <small className="md-err"> {err}</small> : null}</span>
+  return <span><button className={'pb-btn pb-sm' + (on ? '' : ' pb-go')} disabled={busy} onClick={go}>{on ? 'Following' : 'Follow'}</button>{err ? <small className="md-err"> {err}</small> : null}</span>
 }

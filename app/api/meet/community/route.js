@@ -7,8 +7,9 @@ import { meetBase, mainOrigin } from '@/lib/site/meet'
 import { limit } from '@/lib/meet/limit'
 import * as C from '@/lib/meet/community'
 export const dynamic = 'force-dynamic'
-export async function GET() {
+export async function GET(request) {
   const mu = await currentMeetUser(); if (!mu) return refuse('Sign in first.', 401)
+  if (new URL(request.url).searchParams.get('board')) return respond(async () => ({ leaderboard: await C.leaderboard(undefined, 10) }))   // Install 58: the full board
   return respond(() => C.myCommunity(mu, meetBase() || mainOrigin() + '/meet'))
 }
 export async function POST(request) {
