@@ -90,7 +90,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
           <a className="brand tb-brand" href={homePath()}><img src="/meet/logo-96.png" alt="" />Meet</a>
           <JoinBox />
           <span className="grow" style={{ flex: 1 }} />
-          <button className="ib" aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'} onClick={toggleTheme}><I n="sun" /></button>
+          <button className="ib theme-btn" aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'} onClick={toggleTheme}><I n="sun" /></button>
           <button className="ib" aria-label={unread ? `${unread} new notifications` : 'Notifications'} aria-expanded={bell} onClick={openBell}><I n="bell" />{unread ? <span className="dot">{unread > 9 ? '9+' : unread}</span> : null}</button>
           <a className="topav" href="#profile"><Ring pct={lvl ? lvl.pct : 0} name={me.name} picture={me.picture} /><span>{(me.name || '').split(' ')[0]}</span></a>
         </div>

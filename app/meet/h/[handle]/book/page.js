@@ -4,6 +4,7 @@ import { currentMeetUser } from '@/lib/meet/auth'
 import { slots } from '@/lib/meet/earn'
 import { meetBase } from '@/lib/site/meet'
 import Booker from '@/components/meet/Booker'
+import PubTop from '@/components/meet/PubTop'
 export const dynamic = 'force-dynamic'
 export async function generateMetadata({ params }) {
   const s = await slots(params.handle).catch(() => null)
@@ -13,8 +14,7 @@ export default async function Book({ params, searchParams }) {
   const [s, me] = await Promise.all([slots(params.handle).catch(() => null), currentMeetUser()])
   if (!s) notFound()
   const home = meetBase() ? '/' : '/meet'
-  return (<div className="mh">
-    <header className="mh-top"><a className="mh-brand" href={home}><img src="/meet/logo-96.png" alt="" width="40" height="40" /><span>Olexweb <b>Meet</b></span></a></header>
-    <main className="pf"><Booker data={JSON.parse(JSON.stringify(s))} signedIn={!!me} home={home} via={searchParams && searchParams.from === 'dir' ? 'directory' : null} /></main>
+  return (<div className="pb"><PubTop />
+    <main className="pb-main pb-narrow pb-stack"><Booker data={JSON.parse(JSON.stringify(s))} signedIn={!!me} home={home} via={searchParams && searchParams.from === 'dir' ? 'directory' : null} /></main>
   </div>)
 }

@@ -65,7 +65,7 @@ export default function Landing({ providers, emailOn, pricing, faq = [], spotlig
     {faq.length ? <section className="sec rv faq" aria-labelledby="faq-h"><h2 id="faq-h">Questions people ask</h2>{faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</section> : null}
     <footer className="ld-foot"><a href="https://olexweb.com">Part of Olexweb</a><a href="/meet/legal/earnings">Earnings and payouts</a><a href="/meet/legal/refunds">Refunds</a><a href="/meet/legal/community">Community rules</a><a href="https://olexweb.com/privacy">Privacy</a><a href="https://olexweb.com/terms">Terms</a></footer>
     {sheet ? <Sheet title="Sign in to Olexweb Meet" onClose={() => setSheet(null)}>
-      <p className="dim" style={{ margin: 0 }}>Sign in to host and schedule meetings. People joining your meetings never need an account.</p>
+      <p className="dim" style={{ margin: 0 }}>New here? The same buttons create your free account. You need one to host; people joining your meetings never do.</p>
       {providers.length ? <div className="providers">{providers.map((p) => <a key={p.id} className="opt" href={`/api/meet/auth/${p.id}?next=${encodeURIComponent(sheet.next || '/')}`}>{PROVIDER_ICON[p.id]}<span>Continue with {p.name}</span></a>)}</div>
         : !emailOn ? <p className="dim">Sign-in isn’t available yet. Check back soon.</p> : null}
       {emailOn ? <>{providers.length ? <p className="es-or"><span>or with email</span></p> : null}<EmailSignIn next={sheet.next || '/'} /></> : null}

@@ -4,6 +4,7 @@
 // protected first (speech audio with redundancy and silence detection), video is 360p at most and drops to smaller
 // layers on its own, only the people on screen get video, and Data saver turns other people's cameras off entirely.
 // LiveKit's library loads after the page appears, so the first load stays light.
+import BackButton from './BackButton'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLive, PollCard, PollMaker, QAPanel } from './Live'                // Install D: polls, quizzes, webinar Q&A
 import { MeetRecorder, canMp3, canRecord, pendingRecordings, saveRecording, discardRecording, fileName } from './recorder'
@@ -95,6 +96,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const [fx, setFx] = useState({ noise: true, blur: false }), [blurOk, setBlurOk] = useState(false), fxRef = useRef(fx)   // noise cancellation and background blur
   const [iosTip, setIosTip] = useState(false)
   // paid meetings (Install D): a ticket's key comes back from Paystack in the link (?pass=) and is kept on this device
+  const [copied, setCopied] = useState(false)
   const [membersOf, setMembersOf] = useState(null)
   const [needTicket, setNeedTicket] = useState(false), [buyer, setBuyer] = useState(''), [buying, setBuying] = useState(false)
   const passKey = 'meet-pass:' + code
@@ -526,8 +528,9 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
 
   // ---------- screens other than the room ----------
   if (phase !== 'in') return (<div className="mt mt-solo">{showNotes ? <NotesPanel code={code} title={title} make who={seat()} onClose={() => setShowNotes(false)} /> : null}
-    <header className="mt-brand"><img src="/studio/mark.png" alt="" width="22" height="26" /><span>Olexweb</span></header>
-    <main className="mt-card">
+    <header className="mt-top2"><BackButton home="/meet" className="mt-back" /><a className="mt-brand2" href="/meet"><img src="/meet/logo-96.png" alt="" width="30" height="30" /><span>Olexweb <b>Meet</b></span></a>
+      <span className="mt-sp" />{code ? <button type="button" className="mt-code2" onClick={() => { try { navigator.clipboard.writeText(location.href.split('?')[0]) } catch {} setCopied(true); setTimeout(() => setCopied(false), 1800) }} title="Copy the meeting link">{I.link || null}<span>{copied ? 'Link copied' : code}</span></button> : null}</header>
+    <main className={'mt-card' + (!['ended', 'removed', 'unavailable', 'left', 'waiting'].includes(phase) ? ' mt-lob2' : '')}>
       {phase === 'ended' ? <><h1 className="mt-h">This meeting has ended</h1><p className="mt-p">{boss && notesReady ? 'Your recording is saved. Olex AI can turn it into notes: a summary, decisions and action items.' : 'Thanks for being here. You can close this page.'}</p>
           {boss && notesReady ? <div className="mt-row"><button className="mt-btn mt-go" onClick={() => setShowNotes(true)}>Make AI notes</button></div> : null}</>
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
@@ -536,19 +539,32 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
         : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}{startsAt && new Date(startsAt) > new Date() ? <RegisterBox code={code} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
+          <div className="mt-gl">
+          <div className={'mt-preview' + (camOn ? ' on' : '')}>
+            <video ref={previewRef} muted playsInline autoPlay className="mt-mirror" />
+            {!camOn ? <span className="mt-av mt-av-lg" style={{ background: tone(name || 'x') }}>{initials(name || '?')}</span> : null}
+          </div>
+          {host || speakers === 'everyone' ? <div className="mt-toggles" role="group" aria-label="Before you join">
+            <button type="button" className="mt-chip" aria-pressed={micOn} onClick={() => setMicOn((m) => !m)}>{micOn ? I.mic : I.micOff}{micOn ? 'Mic on' : 'Mic off'}</button>
+            {videoOk ? <button type="button" className="mt-chip" aria-pressed={camOn} disabled={saver} onClick={() => previewOn(!camOn)}>{camOn ? I.cam : I.camOff}{camOn ? 'Camera on' : 'Camera off'}</button> : <span className="mt-chip mt-audiochip">{I.mic}Audio call</span>}
+            <button type="button" className="mt-chip" aria-pressed={saver} onClick={() => { const on = !saver; setSaver(on); if (on && camOn) previewOn(false) }}>{I.leaf}Data saver</button>
+            {noiseOk ? <button type="button" className="mt-chip" aria-pressed={fx.noise} onClick={() => { const v = { ...fx, noise: !fx.noise }; setFx(v); fxRef.current = v; rememberFx({ noise: v.noise }) }}>{I.wave}Noise cancellation</button> : null}
+            {blurOk ? <button type="button" className="mt-chip" aria-pressed={fx.blur} onClick={() => { const v = { ...fx, blur: !fx.blur }; setFx(v); fxRef.current = v; rememberFx({ blur: v.blur }) }}>{I.blur}Blur background</button> : null}
+          </div> : <div className="mt-toggles"><button type="button" className="mt-chip" aria-pressed={saver} onClick={() => setSaver((s) => !s)}>{I.leaf}Data saver</button></div>}
+          {saver ? <p className="mt-hint">Data saver: you’ll hear everyone and see shared screens, but not cameras. Best on a weak or costly connection.</p> : null}
+          </div>
+          <div className="mt-gr">
           {pending.length ? <div className="mt-pending" role="status">
             <b>{pending.length === 1 ? 'A recording wasn’t saved' : `${pending.length} recordings weren’t saved`}</b>
             {pending.map((x) => <div key={x.id} className="mt-pending-row"><span>{fileName(x)}</span>
               <button type="button" className="mt-btn mt-xs mt-go" onClick={() => savePending(x)}>Save</button>
               <button type="button" className="mt-btn mt-xs mt-ghost" onClick={() => dropPending(x)}>Delete</button></div>)}
           </div> : null}
+          <span className="mt-eyebrow">{host ? 'You’re the host' : 'You’re invited'}</span>
           <h1 className="mt-h">{title}</h1>
+
           {startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} host={host} /> : null}
           <p className="mt-p">{host ? 'You’re the host. Joining starts the meeting for everyone with the link.' : speakers === 'invited' ? 'You’ll join as a listener. Raise your hand to ask to speak, and use the chat anytime.' : asks ? 'The host asks for a few details before you join. Then check your mic and camera.' : 'Check your name, mic and camera, then join.'}</p>
-          <div className={'mt-preview' + (camOn ? ' on' : '')}>
-            <video ref={previewRef} muted playsInline autoPlay className="mt-mirror" />
-            {!camOn ? <span className="mt-av mt-av-lg" style={{ background: tone(name || 'x') }}>{initials(name || '?')}</span> : null}
-          </div>
           <label className="mt-lab" htmlFor="mt-name">Your name</label>
           <input id="mt-name" className="mt-in" value={name} maxLength={40} autoComplete="name" onChange={(e) => setName(e.target.value)} placeholder="How others will see you" />
           {iosTip ? <p className="mt-iostip">On iPhone, keep this page open while you talk. If you switch apps, your mic pauses until you come back (Apple’s rule for websites).</p> : null}
@@ -564,20 +580,14 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
             <label className="mt-consent"><input type="checkbox" checked={det.consent} onChange={(e) => setDet({ ...det, consent: e.target.checked })} />
               <span>Share these details with the host of this meeting. Only the host sees them. They’re kept {keepWords(form.keep)}{form.keep ? ' after the meeting' : ''}, then deleted.</span></label>
           </div> : null}
-          {host || speakers === 'everyone' ? <div className="mt-toggles" role="group" aria-label="Before you join">
-            <button type="button" className="mt-chip" aria-pressed={micOn} onClick={() => setMicOn((m) => !m)}>{micOn ? I.mic : I.micOff}{micOn ? 'Mic on' : 'Mic off'}</button>
-            {videoOk ? <button type="button" className="mt-chip" aria-pressed={camOn} disabled={saver} onClick={() => previewOn(!camOn)}>{camOn ? I.cam : I.camOff}{camOn ? 'Camera on' : 'Camera off'}</button> : <span className="mt-chip mt-audiochip">{I.mic}Audio call</span>}
-            <button type="button" className="mt-chip" aria-pressed={saver} onClick={() => { const on = !saver; setSaver(on); if (on && camOn) previewOn(false) }}>{I.leaf}Data saver</button>
-            {noiseOk ? <button type="button" className="mt-chip" aria-pressed={fx.noise} onClick={() => { const v = { ...fx, noise: !fx.noise }; setFx(v); fxRef.current = v; rememberFx({ noise: v.noise }) }}>{I.wave}Noise cancellation</button> : null}
-            {blurOk ? <button type="button" className="mt-chip" aria-pressed={fx.blur} onClick={() => { const v = { ...fx, blur: !fx.blur }; setFx(v); fxRef.current = v; rememberFx({ blur: v.blur }) }}>{I.blur}Blur background</button> : null}
-          </div> : <div className="mt-toggles"><button type="button" className="mt-chip" aria-pressed={saver} onClick={() => setSaver((s) => !s)}>{I.leaf}Data saver</button></div>}
-          {saver ? <p className="mt-hint">Data saver: you’ll hear everyone and see shared screens, but not cameras. Best on a weak or costly connection.</p> : null}
           {error ? <p className="mt-err" role="alert">{error}</p> : null}
           {membersOf ? <div className="mt-asks">{membersOf.handle ? <a className="mt-btn" href={`/meet/h/${membersOf.handle}/join`}>See the membership</a> : null}{!membersOf.signedIn ? <a className="mt-btn" href={`/meet?next=${encodeURIComponent('/meet/' + code)}#signin`}>Sign in</a> : null}</div> : null}
           {(needTicket || (price > 0 && !host)) ? <div className="mt-asks"><p className="mt-lab">Ticket: ₦{Number(price).toLocaleString('en-NG')}{needTicket ? '' : ' (if you already have one, just join)'}</p>
             <input className="mt-in" type="email" maxLength={200} value={buyer} onChange={(e) => setBuyer(e.target.value)} placeholder="Your email (for your ticket)" autoComplete="email" />
             <button type="button" className="mt-btn" disabled={buying || !name.trim() || !buyer.trim()} onClick={buyTicket}>{buying ? 'Opening Paystack…' : `Buy a ticket (₦${Number(price).toLocaleString('en-NG')})`}</button></div> : null}
           <button type="submit" className="mt-btn mt-go" disabled={phase === 'joining'}>{phase === 'joining' ? 'Joining…' : host ? 'Start the meeting' : 'Join the meeting'}</button>
+          <p className="mt-trust">No account needed to join · encrypted in transit · works on mobile data</p>
+          </div>
         </form>}
       {phase === 'ended' || phase === 'left' ? <AfterMeeting code={code} info={joinInfo.current} /> : null}
     </main>

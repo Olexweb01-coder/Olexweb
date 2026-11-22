@@ -388,3 +388,29 @@
 .mt-brbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.mt-brrooms{display:flex;gap:10px;flex-wrap:wrap}
 .bk-days{display:grid;gap:14px}.bk-day{display:grid;gap:8px}.bk-times{display:flex;flex-wrap:wrap;gap:8px}
 .bk-t{appearance:none;padding:9px 14px;border-radius:12px;border:1px solid rgba(242,239,233,.18);background:transparent;color:inherit;font:inherit;cursor:pointer}.bk-t.on{border-color:#8fe36a;background:rgba(143,227,106,.12);color:#8fe36a}
+/* ---------- Install 58d: the waiting room in the new design (back, brand, code; preview beside the details) ---------- */
+.mt-solo{justify-content:flex-start;background:radial-gradient(700px 480px at 85% -10%,rgba(143,227,106,.12),transparent 60%),radial-gradient(520px 420px at -10% 110%,rgba(233,196,106,.07),transparent 60%),var(--night)}
+.mt-top2{align-self:stretch;display:flex;align-items:center;gap:10px;width:100%;max-width:1100px;margin:0 auto clamp(18px,4vh,44px)}
+.mt-back{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:8px 14px 8px 10px;border-radius:999px;border:1px solid var(--line);background:var(--tile);color:var(--paper);font-weight:700;font-size:14px;text-decoration:none}
+.mt-back:hover{background:var(--tile2)}.mt-back svg{width:20px;height:20px}
+.mt-brand2{display:flex;align-items:center;gap:9px;color:var(--paper);text-decoration:none;font-family:var(--font-hubot),'Hubot Sans',sans-serif;font-weight:800;font-size:17px}.mt-brand2 img{width:30px;height:30px;border-radius:9px}.mt-brand2 b{color:var(--green)}
+.mt-sp{flex:1}
+.mt-code2{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--tile);cursor:pointer;font-family:var(--font-mona),'Mona Sans',sans-serif;font-weight:700;font-size:13.5px;letter-spacing:.02em;color:var(--paper)}
+.mt-code2 svg{width:17px;height:17px}
+.mt-card.mt-lob2{max-width:1100px}
+.mt-lob2 .mt-lobby{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(20px,4vw,48px);align-items:start}
+.mt-gl{display:grid;gap:4px;position:sticky;top:20px}.mt-gr{display:grid;align-content:start}
+.mt-lob2 .mt-preview{aspect-ratio:16/10;border-radius:28px;margin-bottom:6px;box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 0 0 1px rgba(242,239,233,.06);background:radial-gradient(400px 260px at 50% 40%,rgba(143,227,106,.12),transparent 70%),var(--tile)}
+.mt-lob2 .mt-toggles{justify-content:center}
+.mt-eyebrow{justify-self:start;display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(143,227,106,.12);border:1px solid rgba(143,227,106,.3);color:var(--green);font-weight:750;font-size:12.5px;margin-bottom:12px}
+.mt-eyebrow:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(143,227,106,.18)}
+.mt-lob2 .mt-h{font-size:clamp(28px,3.6vw,44px)}
+.mt-trust{margin:12px 0 0;color:var(--faint);font-size:12.5px;text-align:center}
+.mt-solo .mt-card:not(.mt-lob2){text-align:left;padding:28px;border-radius:26px;background:var(--tile);border:1px solid var(--line);box-shadow:0 24px 70px rgba(0,0,0,.4)}
+@media (max-width:860px){.mt-lob2 .mt-lobby{grid-template-columns:minmax(0,1fr)}.mt-gl{position:static;order:0}.mt-gr{order:1}.mt-card.mt-lob2{max-width:560px}}
+@media (max-width:520px){.mt-back span{display:none}.mt-back{padding:8px 10px}.mt-brand2 span{font-size:15px}.mt-code2 span{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mt-solo .mt-card:not(.mt-lob2){padding:20px}}
+.mt-brand2{white-space:nowrap;min-width:0}.pb-brand{white-space:nowrap}
+@media (max-width:360px){.mt-code2 span{display:none}.mt-code2{padding:8px 11px}.mt-top2{gap:8px}.mt-brand2 span{font-size:14px}}
+/* Install 58e: the room's top bar keeps Back and the brand whole; the code gives way first */
+.mt-top2>*{flex:none}.mt-top2 .mt-sp{flex:1 1 0;min-width:0}.mt-top2 .mt-code2{flex:0 1 auto;min-width:0;overflow:hidden}.mt-code2 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:440px){.mt-brand2 span{display:none}.mt-brand2:after{content:"Meet";font-size:17px;color:var(--paper)}}

@@ -439,3 +439,7 @@ html.ma-lock{overflow:hidden}
 /* plain zeros: big numbers use Mona Sans (Hubot Sans draws a dotted zero) */
 .ma .amt,.ma .stat b,.ma .cd,.ma .bigring b,.ma .streak b.n,.ma .when b,.ma .amtsm,.ma .lbrow .v,.ma .plan .big,.ma .stand{font-family:var(--font-mona),'Mona Sans',sans-serif;font-weight:850}
 .ma .fees b{white-space:nowrap}
+/* Install 58e: top bars never crowd or overlap, down to the narrowest phones (320px) */
+.ma .ld-nav .brand,.ma .top .brand{flex:none}.ma .ld-nav .right{flex-wrap:nowrap;min-width:0;flex:none}.ma .top{min-width:0}.ma .top>*{flex-shrink:0}.ma .top .grow{flex:1 1 0;min-width:0}
+@media (max-width:420px){.ma .ld-nav .signin{display:none}.ma .ld-nav{gap:8px}.ma .top{gap:6px;padding-left:12px;padding-right:12px}}
+@media (max-width:360px){.ma .ld-nav .right .ib,.ma .top .theme-btn{display:none}.ma .ld-nav .brand:after{font-size:16px}.ma .ld-nav .brand img,.ma .top .brand img{width:30px;height:30px}.ma .ld-nav .btn.go.sm{padding:8px 12px}}
