@@ -85,7 +85,7 @@ export default function Landing({ providers, emailOn, spotlight = null, notice =
     </Section>
 
     {pricing && pricing.on ? <Section alt><Head eyebrow="Pricing" title="Free for real. Pro when you need it." text="Pick what fits: free forever, Pro for just one meeting, or Pro every month." center />
-      <PlanCards p={pricing.prices || {}} freeHref={startHref(base)} oneHref={`${base || ''}/?next=${encodeURIComponent('/#settings')}#signin`.replace(/^\/\?/, '/?')} proHref={`${base || ''}/?next=${encodeURIComponent('/#settings')}#signin`.replace(/^\/\?/, '/?')} />
+      <PlanCards p={pricing.prices || {}} freeHref={startHref(base)} oneHref={`${base || ''}/?next=${encodeURIComponent('/#billing')}#signin`.replace(/^\/\?/, '/?')} proHref={`${base || ''}/?next=${encodeURIComponent('/#billing')}#signin`.replace(/^\/\?/, '/?')} />
       <p className="rv" style={{ textAlign: 'center', marginTop: 18 }}><a href={at(base, '/pricing')} style={{ textDecoration: 'underline', color: 'var(--dim)' }}>Compare everything in each plan</a></p></Section> : null}
 
     <Section>

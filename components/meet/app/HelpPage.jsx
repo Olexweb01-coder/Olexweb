@@ -1,5 +1,5 @@
 'use client'
-// Help (Olex AI first, then the Olexweb team) and Settings (plan, payments, invoices, look, account). Install 58.
+// Help (Olex AI first, then the Olexweb team), Billing (plan, payments, invoices; Install 65) and Settings (look, account). Install 58.
 import { useEffect, useState } from 'react'
 import { I } from './icons'
 import { api, naira, day, when, homePath, Field, Empty, Sheet } from './ui'
@@ -34,9 +34,11 @@ export default function HelpPage({ ctx }) {
   </div>)
 }
 
-export function SettingsPage({ ctx }) {
-  const { h, setToast, reload, theme, toggleTheme, signOut, user, list = [], nav } = ctx
-  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false), [del, setDel] = useState(false), free = h && h.dash.freeMeetings || 0   // one: choosing the meeting for Pro for one meeting (Install 61)
+// Install 65: Billing has its own page in the sidebar (it was the top of Settings): the plan, buying Pro, free Pro meetings,
+// payments due and past payments
+export function BillingPage({ ctx }) {
+  const { h, setToast, reload, list = [], nav } = ctx
+  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false), free = h && h.dash.freeMeetings || 0   // one: choosing the meeting for Pro for one meeting (Install 61)
   if (!h) return <div className="wrap" />
   const d = h.dash, p = d.pricing, due = d.invoices.filter((i) => !i.paid)
   async function pay(body, via) {
@@ -47,7 +49,7 @@ export function SettingsPage({ ctx }) {
   async function useFree(code) { setOne(false); setBusy('free'); try { await api('/api/meet/dash', { action: 'use-free', code }); await reload(); setToast('Pro is on for that meeting.') } catch (e) { setToast(e.message) } finally { setBusy('') } }
   async function claim(ref) { setBusy('claim' + ref); try { await api('/api/meet/dash', { action: 'claim', ref }); await reload() } catch (e) { setToast(e.message) } finally { setBusy('') } }
   return (<div className="wrap">
-    <div className="pghead"><div><h1>Settings</h1><p className="dim">{user.email || ''}</p></div></div>
+    <div className="pghead"><div><h1>Billing</h1><p className="dim">Your plan and payments</p></div></div>
     <section className="card"><div className="ch"><h3>Your plan</h3></div>
       <div className="plan"><b className="big">{d.plan.pro ? 'Pro' : 'Free'}</b><p className="dim">{d.plan.owner ? 'Everything, always.' : d.plan.pro ? `Pro until ${day(d.plan.proUntil)}.` : 'Unlimited hours, audio and video up to 100 people, MP3 recording, AI notes, screen sharing.'}</p></div>
       {p.on && !d.plan.pro && d.payReady ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => pay({ kind: 'month' })}>{busy === 'month' ? 'Opening…' : `Pro ${naira(p.prices.month)}/month`}</button><button className="btn" disabled={!!busy} onClick={() => pay({ kind: 'year' })}>{busy === 'year' ? 'Opening…' : `${naira(p.prices.year)}/year`}</button>
@@ -62,12 +64,28 @@ export function SettingsPage({ ctx }) {
         {!t.claimed ? <button className="btn go sm" disabled={!!busy} onClick={() => claim(t.ref)}>{busy === 'claim' + t.ref ? 'Sending…' : 'I’ve sent it'}</button> : null}</div>)}
       {due.map((i) => <div key={i.id} className="due"><span><b>Invoice: {naira(i.amount)}</b> for “{i.title}”: {i.people} extra {i.people === 1 ? 'person' : 'people'} past the free 100. New meetings wait until it’s paid.</span>
         {d.payReady ? <button className="btn go sm" disabled={!!busy} onClick={() => pay({ kind: 'invoice', invoiceId: i.id })}>{busy === 'invoice' + i.id ? 'Opening…' : 'Pay now'}</button> : null}</div>)}</section> : null}
+    {d.payments && d.payments.length ? <section className="card"><div className="ch"><h3>Past payments</h3></div>
+      {d.payments.map((x) => <div key={x.ref} className="due"><span><b>{naira(x.amount)}</b> · {PAID_FOR[x.kind] || 'Payment'}{x.title ? ': “' + x.title + '”' : ''}<br /><small className="dim">{day(x.at)} · Reference {x.ref}</small></span></div>)}</section> : null}
+      {one ? <Sheet title={one === 'free' ? 'Your free Pro meeting' : 'Pro for one meeting'} onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} free={one === 'free'} onPick={(code) => { if (one === 'free') return useFree(code); setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
+  </div>)
+}
+
+const PAID_FOR = { month: 'Pro for a month', year: 'Pro for a year', meeting: 'Pro for one meeting', invoice: 'Extra people invoice' }
+
+export function SettingsPage({ ctx }) {
+  const { h, theme, toggleTheme, signOut, user, nav } = ctx
+  const [del, setDel] = useState(false)
+  if (!h) return <div className="wrap" />
+  const d = h.dash
+  return (<div className="wrap">
+    <div className="pghead"><div><h1>Settings</h1><p className="dim">{user.email || ''}</p></div></div>
+    <section className="card"><div className="ch"><h3>Plan and payments</h3></div><p className="dim" style={{ marginTop: 0 }}>You’re on {d.plan.owner ? 'the owner plan' : d.plan.pro ? 'Pro' : 'Free'}. Your plan, buying Pro and your payments are on the Billing page.</p>
+      <div className="row-btns"><button className="btn" onClick={() => nav('billing')}><I n="coin" />Open Billing</button></div></section>
     <section className="card"><div className="ch"><h3>Look</h3></div><div className="row-btns"><button className="btn" onClick={toggleTheme}><I n="sun" />{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</button>
       <InstallButton big /></div></section>
     <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div>
       {user.role !== 'owner' ? <button className="lnk del-link" onClick={() => setDel(true)}>Delete my account</button> : null}</section>
       {del ? <DeleteAccount onClose={() => setDel(false)} /> : null}
-      {one ? <Sheet title={one === 'free' ? 'Your free Pro meeting' : 'Pro for one meeting'} onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} free={one === 'free'} onPick={(code) => { if (one === 'free') return useFree(code); setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
   </div>)
 }
 

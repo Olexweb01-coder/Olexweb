@@ -106,7 +106,7 @@ function Members({ e, pro, pricingOn, busy, run, reload }) {
   return (<>
     <section className="card"><div className="ch"><h3>Your membership</h3>{m.on && e.handle ? <a href={`/meet/h/${e.handle}/join`}>See your page</a> : null}</div>
       <p className="dim" style={{ marginTop: 0 }}>People pay you every month for what you promise. Olexweb counts the members-only meetings you hold and shows it on your page. If you hold none in a member’s month, they aren’t charged for the next one: their membership pauses until you hold one.</p>
-      {!pro ? <p className="note">Memberships are for Pro hosts. Go Pro in Settings to turn them on.</p> : null}
+      {!pro ? <p className="note">Memberships are for Pro hosts. Go Pro in Billing to turn them on.</p> : null}
       {m.on ? <div className="stats"><div className="stat"><span>Members</span><b>{m.active}</b><small>paying now</small></div><div className="stat"><span>Paused</span><b>{m.paused}</b><small>waiting for a meeting</small></div><div className="stat"><span>This month</span><b>{m.heldThisMonth} of {m.perMonth}</b><small>members-only meetings held</small></div></div> : null}
       <form className="stack" style={{ marginTop: 14 }} onSubmit={async (x) => { x.preventDefault(); if (await run('mem', () => earnApi({ action: 'membership', on: f.on, price: f.price, perMonth: f.perMonth, perks: { free: f.free, discount: f.discount }, line: f.line }), 'Membership saved.')) reload() }}>
         <div className="grid3"><Field label="Price per month (₦)"><input className="in" type="number" min={500} inputMode="numeric" value={f.price} onChange={(x) => setF({ ...f, price: x.target.value })} /></Field>

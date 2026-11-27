@@ -20,12 +20,12 @@ const yes = (v) => (v === 1 ? <span className="yes" aria-label="Included">✓</s
 export default async function Pricing() {
   const base = siteBase('/pricing')
   const pr = await pricing().catch(() => ({ on: false, prices: {} })), p = pr.prices || {}
-  const me = await currentMeetUser().catch(() => null)   // signed in: the plan buttons go straight to Settings
+  const me = await currentMeetUser().catch(() => null)   // signed in: the plan buttons go straight to Billing
   return (<Site base={base} active="/pricing">
     <PageHero pill="Pricing" title="Free for real." accent="Pro when you grow." text={`Meet as long as you like with up to ${FREE_PEOPLE} people, free. Go Pro for recordings, your full history and more ways to earn.`} />
     <Section tight>
       {!pr.on ? <div className="soon rv"><b style={{ color: 'var(--fg)' }}>Right now, everything is free.</b> Every feature on this page works without paying. If that changes, you will see the prices here and in the app first.</div> : null}
-      <PlanCards p={p} free={FREE_PEOPLE} freeHref={startHref(base)} oneHref={me ? at(base, '/') + '#settings' : signinTo(base, '/#settings')} proHref={me ? at(base, '/') + '#settings' : signinTo(base, '/#settings')} />
+      <PlanCards p={p} free={FREE_PEOPLE} freeHref={startHref(base)} oneHref={me ? at(base, '/') + '#billing' : signinTo(base, '/#billing')} proHref={me ? at(base, '/') + '#billing' : signinTo(base, '/#billing')} />
       <div className="ways" style={{ maxWidth: 920, margin: '14px auto 0', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
         <div className="way rv"><h3>Big meetings</h3><p>{p.extra ? naira(p.extra) : '–'} per extra person for every 30 minutes, only past {FREE_PEOPLE} people, up to {MAX_WITH_EXTRA}. You choose to let more in.</p></div>
       </div>

@@ -10,11 +10,11 @@ import MeetingsPage from './MeetingsPage'
 import EarnPage from './EarnPage'
 import ProfilePage from './ProfilePage'
 import LeadersPage from './LeadersPage'
-import HelpPage, { SettingsPage } from './HelpPage'
+import HelpPage, { SettingsPage, BillingPage } from './HelpPage'
 import Celebrate from './Celebrate'
 
 const PAGES = [['home', 'Home', 'home'], ['meetings', 'Meetings', 'cal'], ['room', 'My room', 'door'], ['notes', 'Recordings and notes', 'spark'],
-  ['-Grow'], ['profile', 'My profile', 'user'], ['leaders', 'Leaderboard', 'trophy'], ['earn', 'Earn', 'wallet'], ['-More'], ['help', 'Help', 'help'], ['settings', 'Settings', 'gear']]
+  ['-Grow'], ['profile', 'My profile', 'user'], ['leaders', 'Leaderboard', 'trophy'], ['earn', 'Earn', 'wallet'], ['-More'], ['billing', 'Billing', 'coin'], ['help', 'Help', 'help'], ['settings', 'Settings', 'gear']]
 const ALIAS = { dashboard: 'home', '': 'home' }
 
 export default function MeetApp({ user, meetings: initial, pricing, morePast = 0, notice = '' }) {
@@ -99,7 +99,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
         {bell ? <Notifications h={h} onClose={() => setBell(false)} nav={nav} /> : null}
         <div className="page on" key={page}>
           {page === 'home' ? <HomePage ctx={ctx} /> : page === 'meetings' || page === 'notes' ? <MeetingsPage ctx={ctx} notes={page === 'notes'} /> : page === 'earn' ? <EarnPage ctx={ctx} />
-            : page === 'profile' ? <ProfilePage ctx={ctx} /> : page === 'leaders' ? <LeadersPage ctx={ctx} /> : page === 'help' ? <HelpPage ctx={ctx} /> : page === 'settings' ? <SettingsPage ctx={ctx} /> : null}
+            : page === 'profile' ? <ProfilePage ctx={ctx} /> : page === 'leaders' ? <LeadersPage ctx={ctx} /> : page === 'help' ? <HelpPage ctx={ctx} /> : page === 'settings' ? <SettingsPage ctx={ctx} /> : page === 'billing' ? <BillingPage ctx={ctx} /> : null}
         </div>
       </main>
     </div>

@@ -12,8 +12,8 @@ export function ProLocked({ h, nav, title = 'You’re on Free', text = 'Everythi
   return (<section className="card prolock"><div className="ch"><h3><span className="probadge">PRO</span>{title}</h3></div>
     <p className="dim" style={{ marginTop: 0 }}>{text}</p>
     <ul className="plist">{items.map((x) => <li key={x}><I n="lock" /><s>{x}</s></li>)}</ul>
-    <div className="row-btns"><button className="btn go" onClick={() => nav('settings')}>Go Pro · {naira(p.month)}/month</button>
-      {oneMeeting ? <button className="btn" onClick={() => nav('settings')}>Pro for one meeting · {naira(p.meeting)}</button> : null}</div></section>)
+    <div className="row-btns"><button className="btn go" onClick={() => nav('billing')}>Go Pro · {naira(p.month)}/month</button>
+      {oneMeeting ? <button className="btn" onClick={() => nav('billing')}>Pro for one meeting · {naira(p.meeting)}</button> : null}</div></section>)
 }
 // a single locked line inside a form or list
 export const LockLine = ({ children }) => <p className="lockline"><I n="lock" /><span><s>{children}</s> <b className="probadge">PRO</b></span></p>
