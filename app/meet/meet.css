@@ -429,3 +429,15 @@
 .mt-btn.mt-mutebtn:disabled{opacity:.45;cursor:default}
 /* Install 59: profile photos on tiles (letters when there's none) */
 img.mt-av.mt-pic{object-fit:cover;background:var(--tile2);padding:0}
+/* Install 59: colour inside the call, around Meet green; the Olexweb Meet mark stays in view */
+.mt-av{color:#0a0b0a}
+.mt-av-sm{color:#0a0b0a}
+.mt-brand3{display:inline-flex;align-items:center;gap:8px;flex:none;align-self:center;padding-right:12px;margin-right:2px;border-right:1px solid var(--line);font-size:14px;font-weight:500;white-space:nowrap}
+.mt-brand3 img{width:28px;height:28px;border-radius:8px}
+.mt-title .mt-brand3 b{color:var(--green);font-weight:700;font-family:inherit;font-stretch:normal;font-size:inherit;overflow:visible}
+.mt-title{align-items:center}
+.mt-tile.mt-speaking{border-color:var(--green);box-shadow:inset 0 0 0 2px var(--green),0 0 0 3px rgba(143,227,106,.18)}
+.mt-hand{background:#ffc85c;color:#3a2600}
+.mt-leave{background:#e5484d;color:#fff}.mt-leave svg{color:#fff}.mt-leave:hover{background:#d13d42}
+.mt-c.mt-leave span{color:#fff}
+@media (max-width:760px){.mt-brand3{padding-right:0;margin-right:0;border-right:0}.mt-brand3>span{display:none}.mt-brand3 img{width:24px;height:24px;border-radius:7px}}

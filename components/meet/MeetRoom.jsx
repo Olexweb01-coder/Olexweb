@@ -50,7 +50,7 @@ const EMOJI = ['😀', '😂', '🤣', '😊', '😍', '🥰', '😎', '🤩', '
   '💪', '🤝', '✌️', '👌', '❤️', '🔥', '✨', '🎉', '💯', '✅', '❌', '⭐', '💡', '📌', '⏰', '📎', '☕', '🍕', '🎂', '🌍', '🚀', '📈', '💰', '🇳🇬']
 const ONLY_EMOJI = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\u200d|\ufe0f|\s)+$/u
 const initials = (n) => { const w = String(n || '?').trim().split(/\s+/).filter(Boolean); return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() }
-const TONES = ['#2b3a2a', '#33302a', '#26333a', '#3a2a33', '#2f2a3a', '#2a3a36']
+const TONES = ['#8fe36a', '#6cc4ff', '#ff9b7a', '#b9a3ff', '#ffc85c', '#ff9fd0', '#5fe0c4']   // Install 59: brighter, around Meet green (dark letters on them)
 const tone = (id) => TONES[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length]
 const isHostId = (id) => String(id).startsWith('h_')
 // Install 59: a profile photo, only from the sign-in services or Meet's own photos (anyone can set their own attributes,
@@ -633,7 +633,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
 
   return (<div className={'mt mt-in-room' + (panel ? ' mt-panel-on' : '')} data-noise={fxLive.noise ? 'on' : 'off'} data-blur={fxLive.blur ? 'on' : 'off'} onPointerDown={(e) => { if (pop && !e.target.closest('.mt-popwrap')) setPop(null) }}>
     <header className="mt-top">
-      <div className="mt-title"><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className={'mt-recbadge' + (recPaused ? ' mt-paused' : '')} role="status"><i aria-hidden="true" />{recPaused ? 'Recording paused' : 'Recording'}</span> : null}{notesOn ? <span className="mt-recbadge mt-notesbadge" role="status"><i aria-hidden="true" />AI notes</span> : null}{joinInfo.current && joinInfo.current.e2eeKey ? <span className="mt-recbadge mt-notesbadge" title="Only people in this meeting can see and hear it" role="status">🔒 Encrypted</span> : null}</div>
+      <div className="mt-title"><span className="mt-brand3" aria-label="Olexweb Meet"><img src="/meet/logo-96.png" alt="" width="28" height="28" /><span>Olexweb <b>Meet</b></span></span><b>{title}</b><Elapsed from={startedAt} />{recording ? <span className={'mt-recbadge' + (recPaused ? ' mt-paused' : '')} role="status"><i aria-hidden="true" />{recPaused ? 'Recording paused' : 'Recording'}</span> : null}{notesOn ? <span className="mt-recbadge mt-notesbadge" role="status"><i aria-hidden="true" />AI notes</span> : null}{joinInfo.current && joinInfo.current.e2eeKey ? <span className="mt-recbadge mt-notesbadge" title="Only people in this meeting can see and hear it" role="status">🔒 Encrypted</span> : null}</div>
       <div className="mt-top-end">
         <span className="mt-count" title="People in the meeting">{I.people}{all.length}</span>
         <button className="mt-btn mt-sm" onClick={copyLink}>{I.link}<span>Copy link</span></button>

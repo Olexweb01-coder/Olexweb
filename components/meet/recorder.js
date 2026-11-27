@@ -332,7 +332,7 @@ export class MeetRecorder {
       c.save(); this.round(x, y, w, h, 18); c.fillStyle = '#151815'; c.fill(); c.restore()
       const r = Math.min(w, h) * 0.2
       c.beginPath(); c.arc(x + w / 2, y + h / 2, r, 0, Math.PI * 2); c.fillStyle = el.dataset.tone || '#2b3a2a'; c.fill()
-      c.font = `750 ${Math.round(r * 0.8)}px ${this.font}`; c.fillStyle = '#f2efe9'; c.textAlign = 'center'; c.textBaseline = 'middle'
+      c.font = `750 ${Math.round(r * 0.8)}px ${this.font}`; c.fillStyle = '#0a0b0a'; c.textAlign = 'center'; c.textBaseline = 'middle'
       c.fillText(el.dataset.initials || '?', x + w / 2, y + h / 2 + 1); c.textAlign = 'left'
     }
     if (el.classList.contains('mt-speaking')) { c.save(); this.round(x + 1.5, y + 1.5, w - 3, h - 3, 17); c.lineWidth = 3; c.strokeStyle = 'rgba(143,227,106,.9)'; c.stroke(); c.restore() }
