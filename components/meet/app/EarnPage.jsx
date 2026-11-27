@@ -191,14 +191,14 @@ function CertRow({ m, pro, run, busy, onList }) {
 function Invite({ e, h, setToast }) {
   const c = e.credits, link = h ? h.community.invite : ''
   return (<>
-    <section className="earnhero"><div><span className="pill dark"><i />Invite and earn</span><h2 style={{ marginTop: 12 }}>30% of your friends’ Pro payments</h2>
-      <p style={{ opacity: .8 }}>Everyone who joins through your link and pays for Pro earns you 30% of every Pro payment they make in their first 12 months. Each payment’s 30% can be paid out 14 days later, on the next Monday, once ₦1,000 or more is ready.</p>
+    <section className="earnhero"><div><span className="pill dark"><i />Invite and earn</span><h2 style={{ marginTop: 12 }}>15% of your friends’ Pro payments</h2>
+      <p style={{ opacity: .8 }}>Everyone who joins through your link and pays for Pro earns you 15% of every Pro payment they make in their first 6 months. Each payment’s 15% can be paid out 14 days later, on the next Monday, once ₦1,000 or more is ready.</p>
       <div className="reflink"><code>{link}</code><button className="btn sm go" onClick={async () => { await copyText(link); setToast('Invite link copied.') }}>Copy</button></div></div>
       <div className="bankbox"><small>Waiting</small><b>{kobo(c.waitingKobo)}</b><small>Paid so far {kobo(c.paidKobo)}</small>{!e.payout || !e.payout.transfers ? <small>Add (or re-add) your bank in Overview to get paid.</small> : null}</div></section>
     <div className="rules">
-      <div className="rule"><b>5 invites in 15 days</b><p>Five people you invite host their first meeting within 15 days: a week of Pro, free, and a week in the spotlight.</p></div>
-      <div className="rule"><b>Ambassador of the month</b><p>The person whose invites brought the most new hosts last month (at least 3) wins a cash prize of {kobo((c.prize || 0) * 100)}, when their invitees’ payments that month cover it. Otherwise: a week of Pro.</p></div>
-      <div className="rule"><b>Your friend gets a month of Pro</b><p>When they host their first meeting.</p></div>
+      <div className="rule"><b>10 invites in 15 days</b><p>Ten people you invite host their first meeting within 15 days: the Super connector badge, a week in the spotlight and a day of Pro, free.</p></div>
+      <div className="rule"><b>Ambassador of the month</b><p>The person whose invites brought the most new hosts last month (at least 3) wins a cash prize of {kobo((c.prize || 0) * 100)}, when their invitees’ payments that month cover it. Otherwise: the Ambassador badge and a week in the spotlight.</p></div>
+      <div className="rule"><b>Your friend gets a free Pro meeting</b><p>When they’ve hosted 3 meetings with people in them. Everyone gets this once.</p></div>
       <div className="rule"><b>Fair play</b><p>Inviting yourself, fake accounts or paying people to sign up cancels the rewards involved.</p></div>
     </div>
     <section className="card"><div className="ch"><h3>Your rewards</h3></div>{c.items.length ? c.items.map((x, i) => <div key={i} className="mrow"><span className="ni bg-g"><I n="coin" /></span><div className="t"><b>{x.note}</b><span>{day(x.at)} · {x.status === 'paid' ? 'paid ' + day(x.paidAt) : x.status === 'sending' ? 'on its way' : x.availableAt && new Date(x.availableAt) > new Date() ? 'ready from ' + day(x.availableAt) : 'waiting for Monday'}</span></div><b className="amtsm">{kobo(x.amountKobo)}</b></div>)

@@ -26,8 +26,8 @@ export default function HomePage({ ctx }) {
   const quests = [
     { done: s.meetings > 0, t: 'Host your first meeting', d: 'Any length. Start one now.', xp: 50, go: () => startNow('video') },
     { done: comm.public && !!comm.handle, t: 'Show your profile', d: 'Join the leaderboard and let people follow you.', xp: 100, go: () => nav('profile') },
-    { done: comm.badges.filter((b) => b.earned).length >= 5, t: 'Earn 5 badges', d: `${comm.badges.filter((b) => b.earned).length} of 5. Every 5 badges is a month of Pro.`, xp: 500, go: () => nav('profile'), pct: Math.min(100, comm.badges.filter((b) => b.earned).length * 20) },
-    { done: false, t: 'Invite a friend', d: 'Earn 30% of their Pro payments for a year.', xp: 0, go: async () => { await copyText(comm.invite); setToast('Invite link copied.') } },
+    { done: comm.badges.filter((b) => b.earned && b.id !== 'public').length >= 10, t: 'Earn 10 badges', d: `${Math.min(10, comm.badges.filter((b) => b.earned && b.id !== 'public').length)} of 10. 10 badges earn you a free Pro meeting.`, xp: 0, pct: Math.min(100, comm.badges.filter((b) => b.earned && b.id !== 'public').length * 10), go: () => nav('profile') },
+    { done: false, t: 'Invite a friend', d: 'Earn 15% of their Pro payments for 6 months.', xp: 0, go: async () => { await copyText(comm.invite); setToast('Invite link copied.') } },
   ]
   const winners = comm.spotlight ? Object.values(comm.spotlight.winners || {}) : []
   return (<div className="wrap">
@@ -59,7 +59,7 @@ export default function HomePage({ ctx }) {
       <section className="card streak"><div className="flame"><I n="flame" /></div><b className="n">{comm.streak}</b><span className="dim">week{comm.streak === 1 ? '' : 's'} in a row</span>
         <div className="days" aria-label="The last 8 weeks">{h.heat.slice(-8).map((n, i) => <span key={i} title={`${n} meeting${n === 1 ? '' : 's'}`} className={(n ? 'on' : '') + (i === 7 ? ' today' : '')}>{n || ''}</span>)}</div>
         <small className="dim">The last 8 weeks</small>
-        <small className="dim">{comm.streak ? 'Host at least once a week to keep it. 4 weeks in a row earns a week of Pro.' : 'Host this week to start a streak.'}</small></section>
+        <small className="dim">{comm.streak ? 'Host at least once a week to keep it. 4 weeks in a row earns a day of Pro.' : 'Host this week to start a streak.'}</small></section>
     </div>
 
     <div className="two">

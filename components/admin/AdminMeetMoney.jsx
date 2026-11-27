@@ -54,14 +54,14 @@ export default function AdminMeetMoney() {
       </div>
       {d.short ? <p className="mm-warn">Your balance is {k(d.short)} short of what people have earned. Nobody is half-paid: they wait until the balance covers them. Don’t withdraw until it does.</p>
         : <p className="mg-dim">Everyone who has earned a reward is covered. Only “Yours” is free to withdraw.</p>}
-      <p className="mg-dim" style={{ fontSize: 13 }}>Hosts’ sales never pass through this balance: Paystack pays them straight to their banks. Rewards are only created from money Olexweb really received (30% of a real Pro payment from someone they invited; the ambassador prize from what invitees really paid), so they can’t put you at a loss.</p>
+      <p className="mg-dim" style={{ fontSize: 13 }}>Hosts’ sales never pass through this balance: Paystack pays them straight to their banks. Rewards are only created from money Olexweb really received (15% of a real Pro payment from someone they invited, in their first 6 months; the ambassador prize from what invitees really paid), so they can’t put you at a loss.</p>
       <div className="mm-row"><button className="btn" disabled={busy || !d.owed} onClick={sendNow}>{busy ? 'Sending…' : 'Send what’s waiting now'}</button><span className="mg-dim">Otherwise it goes out on Monday, only what the balance covers. {k(d.min)} minimum per person.</span></div>
       {msg ? <p>{msg}</p> : null}
     </section>
     {d.limit ? <Limit l={d.limit} done={load} /> : null}
     <section className="mg-box">
       <h2>Ambassador of the month</h2>
-      <p className="mg-dim">A fixed cash prize for the top inviter each month. It’s paid only when what Meet kept from their invitees that month is at least twice the prize, so it can never cost you more than half of what they brought in. Otherwise they get a week of Pro.</p>
+      <p className="mg-dim">A fixed cash prize for the top inviter each month. It’s paid only when what Meet kept from their invitees that month is at least twice the prize, so it can never cost you more than half of what they brought in. Otherwise they get the Ambassador badge and a week in the spotlight.</p>
       <Prize now={d.prize} done={load} />
     </section>
     <section className="mg-box">

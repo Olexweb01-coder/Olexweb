@@ -921,10 +921,10 @@ function AfterMeeting({ code, info, boss = false }) {
     try { const r = await post('/api/meet/rate', { code, identity: info.identity, key: info.rateKey, stars, review: text }); setSent(r.rewarded ? 'gift' : true); setCount(r.reviews == null ? null : { n: r.reviews, of: r.reviewsFor || 20 }) } catch (x) { setErr(x.message) } finally { setBusy(false) }
   }
   return (<div className="mt-after">
-    {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.{sent === 'gift' ? ' That’s ' + count.n + ' reviews: here are 3 days of Pro, free. They’re in your account.' : count ? ` You’ve reviewed ${count.n % count.of || count.of} of ${count.of} meetings towards 3 days of Pro.` : ''}</p> : <form onSubmit={send} className="mt-rate">
+    {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.{sent === 'gift' ? ' That’s ' + count.n + ' reviews: you’ve earned the Learner and critic badge and a week in the spotlight.' : count && count.n < count.of ? ` You’ve reviewed ${count.n} of ${count.of} meetings towards the Learner and critic badge.` : ''}</p> : <form onSubmit={send} className="mt-rate">
       <p className="mt-lab">How was this meeting?</p><p className="mt-stars-word" aria-live="polite">{['Tap a star', 'Poor', 'Could be better', 'Good', 'Great', 'Excellent!'][stars]}</p>
       <div className="mt-stars" role="radiogroup" aria-label="Your rating">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={n + (n === 1 ? ' star' : ' stars')} className={n <= stars ? 'on' : ''} onClick={() => setStars(n)}>★</button>)}</div>
-      {stars ? <><small className="mt-hint">Signed in to Olexweb Meet? Every 20 meetings you review in writing earn you 3 days of Pro, free.</small><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
+      {stars ? <><small className="mt-hint">Signed in to Olexweb Meet? Review 20 meetings in writing to earn the Learner and critic badge and a week in the spotlight.</small><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
         <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
       {err ? <p className="mt-err" role="alert">{err}</p> : null}
     </form>) : null}

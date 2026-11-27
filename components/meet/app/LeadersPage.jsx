@@ -13,7 +13,7 @@ export default function LeadersPage({ ctx }) {
   const month = new Date().toLocaleDateString(undefined, { month: 'long' })
   const pod = [rows[1], rows[0], rows[2]]
   return (<div className="wrap">
-    <section className="lbhero"><h1 style={{ fontSize: 'clamp(24px,3.4vw,34px)' }}>{month} leaderboard</h1><p style={{ margin: '6px 0 0', opacity: .8 }}>Top hosts on the 1st get a month of Pro, a badge and the spotlight.</p>
+    <section className="lbhero"><h1 style={{ fontSize: 'clamp(24px,3.4vw,34px)' }}>{month} leaderboard</h1><p style={{ margin: '6px 0 0', opacity: .8 }}>Top hosts on the 1st get 3 days of Pro, a badge and the spotlight.</p>
       <div className="tabs">{BOARDS.map(([id, l]) => <button key={id} className={k === id ? 'on' : ''} aria-pressed={k === id} onClick={() => setK(id)}>{l}</button>)}</div>
       {rows.length ? <div className="podium">{pod.map((x, i) => x ? <div key={x.handle} className={'pd ' + ['second', 'first', 'third'][i]}>{i === 1 ? <I n="trophy" className="i crown" /> : null}<Avatar name={x.name} picture={x.picture} size={i === 1 ? 78 : 58} />
         <b>{x.name}</b><small>{x.value}{unit}</small><div className="stand">{[2, 1, 3][i]}</div></div> : <div key={i} />)}</div> : <div style={{ paddingBottom: 22 }}><p style={{ opacity: .8 }}>No leaders yet this month. Host a meeting to be the first.</p></div>}</section>

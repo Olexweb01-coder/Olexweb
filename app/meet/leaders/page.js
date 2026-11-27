@@ -11,7 +11,7 @@ export default async function Leaders() {
   const base = siteBase('/leaders')
   const [lb, spot] = await Promise.all([leaderboard(undefined, 10).catch(() => null), spotlight().catch(() => null)])
   return (<Site base={base} active="/leaders">
-    <PageHero pill={lb ? month(lb.month) : 'This month'} title="Leaderboard" accent="" text="Top hosts this month. Winners on the 1st get a month of Pro and the spotlight. Only public profiles appear; every number is counted by Olexweb Meet." />
+    <PageHero pill={lb ? month(lb.month) : 'This month'} title="Leaderboard" accent="" text="Top hosts this month. Winners on the 1st get 3 days of Pro and the spotlight. Only public profiles appear; every number is counted by Olexweb Meet." />
     <Section tight>
       {spot ? <div style={{ marginBottom: 18 }}><h2 style={{ fontSize: 26, marginBottom: 14 }}>{month(spot.month)} winners</h2><div className="ways">{Object.values(spot.winners).map((w) => <a key={w.label} className="way" href={'/meet/h/' + w.handle}><span className="ni bg-y"><I n="trophy" className="ico" /></span><h3>{w.name}</h3><p>{w.label}</p></a>)}</div></div> : null}
       <div className="lbgrid">{BOARDS.map(([k, label, unit]) => <section key={k} className="lbcard"><h3>{label}</h3>

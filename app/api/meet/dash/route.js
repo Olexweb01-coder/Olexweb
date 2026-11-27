@@ -23,6 +23,7 @@ export async function POST(request) {
     if (b.action === 'ticket') return D.openTicket(mu, b)
     if (b.action === 'claim') return claimTransfer(mu, b.ref)
     if (b.action === 'pay') return startPayment(mu, b, meetBase() || mainOrigin())
+    if (b.action === 'use-free') return (await import('@/lib/meet/community')).useFreeMeeting(mu, b.code)   // Install 64
     if (b.action === 'pro-check') { const m = await one('select code, host_user, pro from meetings where code = $1', [String(b.code || '')]); return { pro: !!m && (await meetingPro(m)) } }
     throw new Refused('Unknown action.')
   })

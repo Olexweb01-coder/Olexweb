@@ -5,7 +5,7 @@ import { Calc } from '@/components/meet/site/Bits'
 import { I } from '@/components/meet/app/icons'
 import { siteBase, pageMeta } from '@/lib/meet/site'
 import { one } from '@/lib/meet/db'
-import { AMBASSADOR, INVITE_PCT, INVITE_MONTHS, HOLD_DAYS } from '@/lib/meet/money'
+import { AMBASSADOR, INVITE_PCT, INVITE_MONTHS, INVITES_FOR_SPOT, HOLD_DAYS } from '@/lib/meet/money'
 export const dynamic = 'force-dynamic'
 export const generateMetadata = () => pageMeta('/earn', 'Earn', 'Get paid for what you teach on Olexweb Meet: tickets, course bundles, memberships, one-on-one sessions, certificates and invites. Every fee shown before you sell; paid to your bank every week.')
 
@@ -34,7 +34,7 @@ export default async function Earn() {
       <Head eyebrow="Ways to earn" title="Pick one. Or all of them." />
       <div className="ways">
         {WAYS.map(([icon, bg, title, text], i) => <div key={title} className={'way rv' + (i % 3 ? ' d' + (i % 3) : '')}><span className={'ni ' + bg}><I n={icon} className="ico" /></span><h3>{title}</h3><p>{text}</p></div>)}
-        <div className="way rv d2"><span className="ni bg-g"><I n="coin" className="ico" /></span><h3>Invite and earn</h3><p>Get {INVITE_PCT}% of every Pro payment from people you invite, for their first {INVITE_MONTHS} months. Five invites in 15 days earns a week of Pro.</p><span className="k">Paid every Monday</span></div>
+        <div className="way rv d2"><span className="ni bg-g"><I n="coin" className="ico" /></span><h3>Invite and earn</h3><p>Get {INVITE_PCT}% of every Pro payment from people you invite, for their first {INVITE_MONTHS} months. {INVITES_FOR_SPOT} invites who host within 15 days earn the Super connector badge, a week in the spotlight and a day of Pro.</p><span className="k">Paid every Monday</span></div>
       </div>
     </Section>
 
@@ -46,7 +46,7 @@ export default async function Earn() {
     <Section>
       <div className="lv">
         <div className="rv"><span className="eyebrow" style={{ color: 'var(--gold)' }}>Ambassador of the month</span><h2 style={{ fontSize: 'clamp(32px,4.4vw,54px)', margin: '12px 0 14px' }}>Bring people. Win up to ₦{prize.toLocaleString('en-NG')}.</h2>
-          <p style={{ color: 'var(--dim)', fontSize: 18, margin: 0 }}>Every month, whoever invites the most new hosts (at least {AMBASSADOR.minInvites}) is Ambassador of the month. When the people they invited paid for Pro that month, the prize is cash, on top of their {INVITE_PCT}% share; otherwise it is a free week of Pro. Invite earnings are ready {HOLD_DAYS} days after each payment and paid every Monday.</p>
+          <p style={{ color: 'var(--dim)', fontSize: 18, margin: 0 }}>Every month, whoever invites the most new hosts (at least {AMBASSADOR.minInvites}) is Ambassador of the month. When the people they invited paid for Pro that month, the prize is cash, on top of their {INVITE_PCT}% share; otherwise it is the Ambassador badge and a week in the spotlight. Invite earnings are ready {HOLD_DAYS} days after each payment and paid every Monday.</p>
           <div className="cta"><a className="btn go" href={startHref(base)}>Get your invite link</a><a className="btn" href="/meet/legal/earnings">Read the earnings policy</a></div></div>
         <div className="acards rv d1" aria-hidden="true"><div className="ac a1"><span className="m"><I n="gift" className="ico" /></span><div><b>{INVITE_PCT}%</b><br /><small>of their Pro payments</small></div></div><div className="ac a2"><span className="m"><I n="cal" className="ico" /></span><div><b>{INVITE_MONTHS} months</b><br /><small>for every person you invite</small></div></div><div className="ac a3"><span className="m"><I n="trophy" className="ico" /></span><div><b>₦{prize.toLocaleString('en-NG')}</b><br /><small>Ambassador of the month</small></div></div></div>
       </div>

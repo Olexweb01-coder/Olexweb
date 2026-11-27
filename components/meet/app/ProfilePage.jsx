@@ -47,7 +47,7 @@ export default function ProfilePage({ ctx }) {
     <div className="stats"><div className="stat"><span>Meetings</span><b>{s.meetings}</b><small>{s.people} joins</small></div><div className="stat"><span>Hours</span><b>{Math.round((s.minutes / 60) * 10) / 10}</b><small>hosted</small></div>
       <div className="stat"><span>Rating</span><b>{s.rating ? '★ ' + s.rating : '–'}</b><small>{s.ratings} ratings</small></div><div className="stat"><span>Streak</span><b>{c.streak}</b><small>weeks in a row</small></div></div>
     <section className="card"><div className="ch"><h3>Activity</h3><small className="dim">Meetings per week, last 26 weeks</small></div><div className="heat">{h.heat.map((n, i) => <i key={i} title={`${n} meeting${n === 1 ? '' : 's'}`} className={n >= 3 ? 'l3' : n === 2 ? 'l2' : n ? 'l1' : ''} />)}</div></section>
-    <section className="card"><div className="ch"><h3>Achievements</h3><small className="dim">{earned.length} of {c.badges.length} · every 5 is a month of Pro</small></div>
+    <section className="card"><div className="ch"><h3>Achievements</h3><small className="dim">{earned.length} of {c.badges.length} · 10 earn a free Pro meeting</small></div>
       <div className="cards">{c.badges.map((b, i) => <div key={b.id} className={'acard ' + (b.earned ? 'g' + (i % 4) : 'off')}>
         {b.earned ? <button className="shr" aria-label={`Share ${b.name}`} onClick={async () => { const r = await shareText(`I earned “${b.name}” on Olexweb Meet`, me.public && me.handle ? `${location.origin}/meet/h/${me.handle}/a/${b.id}` : location.origin); if (r === 'copied') setToast('Copied.') }}><I n="out" /></button> : null}
         <span className="big"><I n={b.earned ? 'trophy' : 'lock'} /></span><div><h4>{b.name}</h4><small>{b.desc}</small></div>

@@ -36,7 +36,7 @@ export default function HelpPage({ ctx }) {
 
 export function SettingsPage({ ctx }) {
   const { h, setToast, reload, theme, toggleTheme, signOut, user, list = [], nav } = ctx
-  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false), [del, setDel] = useState(false)   // one: choosing the meeting for Pro for one meeting (Install 61)
+  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false), [del, setDel] = useState(false), free = h && h.dash.freeMeetings || 0   // one: choosing the meeting for Pro for one meeting (Install 61)
   if (!h) return <div className="wrap" />
   const d = h.dash, p = d.pricing, due = d.invoices.filter((i) => !i.paid)
   async function pay(body, via) {
@@ -44,6 +44,7 @@ export function SettingsPage({ ctx }) {
     setChoose(null); setBusy(body.kind + (body.invoiceId || ''))
     try { const r = await api('/api/meet/dash', { action: 'pay', ...body, via: via || d.payOptions[0].id }); if (r.url) location.assign(r.url); else { await reload(); setBusy('') } } catch (e) { setToast(e.message); setBusy('') }
   }
+  async function useFree(code) { setOne(false); setBusy('free'); try { await api('/api/meet/dash', { action: 'use-free', code }); await reload(); setToast('Pro is on for that meeting.') } catch (e) { setToast(e.message) } finally { setBusy('') } }
   async function claim(ref) { setBusy('claim' + ref); try { await api('/api/meet/dash', { action: 'claim', ref }); await reload() } catch (e) { setToast(e.message) } finally { setBusy('') } }
   return (<div className="wrap">
     <div className="pghead"><div><h1>Settings</h1><p className="dim">{user.email || ''}</p></div></div>
@@ -51,6 +52,7 @@ export function SettingsPage({ ctx }) {
       <div className="plan"><b className="big">{d.plan.pro ? 'Pro' : 'Free'}</b><p className="dim">{d.plan.owner ? 'Everything, always.' : d.plan.pro ? `Pro until ${day(d.plan.proUntil)}.` : 'Unlimited hours, audio and video up to 100 people, MP3 recording, AI notes, screen sharing.'}</p></div>
       {p.on && !d.plan.pro && d.payReady ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => pay({ kind: 'month' })}>{busy === 'month' ? 'Opening…' : `Pro ${naira(p.prices.month)}/month`}</button><button className="btn" disabled={!!busy} onClick={() => pay({ kind: 'year' })}>{busy === 'year' ? 'Opening…' : `${naira(p.prices.year)}/year`}</button>
         <button className="btn" disabled={!!busy} onClick={() => setOne(true)}>{busy === 'meeting' ? 'Opening…' : `Pro for one meeting ${naira(p.prices.meeting)}`}</button></div> : null}
+      {p.on && !d.plan.pro && free ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => setOne('free')}>{busy === 'free' ? 'Turning on…' : `Use my free Pro meeting${free > 1 ? ` (${free} left)` : ''}`}</button></div> : null}
       {d.plan.pro && !d.plan.owner ? <p className="dim sm">Pro doesn’t renew by itself and your card is never charged again without you. It simply ends on {day(d.plan.proUntil)}, so there’s nothing to cancel. Pay again any time to add more time.</p> : null}
       {p.on && !d.plan.pro ? <ul className="plist">{PRO_LIST.map((x) => <li key={x}><I n="lock" /><s>{x}</s></li>)}</ul> : null}
       {p.on && !d.plan.pro ? <p className="dim sm">Your Free plan keeps everything you use now. Only need Pro once? Pro for one meeting is {naira(p.prices.meeting)}, paid once, for a meeting you choose.</p> : null}
@@ -65,15 +67,15 @@ export function SettingsPage({ ctx }) {
     <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div>
       {user.role !== 'owner' ? <button className="lnk del-link" onClick={() => setDel(true)}>Delete my account</button> : null}</section>
       {del ? <DeleteAccount onClose={() => setDel(false)} /> : null}
-      {one ? <Sheet title="Pro for one meeting" onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} onPick={(code) => { setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
+      {one ? <Sheet title={one === 'free' ? 'Your free Pro meeting' : 'Pro for one meeting'} onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} free={one === 'free'} onPick={(code) => { if (one === 'free') return useFree(code); setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
   </div>)
 }
 
 // Install 61: which meeting gets Pro. Only their own meetings that haven't ended and don't have Pro yet.
-function OneMeeting({ list, price, onPick, onSchedule }) {
+function OneMeeting({ list, price, free, onPick, onSchedule }) {
   const open = list.filter((m) => !m.endedAt && !m.pro)
   return (<div className="one-pick">
-    <p className="dim" style={{ marginTop: 0 }}>{naira(price)}, paid once. That meeting gets video recording, certificates, email reminders and AI notes emailed to guests. No subscription.</p>
+    <p className="dim" style={{ marginTop: 0 }}>{free ? 'Free, you earned it.' : naira(price) + ', paid once.'} That meeting gets video recording, certificates, email reminders and AI notes emailed to guests. No subscription.</p>
     {open.length ? <div className="one-list">{open.map((m) => <button key={m.code} className="opt" onClick={() => onPick(m.code)}><span><b>{m.title}</b><br /><small className="dim">{m.startedAt ? 'Happening now' : m.startsAt ? when(m.startsAt) : 'Not started yet'}</small></span><span className="btn sm go">Choose</span></button>)}</div>
       : <><p>You have no upcoming meetings yet. Schedule one, then come back here to give it Pro.</p><button className="btn go" onClick={onSchedule}>Schedule a meeting</button></>}
   </div>)

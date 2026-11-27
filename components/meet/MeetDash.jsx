@@ -129,9 +129,9 @@ function Community() {
   return (<div className="mc">
     <div className="mc-row"><span className="md-lab">Your {month}</span>{c.streak ? <b>{c.streak} week{c.streak === 1 ? '' : 's'} in a row 🔥</b> : <small className="md-dim">Host this week to start a streak</small>}</div>
     <div className="mc-row"><span>{c.recap.meetings} meetings · {c.recap.people} people{c.recap.rating ? ` · ${c.recap.rating}★` : ''}</span><button className="mh-btn mh-sm" onClick={() => share(recapText)}>Share my month</button></div>
-    <div><span className="md-lab">Badges ({c.badges.filter((b) => b.earned).length} of {c.badges.length}) · every 5 badges = a month of Pro</span>
+    <div><span className="md-lab">Badges ({c.badges.filter((b) => b.earned).length} of {c.badges.length}) · 10 badges = a free Pro meeting</span>
       <div className="pf-badges" style={{ marginTop: 8 }}>{c.badges.map((b) => <span key={b.id} className={'pf-badge' + (b.earned ? '' : ' off')} title={b.desc}>{b.earned ? '🏅' : '🔒'} {b.name}</span>)}</div></div>
-    <div><span className="md-lab">Invite friends: when they host their first meeting, you both get a month of Pro</span>
+    <div><span className="md-lab">Invite friends: earn 15% of their Pro payments for 6 months</span>
       <div className="mc-invite" style={{ marginTop: 8 }}><input className="md-in" readOnly value={c.invite} onFocus={(e) => e.target.select()} /><button className="mh-btn mh-sm mh-go" onClick={() => share(`Free audio and video meetings with no time limit. Join me on Olexweb Meet: ${c.invite}`)}>Share invite</button></div></div>
     <div className="mc-row"><span><span className="md-lab">This month’s leaders</span><br /><small className="md-dim">{top('hours') ? `Most hours: ${top('hours').name}` : 'No leaders yet this month'}{top('rated') ? ` · Best rated: ${top('rated').name}` : ''}</small></span><a className="mh-btn mh-sm" href="/meet/leaders">Leaderboard</a></div>
     {!edit ? <div className="mc-row"><span><span className="md-lab">Public profile</span><br /><small className="md-dim">{c.public && c.handle ? <>Shown at <a href={'/meet/h/' + c.handle}>/meet/h/{c.handle}</a> · {c.followers} follower{c.followers === 1 ? '' : 's'}</> : 'Off: you’re not on the leaderboard and nobody can follow you.'}</small></span>
