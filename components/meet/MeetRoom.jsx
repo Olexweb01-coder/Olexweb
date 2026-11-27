@@ -74,7 +74,7 @@ function deviceError(e, what) {
 export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null, kind = 'meeting', regRequired = false }) {
   const [host, setHost] = useState(hostAtLoad)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
-  const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(true), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
+  const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(!!hostAtLoad), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [toasts, setToasts] = useState([])
   const [, setTick] = useState(0), bump = useCallback(() => setTick((t) => t + 1), [])
   const [panel, setPanel] = useState(null), [messages, setMessages] = useState([]), [unread, setUnread] = useState(0)
@@ -303,6 +303,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
     if (saverRef.current) applySaver(true)
     if (info.speaker) {
       if (micOn) await room.localParticipant.setMicrophoneEnabled(true).catch((e) => { setMicOn(false); toast(deviceError(e, 'microphone')) })
+      else if (!info.moved) toast('You’re muted. Tap Unmute to talk.')            // Install 59: nobody is heard by surprise
       if (camOn && !saverRef.current) await room.localParticipant.setCameraEnabled(true).catch((e) => { setCamOn(false); toast(deviceError(e, 'camera')) })
     }
     room.startAudio().catch(() => {}); bump()
