@@ -228,3 +228,7 @@ create unique index if not exists meet_regs_entry on meet_regs (entry) where ent
 alter table meet_passes add column if not exists entry text;                                -- a ticket's short entry code
 alter table meet_passes add column if not exists live_identity text;
 create unique index if not exists meet_passes_entry on meet_passes (entry) where entry is not null;
+-- Install 66: meetings held alone (nobody else joined): counted, 3 pause the account until Olaitan lets them back in
+alter table meet_users add column if not exists solo_count int not null default 0;
+alter table meet_users add column if not exists restricted_at timestamptz;
+alter table meet_users add column if not exists appeal text;

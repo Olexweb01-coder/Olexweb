@@ -1,6 +1,7 @@
 'use client'
 // Admin → Meetings → Meet app: the people who signed in to meet.olexweb.com, and reports from meetings.
 // Ban a host: signed out everywhere, their open meetings end, and they can't sign in again. Unban; dismiss a report.
+// Install 66: accounts paused for 3 meetings held alone, with their appeal: let them back in, or keep them paused.
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from './ui'
 
@@ -31,7 +32,7 @@ export default function AdminMeetApp() {
   const userById = Object.fromEntries(d.users.map((u) => [u.id, u]))
   return (<section className="mg-box ma">
     <h2>Meet app <span className="mg-dim">{d.counts.users} account{d.counts.users === 1 ? '' : 's'}{d.counts.banned ? `, ${d.counts.banned} banned` : ''}</span></h2>
-    <div className="seg" role="group" aria-label="Show"><button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>Reports{d.counts.open ? ` (${d.counts.open} new)` : ''}</button><button type="button" aria-pressed={tab === 'users'} onClick={() => setTab('users')}>Accounts</button></div>
+    <div className="seg" role="group" aria-label="Show"><button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>Reports{d.counts.open ? ` (${d.counts.open} new)` : ''}</button><button type="button" aria-pressed={tab === 'users'} onClick={() => setTab('users')}>Accounts{d.counts.appeals ? ` (${d.counts.appeals} appeal${d.counts.appeals === 1 ? '' : 's'})` : ''}</button></div>
     {tab === 'reports' ? (d.reports.length ? <ul className="mg-list">{d.reports.map((r) => <li key={r.id} className={r.status === 'open' ? 'ma-open' : ''}>
       <div className="mg-main"><b>{REASON[r.reason]}{r.status !== 'open' ? <span className="mg-dim"> ({r.status === 'dismissed' ? 'dismissed' : 'acted on'})</span> : null}</b>
         <span className="mg-dim">“{r.title || r.code}” hosted by {r.host_user ? (r.host_name || r.host_email || 'a Meet account') : 'you'}, {day(r.created_at)}{r.reporter_name ? `, reported by ${r.reporter_name}` : ''}</span>
@@ -43,10 +44,11 @@ export default function AdminMeetApp() {
     : <>
       <form className="ma-search" onSubmit={(e) => { e.preventDefault(); load(search) }}><input className="input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or email" aria-label="Search accounts" /><button className="btn btn-line">Search</button></form>
       {d.users.length ? <ul className="mg-list">{d.users.map((u) => <li key={u.id}>
-        <div className="mg-main"><b>{u.name || '(no name)'}{u.role === 'owner' ? <span className="ma-tag">You</span> : null}{u.banned_at ? <span className="ma-tag ma-bad">Banned</span> : null}</b>
+        <div className="mg-main"><b>{u.name || '(no name)'}{u.role === 'owner' ? <span className="ma-tag">You</span> : null}{u.banned_at ? <span className="ma-tag ma-bad">Banned</span> : null}{u.restricted_at ? <span className="ma-tag ma-bad">Paused</span> : null}{u.appeal ? <span className="ma-tag">Appeal</span> : null}</b>
           <span className="mg-dim">{u.email || 'no email'}{u.email && !u.email_verified ? ' (not verified)' : ''}. Signs in with {u.via || '?'}. {u.meetings} meeting{u.meetings === 1 ? '' : 's'}. Joined {day(u.created_at)}.</span>
-          {u.banned_at ? <span className="ma-note">Banned {day(u.banned_at)}{u.banned_reason ? `: ${u.banned_reason}` : ''}</span> : null}</div>
-        <div className="mg-acts">{u.role === 'owner' ? null : u.banned_at ? <button className="btn btn-line" disabled={!!busy} onClick={() => act({ action: 'unban', id: u.id }, 'Unbanned. They can sign in again.')}>Unban</button> : <button className="btn btn-bad" disabled={!!busy} onClick={() => ban(u)}>Ban</button>}</div>
+          {u.banned_at ? <span className="ma-note">Banned {day(u.banned_at)}{u.banned_reason ? `: ${u.banned_reason}` : ''}</span> : null}
+          {u.restricted_at ? <span className="ma-note">Paused {day(u.restricted_at)} for {u.solo_count || 3} meetings nobody else joined.{u.appeal ? <> Their appeal: “{u.appeal}”</> : ' No appeal yet.'}</span> : u.solo_count ? <span className="mg-dim">{u.solo_count} meeting{u.solo_count === 1 ? '' : 's'} held alone (3 pause the account).</span> : null}</div>
+        <div className="mg-acts">{u.restricted_at ? <><button className="btn" disabled={!!busy} onClick={() => act({ action: 'let-back', id: u.id }, 'Let back in. They can make meetings again, and their count is back to 0.')}>Let them back in</button>{u.appeal ? <button className="btn btn-line" disabled={!!busy} onClick={() => act({ action: 'keep-paused', id: u.id }, 'Kept paused. They were told and can ask again.')}>Keep paused</button> : null}</> : null}{u.role === 'owner' ? null : u.banned_at ? <button className="btn btn-line" disabled={!!busy} onClick={() => act({ action: 'unban', id: u.id }, 'Unbanned. They can sign in again.')}>Unban</button> : <button className="btn btn-bad" disabled={!!busy} onClick={() => ban(u)}>Ban</button>}</div>
       </li>)}</ul> : <p className="mg-dim">{search ? 'No accounts match.' : 'Nobody has signed in to the Meet app yet.'}</p>}
     </>}
     <style dangerouslySetInnerHTML={{ __html: `.ma h2 .mg-dim{font-weight:500;font-size:14px;margin-left:6px}.ma .seg{margin-bottom:10px}

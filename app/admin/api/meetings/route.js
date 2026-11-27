@@ -50,6 +50,7 @@ export async function POST(request) {
     if (b.action === 'ban') return G.banUser(b.id, b.reason, M.endMeeting)
     if (b.action === 'unban') return G.unbanUser(b.id)
     if (b.action === 'dismiss') return G.dismissReport(b.id)
+    if (b.action === 'let-back' || b.action === 'keep-paused') return (await import('@/lib/meet/solo')).decideAppeal(b.id, b.action === 'let-back')   // Install 66
     throw new Refused('Unknown action.')
   })
 }

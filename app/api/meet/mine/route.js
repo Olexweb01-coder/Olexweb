@@ -22,6 +22,7 @@ export async function POST(request) {
     if (b.action === 'create') {
       const owner = mu.role === 'owner'
       if (!owner) await mustNotOwe(mu.id)                                    // an unpaid invoice pauses new meetings
+      if (!owner) await (await import('@/lib/meet/solo')).mustNotBeRestricted(mu.id)   // Install 66: paused for meetings held alone
       await canCreate(owner)                                              // paused near the monthly limit (not for Olaitan)
       const wantsPro = b.kind === 'webinar' || !!(b.slug && String(b.slug).trim())   // Install 58l: checked before anything is made
       if (wantsPro && !owner && !(await (await import('@/lib/meet/plans')).proById(mu.id))) throw new Refused(b.kind === 'webinar' ? 'Webinars are for Pro hosts. Go Pro to run one.' : 'Branded links are for Pro hosts. Go Pro to choose your own link.', 402)

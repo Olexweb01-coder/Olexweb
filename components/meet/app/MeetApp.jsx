@@ -98,6 +98,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
           <a className="topav" href="#profile"><Ring pct={lvl ? lvl.pct : 0} name={me.name} picture={me.picture} /><span>{(me.name || '').split(' ')[0]}</span></a>
         </div>
         {bell ? <Notifications h={h} onClose={() => setBell(false)} nav={nav} /> : null}
+        {h && h.pause && h.pause.restricted ? <Paused p={h.pause} reload={load} setToast={setToast} /> : null}
         <div className="page on" key={page}>
           {page === 'home' ? <HomePage ctx={ctx} /> : page === 'meetings' || page === 'notes' ? <MeetingsPage ctx={ctx} notes={page === 'notes'} /> : page === 'earn' ? <EarnPage ctx={ctx} />
             : page === 'profile' ? <ProfilePage ctx={ctx} /> : page === 'leaders' ? <LeadersPage ctx={ctx} /> : page === 'help' ? <HelpPage ctx={ctx} /> : page === 'settings' ? <SettingsPage ctx={ctx} /> : page === 'billing' ? <BillingPage ctx={ctx} /> : null}
@@ -147,4 +148,21 @@ function WhatsNew({ news, onClose }) {
     <div ref={box} className="whatsnew wn-list">{list.map((n, i) => <article key={n.id} className="wn-item"><span className="pill"><i />{i === 0 ? 'New' : 'Also new'}</span><h2>{n.title}</h2>{n.body ? <p>{n.body}</p> : null}</article>)}</div>
     <div className="wn-foot"><button className="btn go" disabled={!read} onClick={onClose}>{read ? 'Got it' : 'Scroll to read it all'}</button></div>
   </Sheet>)
+}
+
+// Install 66: paused for meetings held alone. They can still use everything else; making or starting meetings waits until
+// Olexweb lets them back in. One appeal at a time.
+function Paused({ p, reload, setToast }) {
+  const [t, setT] = useState(''), [busy, setBusy] = useState(false)
+  async function send(e) {
+    e.preventDefault(); setBusy(true)
+    try { await api('/api/meet/dash', { action: 'appeal', text: t }); setT(''); await reload(); setToast('Sent. Olexweb will check it and tell you.') } catch (x) { setToast(x.message) } finally { setBusy(false) }
+  }
+  return (<section className="card paused" role="alert"><div className="ch"><h3>Your account is paused</h3></div>
+    <p className="dim" style={{ marginTop: 0 }}>Nobody else joined {p.limit} of your meetings, so you can’t make or start meetings for now. Everything else still works.</p>
+    {p.appealed ? <p><b>Your request was sent.</b> Olexweb will check it and tell you here and by email.</p>
+      : <form onSubmit={send} className="appeal"><label className="dim" htmlFor="appeal-t">Tell us why, and ask to be let back in</label>
+        <textarea id="appeal-t" className="in" rows={3} maxLength={1000} value={t} onChange={(e) => setT(e.target.value)} placeholder="For example: I was testing my camera before my first class." />
+        <div className="row-btns"><button className="btn go" disabled={busy || t.trim().length < 10}>{busy ? 'Sending…' : 'Ask to be let back in'}</button></div></form>}
+  </section>)
 }

@@ -471,3 +471,4 @@ html.ma-lock{overflow:hidden}
 .ma .tour-card{position:fixed;display:grid;gap:6px;padding:16px 16px 14px;border-radius:18px;background:var(--solid);border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .ma .tour-card h3{margin:0;font-size:18px}.ma .tour-card p{margin:0;color:var(--dim);line-height:1.5}
 .ma .tour-btns{display:flex;gap:8px;align-items:center;margin-top:8px}
+.ma .paused{margin:16px clamp(16px,3vw,32px) 0;border-color:color-mix(in srgb,var(--coral) 45%,transparent)}.ma .paused .appeal{display:grid;gap:8px}.ma .paused textarea{width:100%;resize:vertical}
