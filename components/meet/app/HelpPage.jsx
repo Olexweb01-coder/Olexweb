@@ -1,8 +1,8 @@
 'use client'
 // Help (Olex AI first, then the Olexweb team) and Settings (plan, payments, invoices, look, account). Install 58.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { I } from './icons'
-import { api, naira, day, when, Field, Empty, Sheet } from './ui'
+import { api, naira, day, when, homePath, Field, Empty, Sheet } from './ui'
 import { PRO_LIST } from './ProLock'
 import { InstallButton } from './Install'
 
@@ -36,7 +36,7 @@ export default function HelpPage({ ctx }) {
 
 export function SettingsPage({ ctx }) {
   const { h, setToast, reload, theme, toggleTheme, signOut, user, list = [], nav } = ctx
-  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false)   // one: choosing the meeting for Pro for one meeting (Install 61)
+  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false), [del, setDel] = useState(false)   // one: choosing the meeting for Pro for one meeting (Install 61)
   if (!h) return <div className="wrap" />
   const d = h.dash, p = d.pricing, due = d.invoices.filter((i) => !i.paid)
   async function pay(body, via) {
@@ -62,7 +62,9 @@ export function SettingsPage({ ctx }) {
         {d.payReady ? <button className="btn go sm" disabled={!!busy} onClick={() => pay({ kind: 'invoice', invoiceId: i.id })}>{busy === 'invoice' + i.id ? 'Opening…' : 'Pay now'}</button> : null}</div>)}</section> : null}
     <section className="card"><div className="ch"><h3>Look</h3></div><div className="row-btns"><button className="btn" onClick={toggleTheme}><I n="sun" />{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</button>
       <InstallButton big /></div></section>
-    <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div></section>
+    <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div>
+      {user.role !== 'owner' ? <button className="lnk del-link" onClick={() => setDel(true)}>Delete my account</button> : null}</section>
+      {del ? <DeleteAccount onClose={() => setDel(false)} /> : null}
       {one ? <Sheet title="Pro for one meeting" onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} onPick={(code) => { setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
   </div>)
 }
@@ -75,4 +77,33 @@ function OneMeeting({ list, price, onPick, onSchedule }) {
     {open.length ? <div className="one-list">{open.map((m) => <button key={m.code} className="opt" onClick={() => onPick(m.code)}><span><b>{m.title}</b><br /><small className="dim">{m.startedAt ? 'Happening now' : m.startsAt ? when(m.startsAt) : 'Not started yet'}</small></span><span className="btn sm go">Choose</span></button>)}</div>
       : <><p>You have no upcoming meetings yet. Schedule one, then come back here to give it Pro.</p><button className="btn go" onClick={onSchedule}>Schedule a meeting</button></>}
   </div>)
+}
+
+// Install 63: deleting the account. First what it means (and anything that stops it), then a final, red warning where
+// they type DELETE. Nothing is deleted until the last button.
+const GONE = ['Your profile, photo, banner and sign-ins', 'Every meeting you made, with its notes, guest lists, sign-ups, ratings and certificates', 'Your course bundles, links, community and memberships', 'Your badges, levels, rewards, free Pro and notifications', 'Your bookings, reviews, follows and support messages']
+function DeleteAccount({ onClose }) {
+  const [step, setStep] = useState(1), [blockers, setBlockers] = useState(null), [typed, setTyped] = useState(''), [busy, setBusy] = useState(false), [err, setErr] = useState('')
+  useEffect(() => { api('/api/meet/me', { action: 'delete-check' }).then((r) => setBlockers(r.blockers || [])).catch((e) => setErr(e.message)) }, [])
+  async function go() {
+    setBusy(true); setErr('')
+    try { await api('/api/meet/me', { action: 'delete', confirm: typed.trim() }); location.assign(homePath() + '?signin=' + encodeURIComponent('Your account and everything in it has been deleted.')) } catch (e) { setErr(e.message); setBusy(false) }
+  }
+  return (<Sheet title={step === 1 ? 'Delete your account?' : 'This can’t be undone'} onClose={busy ? () => {} : onClose}><div className="del">
+    {step === 1 ? <>
+      <p className="del-warn"><b>Warning:</b> deleting your account removes everything you have on Olexweb Meet, for good.</p>
+      <ul className="del-list">{GONE.map((x) => <li key={x}>{x}</li>)}</ul>
+      <p className="dim sm">Payment records stay, without your name or email, because they’re needed for the accounts, refunds and Paystack disputes.</p>
+      {blockers == null && !err ? <p className="dim">Checking your account…</p> : null}
+      {blockers && blockers.length ? <div className="del-stop"><b>You can’t delete your account yet:</b><ul>{blockers.map((x) => <li key={x}>{x}</li>)}</ul></div> : null}
+      <div className="row-btns"><button className="btn" onClick={onClose}>Keep my account</button>
+        <button className="btn del-btn" disabled={!blockers || blockers.length > 0} onClick={() => setStep(2)}>Continue</button></div>
+    </> : <>
+      <div className="del-crit"><b>Final warning.</b> Your account and everything in it will be deleted forever. We can’t bring any of it back, not even if you ask us.</div>
+      <label className="fld"><span>Type <b>DELETE</b> to confirm</span><input className="in" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck={false} placeholder="DELETE" /></label>
+      <div className="row-btns"><button className="btn" disabled={busy} onClick={onClose}>Keep my account</button>
+        <button className="btn del-btn" disabled={busy || typed.trim() !== 'DELETE'} onClick={go}>{busy ? 'Deleting…' : 'Delete my account forever'}</button></div>
+    </>}
+    {err ? <p className="err" role="alert">{err}</p> : null}
+  </div></Sheet>)
 }
