@@ -1,4 +1,4 @@
-// A stand-in for Google, Microsoft, GitHub and Facebook sign-in during the Meet tests (MEET_OAUTH_TEST_BASE=http://localhost:4567).
+// A stand-in for Google, Microsoft, LinkedIn, GitHub and Facebook sign-in during the Meet tests (MEET_OAUTH_TEST_BASE=http://localhost:4567).
 // Like the real ones: the consent page sends the browser back with a code and the same state; the token exchange checks
 // the client secret, the return address, and (Google, Microsoft) the PKCE proof. Who signs in is set by the test:
 // POST /control { as: { google: { sub, email, email_verified, name }, ... } }. GET /log shows what happened.
@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto'
 let as = {}, codes = new Map(), log = [], n = 0
 const send = (res, code, body, type = 'application/json') => { res.writeHead(code, { 'Content-Type': type }); res.end(typeof body === 'string' ? body : JSON.stringify(body)) }
 const PATHS = { google: ['/o/oauth2/v2/auth', '/token', '/v1/userinfo'], microsoft: ['/common/oauth2/v2.0/authorize', '/common/oauth2/v2.0/token', '/oidc/userinfo'],
+  linkedin: ['/oauth/v2/authorization', '/oauth/v2/accessToken', '/v2/userinfo'],
   github: ['/login/oauth/authorize', '/login/oauth/access_token', '/user'], facebook: ['/v21.0/dialog/oauth', '/v21.0/oauth/access_token', '/v21.0/me'] }
 http.createServer((req, res) => {
   let body = ''; req.on('data', (c) => (body += c)); req.on('end', () => {
@@ -33,6 +34,7 @@ http.createServer((req, res) => {
     const who = as[provider] || {}, auth = req.headers.authorization || ''
     if (!auth.startsWith('Bearer tok-' + provider)) return send(res, 401, { error: 'no token' })
     if (path === P[2] && provider === 'google') return send(res, 200, { sub: who.sub, email: who.email, email_verified: who.email_verified, name: who.name, picture: 'https://example.com/a.png' })
+    if (path === P[2] && provider === 'linkedin') return send(res, 200, { sub: who.sub, email: who.email, email_verified: who.email_verified, name: who.name, picture: 'https://example.com/l.png' })
     if (path === P[2] && provider === 'microsoft') return send(res, 200, { sub: who.sub, email: who.email, name: who.name })
     if (path === '/user' && provider === 'github') return send(res, 200, { id: who.id, login: who.login, name: who.name, avatar_url: 'https://example.com/g.png' })
     if (path === '/user/emails' && provider === 'github') return send(res, 200, who.emails || [])
