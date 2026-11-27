@@ -471,6 +471,9 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
     try { await post('/api/meet/host', { action, code, identity: p.identity, ...seat() }); toast(action === 'allow-speak' ? `${p.name} can speak now.` : action === 'stop-speak' ? `${p.name} is listening again.` : action === 'mute' ? `${p.name || 'They'} is muted.` : action === 'make-cohost' ? `${p.name || 'They'} is a co-host now.` : action === 'unmake-cohost' ? `${p.name || 'They'} is no longer a co-host.` : `${p.name} was removed.`) }
     catch (e) { toast(e.message) }
   }
+  async function muteAll() {                                                    // Install 59: quiet the whole room in one tap
+    try { const r = await post('/api/meet/host', { action: 'mute-all', code, ...seat() }); toast(r.muted ? 'Everyone is muted. They can unmute themselves.' : 'Everyone is already muted.') } catch (e) { toast(e.message) }
+  }
   async function startRec(audioOnly) {
     setAskRec(false)
     if (!room || recRef.current) return
@@ -655,7 +658,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
       {panel ? <aside className="mt-panel" aria-label={panel === 'chat' ? 'Chat' : 'People'}>
         <div className="mt-panel-h"><h2>{panel === 'chat' ? 'Chat' : panel === 'qa' ? 'Questions' : `People (${all.length})`}</h2><button className="mt-x" onClick={() => setPanel(null)} aria-label="Close">{I.close}</button></div>
         {panel === 'qa' ? <QAPanel live={live} boss={boss} myId={me.identity} /> : panel === 'chat' ? <Chat messages={messages} send={sendChat} myId={me.identity} />
-          : <><People all={all} me={me} host={host} boss={boss} hands={hands} speaksNow={speaksNow} hostDo={hostDo} lk={lk} />{!host ? <button className="mt-report-link" onClick={() => setReporting(true)}>Report this meeting</button> : null}</>}
+          : <><People all={all} me={me} host={host} boss={boss} hands={hands} speaksNow={speaksNow} hostDo={hostDo} muteAll={muteAll} lk={lk} />{!host ? <button className="mt-report-link" onClick={() => setReporting(true)}>Report this meeting</button> : null}</>}
       </aside> : null}
     </div>
 
@@ -834,10 +837,14 @@ function Chat({ messages, send, myId }) {
     </form>
   </div>)
 }
-function People({ all, me, host, boss, hands, speaksNow, hostDo, lk }) {
+function People({ all, me, host, boss, hands, speaksNow, hostDo, muteAll, lk }) {
   const S = lk.Track.Source
   const order = [...hands, ...all.filter((p) => !hands.includes(p))]
-  return (<ul className="mt-people">
+  const micOn = (p) => { const m = p.getTrackPublication(S.Microphone); return !!(m && !m.isMuted) }
+  const talking = boss ? all.filter((p) => p !== me && !isBoss(p) && micOn(p)).length : 0   // Install 59: mics the host can quiet
+  return (<>{boss ? <div className="mt-muteall"><span>{talking ? `${talking} ${talking === 1 ? 'mic is' : 'mics are'} on` : 'Everyone else is muted'}</span>
+    <button className="mt-btn mt-sm mt-mutebtn" onClick={muteAll} disabled={!talking}>{I.micOff}Mute everyone</button></div> : null}
+  <ul className="mt-people">
     {order.map((p) => { const mic = p.getTrackPublication(S.Microphone), on = mic && !mic.isMuted, isHost = isHostId(p.identity), co = isCoId(p), speaks = isHost || co || speaksNow(p)
       return <li key={p.identity}>
         <span className="mt-av mt-av-sm" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>
@@ -845,13 +852,13 @@ function People({ all, me, host, boss, hands, speaksNow, hostDo, lk }) {
         {p.attributes && p.attributes.hand ? <span className="mt-hand-sm" aria-hidden="true">{I.hand}</span> : null}
         {speaks ? <span className={'mt-mic-sm' + (on ? '' : ' mt-off')} aria-label={on ? 'Mic on' : 'Muted'}>{on ? I.mic : I.micOff}</span> : null}
         {boss && !isHost && p !== me && (host || !co) ? <span className="mt-acts">
-          {on ? <button className="mt-btn mt-xs" onClick={() => hostDo('mute', p)} aria-label={`Mute ${p.name || 'Guest'}`}>Mute</button> : null}
+          {on ? <button className="mt-btn mt-xs mt-mutebtn" onClick={() => hostDo('mute', p)} aria-label={`Mute ${p.name || 'Guest'}`}>{I.micOff}Mute</button> : null}
           {speaks ? <button className="mt-btn mt-xs" onClick={() => hostDo('stop-speak', p)}>Stop speaking</button> : <button className="mt-btn mt-xs mt-go" onClick={() => hostDo('allow-speak', p)}>Let speak</button>}
           {host ? <button className="mt-btn mt-xs" onClick={() => hostDo(co ? 'unmake-cohost' : 'make-cohost', p)}>{co ? 'Remove co-host' : 'Make co-host'}</button> : null}
           <button className="mt-btn mt-xs mt-ghost" onClick={() => hostDo('remove', p)}>Remove</button>
         </span> : null}
       </li> })}
-  </ul>)
+  </ul></>)
 }
 
 // ---------- after the meeting: a rating (everyone, the host too) and, once, how to add Meet to the home screen ----------

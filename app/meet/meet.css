@@ -415,3 +415,10 @@
 .mt-top2>*{flex:none}.mt-top2 .mt-sp{flex:1 1 0;min-width:0}.mt-top2 .mt-code2{flex:0 1 auto;min-width:0;overflow:hidden}.mt-code2 span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:440px){.mt-brand2 span{display:none}.mt-brand2:after{content:"Meet";font-size:17px;color:var(--paper)}}
 .mt-code{display:inline-block;padding:2px 10px;border-radius:8px;background:rgba(143,227,106,.14);color:#c9f2a8;letter-spacing:.12em;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* ---------- Install 59: the host quiets anyone in one tap ---------- */
+.mt-muteall{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 12px 8px;padding:10px 12px;border-radius:14px;background:var(--tile2);font-size:13px;color:var(--dim)}
+.mt-btn.mt-mutebtn{display:inline-flex;align-items:center;gap:6px;background:rgba(239,122,106,.16);color:var(--paper);border-color:rgba(239,122,106,.35)}
+.mt-btn.mt-mutebtn svg{width:15px;height:15px;color:var(--bad)}
+.mt-btn.mt-mutebtn:hover{background:rgba(239,122,106,.26)}
+.mt-btn.mt-mutebtn:disabled{opacity:.45;cursor:default}
