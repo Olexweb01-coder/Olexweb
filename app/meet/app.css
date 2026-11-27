@@ -472,3 +472,12 @@ html.ma-lock{overflow:hidden}
 .ma .tour-card h3{margin:0;font-size:18px}.ma .tour-card p{margin:0;color:var(--dim);line-height:1.5}
 .ma .tour-btns{display:flex;gap:8px;align-items:center;margin-top:8px}
 .ma .paused{margin:16px clamp(16px,3vw,32px) 0;border-color:color-mix(in srgb,var(--coral) 45%,transparent)}.ma .paused .appeal{display:grid;gap:8px}.ma .paused textarea{width:100%;resize:vertical}
+/* Install 67: the big update announcement (fits the screen; the list scrolls on short phones) */
+.ma .ann-card{width:min(480px,100%);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;padding:24px 20px 18px}
+.ma .ann-card h2{margin-top:12px}.ma .ann-card>p{margin:6px 0 14px}
+.ma .ann-list{position:relative;z-index:2;overflow-y:auto;min-height:0;flex:0 1 auto;margin:0 -4px;padding:0 4px}
+.ma .ann-item{align-items:flex-start;padding:11px 12px;animation:ma-up .5s var(--ease) both}.ma .ann-item small{display:block;margin-top:2px;line-height:1.4}.ma .ann-item .ni{flex:none}
+@keyframes ma-up{from{opacity:0;transform:translateY(14px)}}
+.ma .ann-card .row{position:relative;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.ma .ann-never{position:relative;display:inline-flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;font-size:13px;color:rgba(255,255,255,.7);cursor:pointer}.ma .ann-never input{width:16px;height:16px;accent-color:#8fe36a}
+@media (max-height:700px){.ma .ann-card .medal,.ma .ann-card>p{display:none}.ma .ann-card h2{font-size:22px}}

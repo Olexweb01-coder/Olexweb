@@ -12,7 +12,8 @@ import ProfilePage from './ProfilePage'
 import LeadersPage from './LeadersPage'
 import HelpPage, { SettingsPage, BillingPage } from './HelpPage'
 import Celebrate from './Celebrate'
-import Tour from './Tour'
+import Tour, { startTour } from './Tour'
+import Announce, { announceDue, ANNOUNCE } from './Announce'
 
 const PAGES = [['home', 'Home', 'home'], ['meetings', 'Meetings', 'cal'], ['room', 'My room', 'door'], ['notes', 'Recordings and notes', 'spark'],
   ['-Grow'], ['profile', 'My profile', 'user'], ['leaders', 'Leaderboard', 'trophy'], ['earn', 'Earn', 'wallet'], ['-More'], ['billing', 'Billing', 'coin'], ['help', 'Help', 'help'], ['settings', 'Settings', 'gear']]
@@ -21,7 +22,7 @@ const ALIAS = { dashboard: 'home', '': 'home' }
 export default function MeetApp({ user, meetings: initial, pricing, morePast = 0, notice = '' }) {
   const [page, setPage] = useState('home'), [drawer, setDrawer] = useState(false), [theme, setTheme] = useState('dark')
   const [h, setH] = useState(null), [list, setList] = useState(initial || []), [bell, setBell] = useState(false), [toast, setToast] = useState(notice || ''), [newMenu, setNewMenu] = useState(false)
-  const [queue, setQueue] = useState([]), [news, setNews] = useState(null), [install, setInstall] = useState(null)
+  const [queue, setQueue] = useState([]), [news, setNews] = useState(null), [install, setInstall] = useState(null), [ann, setAnn] = useState(null)   // ann: Install 67 (null = not checked yet)
   const load = useCallback(async () => { try { setH(await api('/api/meet/home')) } catch {} }, [])
   const refresh = useCallback(async () => { try { setList((await api('/api/meet/mine', { action: 'list' })).meetings) } catch {} }, [])
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
     }
     setQueue(q)
     setNews(h.news && !c.welcome ? h.news : null)
+    setAnn((a) => (a === null ? announceDue(h.me.since) : a))   // once per page load
     if (c.welcome && h.news) api('/api/meet/home', { action: 'seen', news: h.news.id }).catch(() => {})   // the welcome already says what's new
   }, [h])
   function closeCelebration() {
@@ -114,7 +116,8 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
     {queue.length ? <Celebrate c={queue[0]} me={me} onClose={closeCelebration} /> : null}
     {!queue.length && news ? <WhatsNew news={news} onClose={closeNews} /> : null}
     <InstallSteps />
-    <Tour ready={!!h && !queue.length && !news} setDrawer={setDrawer} />
+    {!queue.length && !news && ann ? <Announce onClose={() => setAnn(false)} onTour={startTour} /> : null}
+    <Tour ready={!!h && !queue.length && !news && ann === false && new Date(h.me.since || 0) >= new Date(ANNOUNCE.newFrom)} setDrawer={setDrawer} />   {/* the tour starts by itself for new accounts; others open it from Help or the update */}
     {toast ? <p className="toast" role="status">{toast}</p> : null}
   </div>)
 }
