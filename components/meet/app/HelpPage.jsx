@@ -5,6 +5,7 @@ import { I } from './icons'
 import { api, naira, day, when, homePath, Field, Empty, Sheet } from './ui'
 import { PRO_LIST } from './ProLock'
 import { InstallButton } from './Install'
+import { startTour } from './Tour'
 
 export default function HelpPage({ ctx }) {
   const { h, setToast, reload } = ctx
@@ -20,6 +21,7 @@ export default function HelpPage({ ctx }) {
   const tickets = h ? h.dash.tickets : []
   return (<div className="wrap">
     <div className="pghead"><div><h1>Help</h1><p className="dim">Olex AI answers straight away. If it can’t solve it, the Olexweb team replies here and by email.</p></div></div>
+    <section className="card"><div className="ch"><h3>New here?</h3></div><p className="dim" style={{ marginTop: 0 }}>A quick tour shows you each part of Meet, one at a time.</p><div className="row-btns"><button className="btn go tour-start" onClick={startTour}><I n="spark" />Take the tour</button></div></section>
     <section className="card">{help.sent ? <p className="okmsg">Sent to the Olexweb team. You’ll get the reply here and by email{help.phone ? ' or WhatsApp' : ''}.</p>
       : <form className="stack" onSubmit={ask}>
         <Field label="What do you need help with?"><textarea className="in" rows={3} maxLength={1000} value={help.q} onChange={(e) => setHelp({ ...help, q: e.target.value, a: null })} placeholder="For example: how do I record only the sound?" /></Field>

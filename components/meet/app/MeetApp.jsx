@@ -12,6 +12,7 @@ import ProfilePage from './ProfilePage'
 import LeadersPage from './LeadersPage'
 import HelpPage, { SettingsPage, BillingPage } from './HelpPage'
 import Celebrate from './Celebrate'
+import Tour from './Tour'
 
 const PAGES = [['home', 'Home', 'home'], ['meetings', 'Meetings', 'cal'], ['room', 'My room', 'door'], ['notes', 'Recordings and notes', 'spark'],
   ['-Grow'], ['profile', 'My profile', 'user'], ['leaders', 'Leaderboard', 'trophy'], ['earn', 'Earn', 'wallet'], ['-More'], ['billing', 'Billing', 'coin'], ['help', 'Help', 'help'], ['settings', 'Settings', 'gear']]
@@ -112,6 +113,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
     {queue.length ? <Celebrate c={queue[0]} me={me} onClose={closeCelebration} /> : null}
     {!queue.length && news ? <WhatsNew news={news} onClose={closeNews} /> : null}
     <InstallSteps />
+    <Tour ready={!!h && !queue.length && !news} setDrawer={setDrawer} />
     {toast ? <p className="toast" role="status">{toast}</p> : null}
   </div>)
 }
