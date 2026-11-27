@@ -78,6 +78,7 @@ function deviceError(e, what) {
 
 export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null, kind = 'meeting', regRequired = false, myPic = null }) {
   const [host, setHost] = useState(hostAtLoad)
+  const idleRef = useRef({ endAt: 0, sent: 0, ending: 0 }), [idleLeft, setIdleLeft] = useState(null)   // Install 61: the quiet-meeting clock
   const [picBroken, setPicBroken] = useState(false)   // Install 60: their photo in the lobby (letters if it won't load)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(false), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
@@ -443,6 +444,32 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   async function checkPro() {
     try { const r = await post('/api/meet/dash', { action: 'pro-check', code }); if (r.pro) { setProNow(true); setPaying(''); toast('Pro is on for this meeting.') } else toast('Not paid yet. Finish the payment, then check again.') } catch (e) { toast(e.message) }
   }
+  // Install 61: quiet meetings end by themselves. Whoever hears someone talk (or sees a shared screen) tells the server,
+  // which keeps the time; 10 minutes before 30 quiet minutes everyone sees a warning, then the meeting ends for all.
+  useEffect(() => {
+    if (phase !== 'in') { setIdleLeft(null); return }
+    const Q = idleRef.current, END = 30 * 60_000; Q.endAt = 0
+    const ask = (action, extra = {}) => post('/api/meet/idle', { code, action, ...seat(), ...extra })
+    const fromWait = (r) => { if (r && typeof r.wait === 'number') Q.endAt = Date.now() + r.wait * 1000 }
+    ask('check').then(fromWait).catch(() => {})
+    const t = setInterval(() => {
+      const room = roomRef.current, now = Date.now()
+      if (!room || inRoomRef.current) { setIdleLeft(null); return }
+      let o = {}; try { o = JSON.parse(room.metadata || '{}') } catch {}
+      if (o.talk) Q.endAt = Math.max(Q.endAt, o.talk + END)
+      const people = [room.localParticipant, ...room.remoteParticipants.values()]
+      const heard = people.find((p) => p.isSpeaking || (spoke.current.get(p.identity) || 0) > now - 6000 || [...p.trackPublications.values()].some((x) => x.source === 'screen_share'))
+      if (heard && now - (o.talk || 0) > 55_000 && now - Q.sent > 55_000 + Math.random() * 15_000) {
+        Q.sent = now; ask('talk', { who: heard.identity }).then((r) => { if (r && r.talk) Q.endAt = Math.max(Q.endAt, r.talk + END) }).catch(() => {})
+      }
+      if (heard) Q.endAt = Math.max(Q.endAt, now + END)                          // (what this browser hears counts at once)
+      if (!Q.endAt) return
+      const left = Q.endAt - now
+      setIdleLeft(left <= 10 * 60_000 ? Math.max(0, left) : null)
+      if (left <= 0 && now - Q.ending > 30_000) { Q.ending = now; setTimeout(() => ask('end').then((r) => { if (r && !r.ended) fromWait(r) }).catch(() => {}), Math.random() * 8000) }
+    }, 5000)
+    return () => clearInterval(t)
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
   // the room's shared settings changed: video switched on, breakout rooms opened or closed
   metaRef.current = (md, first) => {
     let o = {}; try { o = JSON.parse(md || '{}') } catch {}
@@ -654,6 +681,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
       {boss && br ? <span className="mt-brrooms">{inRoom ? <button className="mt-link" onClick={() => moveTo(0)}>Main room</button> : null}{Array.from({ length: br.n }, (_, i) => i + 1).filter((k) => k !== inRoom).map((k) => <button key={k} className="mt-link" onClick={() => moveTo(k)}>Room {k}</button>)}
         {host ? <button className="mt-link" onClick={breakoutEnd}>Bring everyone back</button> : null}</span> : null}</div> : null}
     {boss && notesReady ? <p className="mt-banner" role="status">Your recording is ready for AI notes. <button className="mt-link" onClick={() => setShowNotes(true)}>Make AI notes</button><button className="mt-x mt-x-sm" onClick={() => setNotesReady(false)} aria-label="Hide">{I.close}</button></p> : null}
+    {idleLeft != null ? <p className="mt-banner mt-warn mt-idle" role="alert">{I.clock}{idleLeft > 0 ? `Nobody has spoken for a while. This meeting ends in ${Math.max(1, Math.ceil(idleLeft / 60_000))} minute${Math.ceil(idleLeft / 60_000) > 1 ? 's' : ''} unless someone talks or shares their screen.` : 'Ending this meeting: nobody has spoken for 30 minutes.'}</p> : null}
     {conn.audioBlocked ? <p className="mt-banner" role="status">Sound is off in this browser. <button className="mt-link" onClick={() => room.startAudio().then(() => setConn((c) => ({ ...c, audioBlocked: false }))).catch(() => {})}>Turn on sound</button></p> : null}
 
     <div className="mt-body">
