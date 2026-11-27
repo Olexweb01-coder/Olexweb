@@ -43,6 +43,7 @@ const I = {
   wave: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h2M8 8v8M12 5v14M16 8v8M20 11v2" /></svg>,
   blur: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="3.5" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /><path d="M3 5.5h.01M3 12h.01M3 18.5h.01M21 5.5h.01M21 12h.01M21 18.5h.01" strokeWidth="2.6" /></svg>,
   pause: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5.5" width="3.5" height="13" rx="1" className="mt-fill" /><rect x="13.5" y="5.5" width="3.5" height="13" rx="1" className="mt-fill" /></svg>,
+  clock: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>,
 }
 // quick reactions float up on everyone's screen; the picker's set covers everyday chat
 export const REACTIONS = ['👍', '👏', '😂', '❤️', '🎉', '😮']
@@ -385,6 +386,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
 
   // ---------- controls ----------
   useEffect(() => { callState(micOn, camOn) }, [micOn, camOn])
+  const peak = useRef(0)                                                       // Install 59: the most people at once, for the thank-you page
   const [narrow, setNarrow] = useState(false)                                  // a phone-sized screen (the same width as meet.css's phone layout)
   useEffect(() => { const q = window.matchMedia('(max-width:760px)'), f = () => setNarrow(q.matches); f(); q.addEventListener('change', f); return () => q.removeEventListener('change', f) }, [])
   const room = roomRef.current, me = room && room.localParticipant
@@ -546,11 +548,11 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
     <header className="mt-top2"><BackButton home="/meet" className="mt-back" /><a className="mt-brand2" href="/meet"><img src="/meet/logo-96.png" alt="" width="30" height="30" /><span>Olexweb <b>Meet</b></span></a>
       <span className="mt-sp" />{code ? <button type="button" className="mt-code2" onClick={() => { try { navigator.clipboard.writeText(location.href.split('?')[0]) } catch {} setCopied(true); setTimeout(() => setCopied(false), 1800) }} title="Copy the meeting link">{I.link || null}<span>{copied ? 'Link copied' : code}</span></button> : null}</header>
     <main className={'mt-card' + (!['ended', 'removed', 'unavailable', 'left', 'waiting'].includes(phase) ? ' mt-lob2' : '')}>
-      {phase === 'ended' ? <><h1 className="mt-h">This meeting has ended</h1><p className="mt-p">{boss && notesReady ? 'Your recording is saved. Olex AI can turn it into notes: a summary, decisions and action items.' : 'Thanks for being here. You can close this page.'}</p>
+      {phase === 'ended' ? <><WrapHead title={title} from={startedAt} peak={peak.current} eyebrow="That’s a wrap" /><h1 className="mt-h mt-wrap-h">This meeting has ended</h1><p className="mt-p mt-wrap-p">{boss && notesReady ? 'Your recording is saved. Olex AI can turn it into notes: a summary, decisions and action items.' : 'Thanks for being here. We hope it was a good one.'}</p>
           {boss && notesReady ? <div className="mt-row"><button className="mt-btn mt-go" onClick={() => setShowNotes(true)}>Make AI notes</button></div> : null}</>
         : phase === 'removed' ? <><h1 className="mt-h">You were removed from the meeting</h1><p className="mt-p">The host removed you. If that was a mistake, ask them for the link again.</p></>
         : phase === 'unavailable' ? <><h1 className="mt-h">Meetings aren’t available right now</h1><p className="mt-p">Try again in a little while.</p></>
-        : phase === 'left' ? <><h1 className="mt-h">You left the meeting</h1><p className="mt-p">{title}</p><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
+        : phase === 'left' ? <><WrapHead title={title} from={startedAt} peak={peak.current} eyebrow="See you soon" /><h1 className="mt-h mt-wrap-h">You left the meeting</h1><div className="mt-row"><button className="mt-btn mt-go" onClick={() => { setPhase('lobby'); setMessages([]) }}>Join again</button></div></>
         : phase === 'waiting' ? <><h1 className="mt-h">{title}</h1>{startsAt ? <When at={startsAt} minutes={minutes} code={code} title={title} /> : null}{regRequired && !host ? (myEntry ? <p className="mt-p mt-thanks">You’re registered. Your entry code: <b className="mt-code">{myEntry.length === 8 ? myEntry.slice(0, 4) + '-' + myEntry.slice(4) : myEntry}</b></p> : <RegisterBox code={code} required onEntry={(e) => { try { localStorage.setItem(passKey, e.replace('-', '')) } catch {} setMyEntry(e) }} />) : startsAt && new Date(startsAt) > new Date() ? <RegisterBox code={code} /> : null}<p className="mt-p mt-wait"><span className="mt-pulse" aria-hidden="true" />Waiting for the host to start the meeting. You’ll go in by yourself when they do.</p>
           <div className="mt-row"><button className="mt-btn" onClick={() => setPhase('lobby')}>Back</button></div></>
         : <form onSubmit={join} className="mt-lobby">
@@ -607,7 +609,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
           <p className="mt-trust">No account needed to join · encrypted in transit · works on mobile data</p>
           </div>
         </form>}
-      {phase === 'ended' || phase === 'left' ? <AfterMeeting code={code} info={joinInfo.current} /> : null}
+      {phase === 'ended' || phase === 'left' ? <AfterMeeting code={code} info={joinInfo.current} boss={boss} /> : null}
     </main>
   </div>)
 
@@ -620,6 +622,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const onStage = all.filter((p) => speaksNow(p) || isBoss(p)).sort((a, b) => rank(a) - rank(b))
   const limit = share ? 4 : narrow ? PHONE_TILES : MAX_TILES
   const listeners = all.filter((p) => !onStage.includes(p))
+  if (all.length > peak.current) peak.current = all.length
   const tiles = onStage.slice(0, onStage.length > limit || listeners.length ? limit - 1 : limit)   // the "more" tile takes the last place, so the grid never overflows
   if (me && !tiles.includes(me) && onStage.includes(me)) tiles[tiles.length - 1] = me        // you always see yourself
   const hidden = onStage.length - tiles.length
@@ -874,7 +877,7 @@ function People({ all, me, host, boss, hands, speaksNow, hostDo, muteAll, lk }) 
 // ---------- after the meeting: a rating (everyone, the host too) and, once, how to add Meet to the home screen ----------
 let installEvent = null
 if (typeof window !== 'undefined') window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvent = e })
-function AfterMeeting({ code, info }) {
+function AfterMeeting({ code, info, boss = false }) {
   const [stars, setStars] = useState(0), [text, setText] = useState(''), [sent, setSent] = useState(false), [count, setCount] = useState(null), [busy, setBusy] = useState(false), [err, setErr] = useState('')
   const [tip, setTip] = useState(null)
   useEffect(() => {
@@ -890,13 +893,15 @@ function AfterMeeting({ code, info }) {
   }
   return (<div className="mt-after">
     {info && info.rateKey ? (sent ? <p className="mt-p mt-thanks">Thank you for rating this meeting.{sent === 'gift' ? ' That’s ' + count.n + ' reviews: here are 3 days of Pro, free. They’re in your account.' : count ? ` You’ve reviewed ${count.n % count.of || count.of} of ${count.of} meetings towards 3 days of Pro.` : ''}</p> : <form onSubmit={send} className="mt-rate">
-      <p className="mt-lab">How was this meeting?</p>
+      <p className="mt-lab">How was this meeting?</p><p className="mt-stars-word" aria-live="polite">{['Tap a star', 'Poor', 'Could be better', 'Good', 'Great', 'Excellent!'][stars]}</p>
       <div className="mt-stars" role="radiogroup" aria-label="Your rating">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={n + (n === 1 ? ' star' : ' stars')} className={n <= stars ? 'on' : ''} onClick={() => setStars(n)}>★</button>)}</div>
       {stars ? <><small className="mt-hint">Signed in to Olexweb Meet? Every 20 meetings you review in writing earn you 3 days of Pro, free.</small><textarea className="mt-in" rows={2} maxLength={600} value={text} onChange={(e) => setText(e.target.value)} placeholder="Anything to add? (optional)" />
         <button className="mt-btn mt-go" disabled={busy}>{busy ? 'Sending…' : 'Send rating'}</button></> : null}
       {err ? <p className="mt-err" role="alert">{err}</p> : null}
     </form>) : null}
     {info && info.certs && info.rateKey ? <a className="mt-btn mt-go" href={`/api/meet/cert?code=${encodeURIComponent(code)}&id=${encodeURIComponent(info.identity)}&k=${encodeURIComponent(info.rateKey)}`}>Get your certificate</a> : null}
+    {!boss ? <div className="mt-next"><b>Host your own meeting</b><span>Free on Olexweb Meet: video, chat, screen sharing and recording.</span>
+      <a className="mt-btn mt-go" href={onMeetApp() ? '/' : '/meet'}>Start a meeting</a></div> : null}
     {tip ? <div className="mt-install">
       <b>Keep Olexweb Meet on your home screen</b>
       {tip === 'ios' ? <ol><li>Tap the Share button (the square with an arrow) at the bottom of Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>.</li></ol>
@@ -905,6 +910,18 @@ function AfterMeeting({ code, info }) {
       <div className="mt-row">{installEvent ? <button className="mt-btn mt-go" onClick={async () => { installEvent.prompt(); await installEvent.userChoice.catch(() => {}); installEvent = null; closeTip() }}>Add to home screen</button> : null}
         <button className="mt-btn mt-ghost" onClick={closeTip}>{installEvent ? 'Not now' : 'Got it'}</button></div>
     </div> : null}
+  </div>)
+}
+
+// Install 59: the top of the thank-you page: a mark, the meeting, how long it ran and how many came
+function WrapHead({ title, from, peak, eyebrow }) {
+  const mins = from ? Math.max(1, Math.round((Date.now() - from) / 60000)) : 0
+  const long = mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60 ? (mins % 60) + ' min' : ''}`.trim() : `${mins} min`
+  return (<div className="mt-wrap">
+    <span className="mt-wrap-mark" aria-hidden="true"><i /><i /><i /><i /><i /><i /><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
+    <p className="mt-wrap-eye">{eyebrow}</p>
+    {title ? <p className="mt-wrap-title">{title}</p> : null}
+    {mins || peak > 1 ? <div className="mt-wrap-stats">{mins ? <span>{I.clock}{long} together</span> : null}{peak > 1 ? <span>{I.people}{peak} people</span> : null}</div> : null}
   </div>)
 }
 

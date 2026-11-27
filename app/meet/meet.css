@@ -441,3 +441,28 @@ img.mt-av.mt-pic{object-fit:cover;background:var(--tile2);padding:0}
 .mt-leave{background:#e5484d;color:#fff}.mt-leave svg{color:#fff}.mt-leave:hover{background:#d13d42}
 .mt-c.mt-leave span{color:#fff}
 @media (max-width:760px){.mt-brand3{padding-right:0;margin-right:0;border-right:0}.mt-brand3>span{display:none}.mt-brand3 img{width:24px;height:24px;border-radius:7px}}
+
+/* ---------- Install 59: the thank-you page after a meeting ---------- */
+.mt-wrap{display:grid;justify-items:center;text-align:center;gap:6px;margin-bottom:6px}
+.mt-wrap-mark{position:relative;display:grid;place-items:center;width:84px;height:84px;border-radius:50%;background:var(--green);color:var(--ink);box-shadow:0 0 0 10px rgba(143,227,106,.14),0 0 0 22px rgba(143,227,106,.06);margin:8px 0 14px;animation:mt-pop .5s cubic-bezier(.2,1.4,.4,1) both}
+.mt-wrap-mark svg{width:40px;height:40px;stroke-width:2.6;stroke-dasharray:24;stroke-dashoffset:24;animation:mt-draw .45s .25s ease-out forwards}
+.mt-wrap-mark i{position:absolute;width:9px;height:9px;border-radius:3px;top:50%;left:50%;opacity:0;animation:mt-burst .9s .15s ease-out forwards}
+.mt-wrap-mark i:nth-child(1){background:#6cc4ff;--x:-62px;--y:-38px}.mt-wrap-mark i:nth-child(2){background:#ffc85c;--x:58px;--y:-44px;border-radius:50%}
+.mt-wrap-mark i:nth-child(3){background:#ff9fd0;--x:-70px;--y:22px;border-radius:50%}.mt-wrap-mark i:nth-child(4){background:#b9a3ff;--x:66px;--y:28px}
+.mt-wrap-mark i:nth-child(5){background:#ff9b7a;--x:-18px;--y:-66px}.mt-wrap-mark i:nth-child(6){background:#5fe0c4;--x:24px;--y:62px;border-radius:50%}
+@keyframes mt-pop{from{transform:scale(.4);opacity:0}}
+@keyframes mt-draw{to{stroke-dashoffset:0}}
+@keyframes mt-burst{0%{opacity:1;transform:translate(-50%,-50%)}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(160deg)}}
+.mt-wrap-eye{margin:0;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+.mt-wrap-title{margin:0;font-size:15px;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mt-wrap-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:6px}
+.mt-wrap-stats span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--tile2);font-size:13px;font-weight:600}
+.mt-wrap-stats svg{width:16px;height:16px;color:var(--green)}
+.mt-h.mt-wrap-h{text-align:center}.mt-p.mt-wrap-p{text-align:center}
+.mt-solo .mt-card:has(.mt-wrap) .mt-row{justify-content:center}
+.mt-after .mt-rate{padding:18px;border-radius:20px;background:var(--tile);border:1px solid var(--line);justify-items:center;text-align:center}
+.mt-after .mt-rate .mt-in,.mt-after .mt-rate .mt-btn{width:100%}
+.mt-after .mt-stars button{font-size:38px}
+.mt-stars-word{margin:-4px 0 0;font-size:13px;font-weight:600;color:#f5c542;min-height:1.4em}
+.mt-next{display:grid;gap:4px;padding:16px 18px;border-radius:20px;background:linear-gradient(135deg,rgba(143,227,106,.16),rgba(108,196,255,.1));border:1px solid rgba(143,227,106,.25);text-align:left}
+.mt-next b{font-size:15px}.mt-next span{font-size:13.5px;color:var(--dim)}.mt-next .mt-btn{justify-self:start;margin-top:8px}
