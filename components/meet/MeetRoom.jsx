@@ -76,8 +76,9 @@ function deviceError(e, what) {
   return `The ${what} couldn’t start. Try again.`
 }
 
-export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null, kind = 'meeting', regRequired = false }) {
+export default function MeetRoom({ code, title, speakers, price = 0, mode = 'video', videoOn = true, initialState, startsAt, minutes, host: hostAtLoad, hostName, canNotes = false, form = null, kind = 'meeting', regRequired = false, myPic = null }) {
   const [host, setHost] = useState(hostAtLoad)
+  const [picBroken, setPicBroken] = useState(false)   // Install 60: their photo in the lobby (letters if it won't load)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
   const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(!!hostAtLoad), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [toasts, setToasts] = useState([])
@@ -559,7 +560,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
           <div className="mt-gl">
           <div className={'mt-preview' + (camOn ? ' on' : '')}>
             <video ref={previewRef} muted playsInline autoPlay className="mt-mirror" />
-            {!camOn ? <span className="mt-av mt-av-lg" style={{ background: tone(name || 'x') }}>{initials(name || '?')}</span> : null}
+            {!camOn ? (myPic && PIC_OK.test(myPic) && !picBroken ? <img className="mt-av mt-av-lg mt-pic" src={myPic} alt="" referrerPolicy="no-referrer" onError={() => setPicBroken(true)} /> : <span className="mt-av mt-av-lg" style={{ background: tone(name || 'x') }}>{initials(name || '?')}</span>) : null}
           </div>
           {host || speakers === 'everyone' ? <div className="mt-toggles" role="group" aria-label="Before you join">
             <button type="button" className="mt-chip" aria-pressed={micOn} onClick={() => setMicOn((m) => !m)}>{micOn ? I.mic : I.micOff}{micOn ? 'Mic on' : 'Mic off'}</button>

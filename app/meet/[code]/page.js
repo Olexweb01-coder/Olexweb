@@ -2,7 +2,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { currentUser } from '@/lib/admin/auth'
-import { CODE_RE, meetingState, meetHost, meetLink, hostOf, meetBase, mainOrigin } from '@/lib/site/meet'
+import { CODE_RE, meetingState, meetHost, meetLink, hostOf, meetBase, mainOrigin, myPicture } from '@/lib/site/meet'
 import { currentMeetUser } from '@/lib/meet/auth'
 import MeetRoom from '@/components/meet/MeetRoom'
 export const dynamic = 'force-dynamic'
@@ -27,5 +27,5 @@ export default async function MeetPage({ params }) {
   // once the Meet app is set up, guests on the old address go there; you stay here, where your sign-in makes you the host
   const mh = meetHost(), here = String(headers().get('x-forwarded-host') || headers().get('host') || '')
   if (mh && here !== mh && !host) redirect(meetLink(code))   // (Meet hosts sign in on the Meet app; Olaitan can host from either)
-  return <MeetRoom code={code} title={m.title} speakers={m.speakers} price={m.price || 0} mode={m.mode} videoOn={m.video} initialState={m.state} startsAt={m.startsAt || null} minutes={m.minutes || 60} host={host} hostName={h.name} canNotes={!!h.host} form={m.form || null} kind={m.kind} regRequired={!!m.regRequired} />
+  return <MeetRoom code={code} title={m.title} speakers={m.speakers} price={m.price || 0} mode={m.mode} videoOn={m.video} initialState={m.state} startsAt={m.startsAt || null} minutes={m.minutes || 60} host={host} hostName={h.name} canNotes={!!h.host} form={m.form || null} kind={m.kind} regRequired={!!m.regRequired} myPic={await myPicture(u, mu).catch(() => null)} />
 }
