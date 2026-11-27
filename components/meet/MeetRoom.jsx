@@ -80,7 +80,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const [host, setHost] = useState(hostAtLoad)
   const [picBroken, setPicBroken] = useState(false)   // Install 60: their photo in the lobby (letters if it won't load)
   const [phase, setPhase] = useState(initialState === 'ended' ? 'ended' : initialState === 'unavailable' ? 'unavailable' : 'lobby')
-  const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(!!hostAtLoad), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
+  const [name, setName] = useState(hostName || ''), [micOn, setMicOn] = useState(false), [camOn, setCamOn] = useState(false), [saver, setSaver] = useState(false)
   const [error, setError] = useState(''), [notice, setNotice] = useState(''), [toasts, setToasts] = useState([])
   const [, setTick] = useState(0), bump = useCallback(() => setTick((t) => t + 1), [])
   const [panel, setPanel] = useState(null), [messages, setMessages] = useState([]), [unread, setUnread] = useState(0)
