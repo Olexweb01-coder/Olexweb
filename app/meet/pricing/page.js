@@ -1,7 +1,10 @@
-// Pricing (Install 58g): Free and Pro with the real prices from the admin, and what each includes.
+// Pricing (Install 58g): Free, Pro for one meeting (Install 61) and Pro with the real prices from the admin, and what each includes.
 import Site, { Section, Head, Final, PageHero, startHref, at } from '@/components/meet/site/Site'
 import { siteBase, pageMeta } from '@/lib/meet/site'
 import { pricing, naira, FREE_PEOPLE, MAX_WITH_EXTRA } from '@/lib/meet/plans'
+import { currentMeetUser } from '@/lib/meet/auth'
+import { PlanCards } from '@/components/meet/site/Plans'
+const signinTo = (base, next) => `${base || ''}/?next=${encodeURIComponent(next)}#signin`.replace(/^\/\?/, '/?')
 export const dynamic = 'force-dynamic'
 export const generateMetadata = () => pageMeta('/pricing', 'Pricing', 'Olexweb Meet is free with no time limit for up to 100 people. Pro adds video recording, all your past meetings and transcripts, memberships and paid certificates.')
 
@@ -17,21 +20,14 @@ const yes = (v) => (v === 1 ? <span className="yes" aria-label="Included">✓</s
 export default async function Pricing() {
   const base = siteBase('/pricing')
   const pr = await pricing().catch(() => ({ on: false, prices: {} })), p = pr.prices || {}
-  const save = p.month && p.year ? p.month * 12 - p.year : 0
+  const me = await currentMeetUser().catch(() => null)   // signed in: the plan buttons go straight to Settings
   return (<Site base={base} active="/pricing">
     <PageHero pill="Pricing" title="Free for real." accent="Pro when you grow." text={`Meet as long as you like with up to ${FREE_PEOPLE} people, free. Go Pro for recordings, your full history and more ways to earn.`} />
     <Section tight>
       {!pr.on ? <div className="soon rv"><b style={{ color: 'var(--fg)' }}>Right now, everything is free.</b> Every feature on this page works without paying. If that changes, you will see the prices here and in the app first.</div> : null}
-      <div className="plans">
-        <div className="plan rv"><b style={{ fontSize: 20 }}>Free</b><div className="price">₦0<small> forever</small></div>
-          <ul><li>No time limit</li><li>Up to {FREE_PEOPLE} people</li><li>Audio and video, screen sharing</li><li>MP3 recordings and AI notes</li><li>Polls, Q&amp;A, breakout rooms</li><li>Sell tickets, invite and earn</li></ul><a className="btn" href={startHref(base)}>Start free</a></div>
-        <div className="plan pro rv d1"><b style={{ fontSize: 20 }}>Pro</b><div className="price">{p.month ? naira(p.month) : '–'}<small> / month</small></div>
-          {p.year ? <small style={{ color: 'var(--dim)', marginTop: -8 }}>or {naira(p.year)} a year{save > 0 ? `, saving ${naira(save)}` : ''}</small> : null}
-          <ul><li>Everything in Free</li><li>Video recording</li><li>All past meetings and transcripts</li><li>Course bundles and paid sessions</li><li>Listed in Find a mentor</li><li>Memberships and paid certificates</li></ul><a className="btn go" href={startHref(base)}>Go Pro</a></div>
-      </div>
+      <PlanCards p={p} free={FREE_PEOPLE} freeHref={startHref(base)} oneHref={me ? at(base, '/') + '#settings' : signinTo(base, '/#settings')} proHref={me ? at(base, '/') + '#settings' : signinTo(base, '/#settings')} />
       <div className="ways" style={{ maxWidth: 920, margin: '14px auto 0', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,280px),1fr))' }}>
-        <div className="way rv"><h3>Pro for one meeting</h3><p>{p.meeting ? naira(p.meeting) : '–'} for a single meeting, when you need Pro just once.</p></div>
-        <div className="way rv d1"><h3>Big meetings</h3><p>{p.extra ? naira(p.extra) : '–'} per extra person for every 30 minutes, only past {FREE_PEOPLE} people, up to {MAX_WITH_EXTRA}. You choose to let more in.</p></div>
+        <div className="way rv"><h3>Big meetings</h3><p>{p.extra ? naira(p.extra) : '–'} per extra person for every 30 minutes, only past {FREE_PEOPLE} people, up to {MAX_WITH_EXTRA}. You choose to let more in.</p></div>
       </div>
     </Section>
     <Section alt>

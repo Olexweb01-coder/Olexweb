@@ -2,7 +2,7 @@
 // Help (Olex AI first, then the Olexweb team) and Settings (plan, payments, invoices, look, account). Install 58.
 import { useState } from 'react'
 import { I } from './icons'
-import { api, naira, day, Field, Empty } from './ui'
+import { api, naira, day, when, Field, Empty, Sheet } from './ui'
 import { PRO_LIST } from './ProLock'
 import { InstallButton } from './Install'
 
@@ -35,8 +35,8 @@ export default function HelpPage({ ctx }) {
 }
 
 export function SettingsPage({ ctx }) {
-  const { h, setToast, reload, theme, toggleTheme, signOut, user } = ctx
-  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null)
+  const { h, setToast, reload, theme, toggleTheme, signOut, user, list = [], nav } = ctx
+  const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null), [one, setOne] = useState(false)   // one: choosing the meeting for Pro for one meeting (Install 61)
   if (!h) return <div className="wrap" />
   const d = h.dash, p = d.pricing, due = d.invoices.filter((i) => !i.paid)
   async function pay(body, via) {
@@ -49,10 +49,11 @@ export function SettingsPage({ ctx }) {
     <div className="pghead"><div><h1>Settings</h1><p className="dim">{user.email || ''}</p></div></div>
     <section className="card"><div className="ch"><h3>Your plan</h3></div>
       <div className="plan"><b className="big">{d.plan.pro ? 'Pro' : 'Free'}</b><p className="dim">{d.plan.owner ? 'Everything, always.' : d.plan.pro ? `Pro until ${day(d.plan.proUntil)}.` : 'Unlimited hours, audio and video up to 100 people, MP3 recording, AI notes, screen sharing.'}</p></div>
-      {p.on && !d.plan.pro && d.payReady ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => pay({ kind: 'month' })}>{busy === 'month' ? 'Opening…' : `Pro ${naira(p.prices.month)}/month`}</button><button className="btn" disabled={!!busy} onClick={() => pay({ kind: 'year' })}>{busy === 'year' ? 'Opening…' : `${naira(p.prices.year)}/year`}</button></div> : null}
+      {p.on && !d.plan.pro && d.payReady ? <div className="row-btns"><button className="btn go" disabled={!!busy} onClick={() => pay({ kind: 'month' })}>{busy === 'month' ? 'Opening…' : `Pro ${naira(p.prices.month)}/month`}</button><button className="btn" disabled={!!busy} onClick={() => pay({ kind: 'year' })}>{busy === 'year' ? 'Opening…' : `${naira(p.prices.year)}/year`}</button>
+        <button className="btn" disabled={!!busy} onClick={() => setOne(true)}>{busy === 'meeting' ? 'Opening…' : `Pro for one meeting ${naira(p.prices.meeting)}`}</button></div> : null}
       {d.plan.pro && !d.plan.owner ? <p className="dim sm">Pro doesn’t renew by itself and your card is never charged again without you. It simply ends on {day(d.plan.proUntil)}, so there’s nothing to cancel. Pay again any time to add more time.</p> : null}
       {p.on && !d.plan.pro ? <ul className="plist">{PRO_LIST.map((x) => <li key={x}><I n="lock" /><s>{x}</s></li>)}</ul> : null}
-      {p.on && !d.plan.pro ? <p className="dim sm">Your Free plan keeps everything you use now. Only need Pro once? Get Pro for one meeting ({naira(p.prices.meeting)}) from inside the meeting.</p> : null}
+      {p.on && !d.plan.pro ? <p className="dim sm">Your Free plan keeps everything you use now. Only need Pro once? Pro for one meeting is {naira(p.prices.meeting)}, paid once, for a meeting you choose.</p> : null}
       {choose ? <div className="row-btns"><span className="dim">How would you like to pay?</span>{d.payOptions.map((o) => <button key={o.id} className="btn sm go" onClick={() => pay(choose, o.id)}>{o.name}</button>)}<button className="btn sm quiet" onClick={() => setChoose(null)}>Cancel</button></div> : null}</section>
     {d.transfers.length || due.length ? <section className="card"><div className="ch"><h3>Payments due</h3></div>
       {d.transfers.map((t) => <div key={t.ref} className="due"><span><b>Bank transfer: {naira(t.amount)}</b>{t.bank ? <> to <b>{t.bank.accountNumber}</b> · {t.bank.accountName}{t.bank.bankName ? ' · ' + t.bank.bankName : ''}</> : null}. Use <b>{t.ref}</b> as the narration.{t.bank && t.bank.note ? ' ' + t.bank.note : ''}{t.claimed ? ' Olexweb is checking it.' : ''}</span>
@@ -62,5 +63,16 @@ export function SettingsPage({ ctx }) {
     <section className="card"><div className="ch"><h3>Look</h3></div><div className="row-btns"><button className="btn" onClick={toggleTheme}><I n="sun" />{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</button>
       <InstallButton big /></div></section>
     <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div></section>
+      {one ? <Sheet title="Pro for one meeting" onClose={() => setOne(false)}><OneMeeting list={list} price={p.prices.meeting} onPick={(code) => { setOne(false); pay({ kind: 'meeting', code }) }} onSchedule={() => { setOne(false); nav('meetings'); setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }} /></Sheet> : null}
+  </div>)
+}
+
+// Install 61: which meeting gets Pro. Only their own meetings that haven't ended and don't have Pro yet.
+function OneMeeting({ list, price, onPick, onSchedule }) {
+  const open = list.filter((m) => !m.endedAt && !m.pro)
+  return (<div className="one-pick">
+    <p className="dim" style={{ marginTop: 0 }}>{naira(price)}, paid once. That meeting gets video recording, certificates, email reminders and AI notes emailed to guests. No subscription.</p>
+    {open.length ? <div className="one-list">{open.map((m) => <button key={m.code} className="opt" onClick={() => onPick(m.code)}><span><b>{m.title}</b><br /><small className="dim">{m.startedAt ? 'Happening now' : m.startsAt ? when(m.startsAt) : 'Not started yet'}</small></span><span className="btn sm go">Choose</span></button>)}</div>
+      : <><p>You have no upcoming meetings yet. Schedule one, then come back here to give it Pro.</p><button className="btn go" onClick={onSchedule}>Schedule a meeting</button></>}
   </div>)
 }

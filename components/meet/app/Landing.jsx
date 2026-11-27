@@ -6,6 +6,7 @@ import { I } from './icons'
 import EmailSignIn from '../EmailSignIn'
 import { pathFor, Sheet, homePath } from './ui'
 import Site, { Section, Head, Final, at, startHref } from '../site/Site'
+import { PlanCards } from '../site/Plans'
 import { Stage, Calc, Notes, Poll, Signal, Rooms, Lock } from '../site/Bits'
 
 const PROVIDER_ICON = {
@@ -24,7 +25,7 @@ const PANELS = [
 ]
 const WHO = ['Classes', 'Bible study', 'Coaching', 'Team stand-ups', 'Webinars', 'Mentorship', 'Communities', 'Interviews']
 
-export default function Landing({ providers, emailOn, spotlight = null, notice = '', base = '/meet' }) {
+export default function Landing({ providers, emailOn, spotlight = null, notice = '', base = '/meet', pricing = null }) {
   const [sheet, setSheet] = useState(null), [code, setCode] = useState(''), [toast, setToast] = useState(notice || '')
   const found = useMemo(() => (code.match(/[a-hj-km-np-z]{3}-[a-hj-km-np-z]{4}-[a-hj-km-np-z]{3}/) || [])[0] || null, [code])
   useEffect(() => {
@@ -82,6 +83,10 @@ export default function Landing({ providers, emailOn, spotlight = null, notice =
           <ul>{list.map((x) => <li key={x}>{x}</li>)}</ul><div className="cta"><a className="btn go" href={startHref(base)}>Start free</a><a className="btn" href={at(base, '/for') + '#' + k}>Learn more</a></div></div>
           <div className="art"><I n={icon} className="ico" /></div></div>)}</div>
     </Section>
+
+    {pricing && pricing.on ? <Section alt><Head eyebrow="Pricing" title="Free for real. Pro when you need it." text="Pick what fits: free forever, Pro for just one meeting, or Pro every month." center />
+      <PlanCards p={pricing.prices || {}} freeHref={startHref(base)} oneHref={`${base || ''}/?next=${encodeURIComponent('/#settings')}#signin`.replace(/^\/\?/, '/?')} proHref={`${base || ''}/?next=${encodeURIComponent('/#settings')}#signin`.replace(/^\/\?/, '/?')} />
+      <p className="rv" style={{ textAlign: 'center', marginTop: 18 }}><a href={at(base, '/pricing')} style={{ textDecoration: 'underline', color: 'var(--dim)' }}>Compare everything in each plan</a></p></Section> : null}
 
     <Section>
       <div className="earnband rv"><div><span className="eyebrow" style={{ color: 'var(--gold)' }}>Earn</span><h2 style={{ fontSize: 'clamp(32px,4.4vw,54px)', margin: '12px 0 14px' }}>Get paid for what you know</h2>
