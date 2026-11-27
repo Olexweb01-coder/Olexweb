@@ -68,6 +68,11 @@
 .mt-grid[data-n="3"],.mt-grid[data-n="4"]{--c:2;--r:2}
 .mt-grid[data-n="5"],.mt-grid[data-n="6"]{--c:3;--r:2}
 .mt-grid[data-n="7"],.mt-grid[data-n="8"],.mt-grid[data-n="9"]{--c:3;--r:3}
+/* Install 59: more people, smaller tiles, up to 4 rows of 5 (like Google Meet) */
+.mt-grid[data-n="10"],.mt-grid[data-n="11"],.mt-grid[data-n="12"]{--c:4;--r:3}
+.mt-grid[data-n="13"],.mt-grid[data-n="14"],.mt-grid[data-n="15"],.mt-grid[data-n="16"]{--c:4;--r:4}
+.mt-grid[data-n="17"],.mt-grid[data-n="18"],.mt-grid[data-n="19"],.mt-grid[data-n="20"]{--c:5;--r:4}
+.mt-grid[data-n="13"] .mt-name,.mt-grid[data-n="14"] .mt-name,.mt-grid[data-n="15"] .mt-name,.mt-grid[data-n="16"] .mt-name,.mt-grid[data-n="17"] .mt-name,.mt-grid[data-n="18"] .mt-name,.mt-grid[data-n="19"] .mt-name,.mt-grid[data-n="20"] .mt-name{left:6px;bottom:6px;padding:3px 8px;font-size:12px}
 .mt-sharing{container-type:normal}
 .mt-sharing .mt-share{flex:1;min-height:0}
 .mt-sharing .mt-grid{margin:0;width:100%;flex:none;height:min(22vh,150px);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none}

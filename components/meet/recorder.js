@@ -304,7 +304,7 @@ export class MeetRecorder {
       const n = Math.min(tiles.length, 5), tw = Math.min((stripH * 16) / 9, (area.w - GAP * (n - 1)) / Math.max(1, n))
       tiles.slice(0, n).forEach((el, i) => this.tile(el, area.x + i * (tw + GAP), area.y + area.h - stripH, tw, stripH))
     } else if (tiles.length) {
-      const n = tiles.length, cols = n === 1 ? 1 : n <= 4 ? 2 : 3, rows = Math.ceil(n / cols)
+      const n = tiles.length, cols = n === 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : n <= 16 ? 4 : 5, rows = Math.ceil(n / cols)
       let tw = (area.w - GAP * (cols - 1)) / cols, th = (tw * 9) / 16
       if (th * rows + GAP * (rows - 1) > area.h) { th = (area.h - GAP * (rows - 1)) / rows; tw = (th * 16) / 9 }
       const gx = area.x + (area.w - (tw * cols + GAP * (cols - 1))) / 2, gy = area.y + (area.h - (th * rows + GAP * (rows - 1))) / 2

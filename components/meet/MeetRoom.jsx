@@ -18,7 +18,7 @@ const SAVED_NAME = 'olexweb-meet-name'
 const onApple = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1))
 const onMeetApp = () => typeof location !== 'undefined' && location.hostname.startsWith('meet.')
 const hereLink = (code) => `${location.origin}${onMeetApp() ? '' : '/meet'}/${code}`
-const MAX_TILES = 9
+const MAX_TILES = 20, PHONE_TILES = 8                                         // Install 59: up to 4 rows of 5 on a computer, 4 rows of 2 on a phone
 const I = {
   mic: <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>,
   micOff: <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 9.5V6a3 3 0 0 0-5.6-1.5M9 9v2a3 3 0 0 0 4.6 2.5M5.5 11a6.5 6.5 0 0 0 10.4 5.2M18.5 11c0 .8-.1 1.5-.4 2.2M12 17.5V21M4 4l16 16" /></svg>,
@@ -385,6 +385,8 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
 
   // ---------- controls ----------
   useEffect(() => { callState(micOn, camOn) }, [micOn, camOn])
+  const [narrow, setNarrow] = useState(false)                                  // a phone-sized screen (the same width as meet.css's phone layout)
+  useEffect(() => { const q = window.matchMedia('(max-width:760px)'), f = () => setNarrow(q.matches); f(); q.addEventListener('change', f); return () => q.removeEventListener('change', f) }, [])
   const room = roomRef.current, me = room && room.localParticipant
   const canSpeak = !!(me && me.permissions && me.permissions.canPublish)
   async function toggleMic() {
@@ -616,10 +618,11 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
   const share = all.map((p) => ({ p, pub: p.getTrackPublication(S.ScreenShare) })).find((x) => x.pub && x.pub.track && !x.pub.isMuted)
   const order = layout.current.order, rank = (p) => { const i = order.indexOf(p.identity); return i < 0 ? (isHostId(p.identity) ? -1 : 1e15 + (+p.joinedAt || 0)) : i }
   const onStage = all.filter((p) => speaksNow(p) || isBoss(p)).sort((a, b) => rank(a) - rank(b))
-  const limit = share ? 4 : MAX_TILES
-  const tiles = onStage.slice(0, limit)
+  const limit = share ? 4 : narrow ? PHONE_TILES : MAX_TILES
+  const listeners = all.filter((p) => !onStage.includes(p))
+  const tiles = onStage.slice(0, onStage.length > limit || listeners.length ? limit - 1 : limit)   // the "more" tile takes the last place, so the grid never overflows
   if (me && !tiles.includes(me) && onStage.includes(me)) tiles[tiles.length - 1] = me        // you always see yourself
-  const listeners = all.filter((p) => !onStage.includes(p)), hidden = onStage.length - tiles.length
+  const hidden = onStage.length - tiles.length
   const hands = all.filter((p) => p.attributes && p.attributes.hand).sort((a, b) => Number(a.attributes.hand) - Number(b.attributes.hand))
   const audioPubs = [...room.remoteParticipants.values()].flatMap((p) => [...p.audioTrackPublications.values()].filter((x) => x.track))
   const canShare = canSpeak && (videoOk || boss) && typeof navigator !== 'undefined' && navigator.mediaDevices && 'getDisplayMedia' in navigator.mediaDevices
