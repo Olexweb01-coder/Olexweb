@@ -53,6 +53,10 @@ const initials = (n) => { const w = String(n || '?').trim().split(/\s+/).filter(
 const TONES = ['#2b3a2a', '#33302a', '#26333a', '#3a2a33', '#2f2a3a', '#2a3a36']
 const tone = (id) => TONES[[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length]
 const isHostId = (id) => String(id).startsWith('h_')
+// Install 59: a profile photo, only from the sign-in services or Meet's own photos (anyone can set their own attributes,
+// so any other address is ignored and nobody's browser is sent to a stranger's server)
+const PIC_OK = /^(\/api\/meet\/pic\/\d{1,12}(\?v=[a-z0-9]{1,16})?|https:\/\/([a-z0-9-]+\.)*(googleusercontent\.com|licdn\.com|githubusercontent\.com|fbcdn\.net|fbsbx\.com)\/[^\s"'<>]{1,400})$/i
+const picOf = (p) => { const u = p && p.attributes && p.attributes.pic; return u && PIC_OK.test(u) ? u : null }
 const isCoId = (p) => !!(p && p.attributes && p.attributes.cohost === '1' && p.permissions && p.permissions.canSubscribeMetrics)   // a co-host: only the server sets this mark
 const isBoss = (p) => !!p && (isHostId(p.identity) || isCoId(p))
 const clock = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0') }
@@ -281,6 +285,7 @@ export default function MeetRoom({ code, title, speakers, price = 0, mode = 'vid
         setPhase(endedRef.current || reason === R.ROOM_DELETED ? 'ended' : reason === R.PARTICIPANT_REMOVED ? 'removed' : 'left')
       })
     await room.connect(info.url, info.token)
+    if (info.pic) room.localParticipant.setAttributes({ pic: info.pic }).catch(() => {})   // Install 59: everyone sees their photo
     if (previewTrack.current) { previewTrack.current.stop(); previewTrack.current = null }
     miniRef.current = new MiniWindow({ room, lk, actions: { mic: () => actRef.current.toggleMic(), cam: () => actRef.current.toggleCam(), leave: () => actRef.current.leave(),
       state: () => ({ micOn: room.localParticipant.isMicrophoneEnabled, camOn: room.localParticipant.isCameraEnabled }) } })
@@ -796,9 +801,11 @@ function Tile({ p, me, lk, saver, levelEls }) {
   useEffect(() => { const el = vref.current; if (!el || !track) return; track.attach(el); return () => { track.detach(el) } }, [track])
   useEffect(() => { const el = ring.current, m = levelEls.current; if (el) m.set(p.identity, el); return () => { if (m.get(p.identity) === el) m.delete(p.identity) } }, [p.identity, levelEls])
   const muted = !mic || mic.isMuted, weak = p.connectionQuality === lk.ConnectionQuality.Poor
+  const pic = picOf(p), [broken, setBroken] = useState(null)
   return (<div data-id={p.identity} className={'mt-tile' + (p.isSpeaking ? ' mt-speaking' : '') + (track ? ' mt-has-video' : '')} ref={ring}
     data-name={p.name || 'Guest'} data-initials={initials(p.name)} data-tone={tone(p.identity)} data-host={isHostId(p.identity) ? '1' : undefined}>
     {track ? <video ref={vref} muted playsInline autoPlay className={me && cam.source === S.Camera ? 'mt-mirror' : ''} />
+      : pic && broken !== pic ? <img className="mt-av mt-pic" src={pic} alt="" referrerPolicy="no-referrer" onError={() => setBroken(pic)} />
       : <span className="mt-av" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>}
     {!track && cam && !cam.isMuted && saver && !me ? <span className="mt-saved">Video paused (Data saver)</span> : null}
     <span className="mt-name">{muted ? <i className="mt-mute" aria-label="Muted">{I.micOff}</i> : null}{p.name || 'Guest'}{me ? ' (you)' : ''}{isHostId(p.identity) ? <em>Host</em> : isCoId(p) ? <em>Co-host</em> : null}</span>
@@ -847,7 +854,7 @@ function People({ all, me, host, boss, hands, speaksNow, hostDo, muteAll, lk }) 
   <ul className="mt-people">
     {order.map((p) => { const mic = p.getTrackPublication(S.Microphone), on = mic && !mic.isMuted, isHost = isHostId(p.identity), co = isCoId(p), speaks = isHost || co || speaksNow(p)
       return <li key={p.identity}>
-        <span className="mt-av mt-av-sm" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>
+        {picOf(p) ? <img className="mt-av mt-av-sm mt-pic" src={picOf(p)} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} /> : <span className="mt-av mt-av-sm" style={{ background: tone(p.identity) }}>{initials(p.name)}</span>}
         <span className="mt-who"><b>{p.name || 'Guest'}{p === me ? ' (you)' : ''}</b><small>{isHost ? 'Host' : co ? 'Co-host' : speaks ? 'Can speak' : 'Listening'}{p.attributes && p.attributes.hand ? ', hand raised' : ''}</small></span>
         {p.attributes && p.attributes.hand ? <span className="mt-hand-sm" aria-hidden="true">{I.hand}</span> : null}
         {speaks ? <span className={'mt-mic-sm' + (on ? '' : ' mt-off')} aria-label={on ? 'Mic on' : 'Muted'}>{on ? I.mic : I.micOff}</span> : null}

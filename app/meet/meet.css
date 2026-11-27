@@ -422,3 +422,5 @@
 .mt-btn.mt-mutebtn svg{width:15px;height:15px;color:var(--bad)}
 .mt-btn.mt-mutebtn:hover{background:rgba(239,122,106,.26)}
 .mt-btn.mt-mutebtn:disabled{opacity:.45;cursor:default}
+/* Install 59: profile photos on tiles (letters when there's none) */
+img.mt-av.mt-pic{object-fit:cover;background:var(--tile2);padding:0}
