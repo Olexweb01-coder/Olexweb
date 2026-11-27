@@ -456,3 +456,6 @@ html.ma-lock{overflow:hidden}
 .ma .slugbox .in{border:0;background:none;min-width:0;flex:1;padding-left:2px}
 .ma .stack{grid-template-columns:minmax(0,1fr)}.ma .slugbox span{flex:0 1 auto}
 .ma .seg{border-radius:18px}
+/* Install 60: the Install button and its steps */
+.ma .install-btn .i{width:18px;height:18px}.ma .inst{display:grid;gap:14px}.ma .inst p{margin:0}.ma .inst ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}.ma .inst li{display:flex;gap:12px;align-items:flex-start;line-height:1.45}.ma .inst .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--g);color:var(--ink);font-weight:800;font-size:14px}
+@media (max-width:480px){.ma .install-btn{padding:8px 12px;gap:6px}.ma .top:has(.install-btn) .theme-btn{display:none}}@media (max-width:374px){.ma .install-btn{padding:0;width:42px;height:42px;min-height:42px}.ma .install-btn span{display:none}}

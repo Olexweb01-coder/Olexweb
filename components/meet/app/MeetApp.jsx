@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { I } from './icons'
 import { api, homePath, pathFor, linkFor, onMeetApp, Ring, Sheet, JoinBox } from './ui'
+import { InstallButton, InstallSteps } from './Install'
 import HomePage from './HomePage'
 import MeetingsPage from './MeetingsPage'
 import EarnPage from './EarnPage'
@@ -90,6 +91,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
           <a className="brand tb-brand" href={homePath()}><img src="/meet/logo-96.png" alt="" />Meet</a>
           <JoinBox />
           <span className="grow" style={{ flex: 1 }} />
+          <InstallButton />
           <button className="ib theme-btn" aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'} onClick={toggleTheme}><I n="sun" /></button>
           <button className="ib" aria-label={unread ? `${unread} new notifications` : 'Notifications'} aria-expanded={bell} onClick={openBell}><I n="bell" />{unread ? <span className="dot">{unread > 9 ? '9+' : unread}</span> : null}</button>
           <a className="topav" href="#profile"><Ring pct={lvl ? lvl.pct : 0} name={me.name} picture={me.picture} /><span>{(me.name || '').split(' ')[0]}</span></a>
@@ -109,6 +111,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
     </Sheet> : null}
     {queue.length ? <Celebrate c={queue[0]} me={me} onClose={closeCelebration} /> : null}
     {!queue.length && news ? <WhatsNew news={news} onClose={closeNews} /> : null}
+    <InstallSteps />
     {toast ? <p className="toast" role="status">{toast}</p> : null}
   </div>)
 }

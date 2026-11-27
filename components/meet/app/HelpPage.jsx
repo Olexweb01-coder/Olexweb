@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { I } from './icons'
 import { api, naira, day, Field, Empty } from './ui'
 import { PRO_LIST } from './ProLock'
+import { InstallButton } from './Install'
 
 export default function HelpPage({ ctx }) {
   const { h, setToast, reload } = ctx
@@ -34,7 +35,7 @@ export default function HelpPage({ ctx }) {
 }
 
 export function SettingsPage({ ctx }) {
-  const { h, setToast, reload, theme, toggleTheme, signOut, install, setInstall, user } = ctx
+  const { h, setToast, reload, theme, toggleTheme, signOut, user } = ctx
   const [busy, setBusy] = useState(''), [choose, setChoose] = useState(null)
   if (!h) return <div className="wrap" />
   const d = h.dash, p = d.pricing, due = d.invoices.filter((i) => !i.paid)
@@ -59,7 +60,7 @@ export function SettingsPage({ ctx }) {
       {due.map((i) => <div key={i.id} className="due"><span><b>Invoice: {naira(i.amount)}</b> for “{i.title}”: {i.people} extra {i.people === 1 ? 'person' : 'people'} past the free 100. New meetings wait until it’s paid.</span>
         {d.payReady ? <button className="btn go sm" disabled={!!busy} onClick={() => pay({ kind: 'invoice', invoiceId: i.id })}>{busy === 'invoice' + i.id ? 'Opening…' : 'Pay now'}</button> : null}</div>)}</section> : null}
     <section className="card"><div className="ch"><h3>Look</h3></div><div className="row-btns"><button className="btn" onClick={toggleTheme}><I n="sun" />{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}</button>
-      {install ? <button className="btn" onClick={async () => { install.prompt(); await install.userChoice.catch(() => {}); setInstall(null) }}>Install the app</button> : null}</div></section>
+      <InstallButton big /></div></section>
     <section className="card"><div className="ch"><h3>Account</h3></div><div className="row-btns">{user.role === 'owner' ? <a className="btn" href="https://olexweb.com/admin">Open the admin</a> : null}<button className="btn quiet" onClick={signOut}>Sign out</button></div></section>
   </div>)
 }
