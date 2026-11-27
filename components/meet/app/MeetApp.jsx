@@ -108,8 +108,7 @@ export default function MeetApp({ user, meetings: initial, pricing, morePast = 0
       <button className="opt" onClick={() => { setNewMenu(false); location.hash = 'meetings'; setTimeout(() => window.dispatchEvent(new Event('meet:schedule')), 50) }}><span className="ni bg-o"><I n="cal" /></span><span><b>Schedule a meeting</b><br /><small>Pick a time, share the invite</small></span></button>
     </Sheet> : null}
     {queue.length ? <Celebrate c={queue[0]} me={me} onClose={closeCelebration} /> : null}
-    {!queue.length && news ? <Sheet title="What’s new" onClose={closeNews}><div className="whatsnew"><span className="pill"><i />New</span><h2>{news.title}</h2><p>{news.body}</p>
-      <button className="btn go" onClick={closeNews}>Got it</button></div></Sheet> : null}
+    {!queue.length && news ? <WhatsNew news={news} onClose={closeNews} /> : null}
     {toast ? <p className="toast" role="status">{toast}</p> : null}
   </div>)
 }
@@ -128,4 +127,19 @@ function Notifications({ h, onClose, nav }) {
       {n.link ? <div className="acts"><a className="btn sm" href={n.link}>Open</a></div> : null}<small>{new Date(n.at).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</small></div></div>)}
     {!h.nudges.length && !h.dash.notices.length ? <p className="dim" style={{ padding: 12 }}>Nothing yet.</p> : null}
   </div>)
+}
+
+// Install 60: every update they haven't read, in one popup. "Got it" wakes up once they've scrolled to the end (at once
+// when it all fits), and it's the only way out: no ✕, no Escape, no tap outside.
+function WhatsNew({ news, onClose }) {
+  const list = news.items && news.items.length ? news.items : [news], box = useRef(null), [read, setRead] = useState(false)
+  useEffect(() => {
+    const b = box.current; if (!b) return
+    const check = () => { if (b.scrollTop + b.clientHeight >= b.scrollHeight - 8) setRead(true) }
+    check(); b.addEventListener('scroll', check, { passive: true }); return () => b.removeEventListener('scroll', check)
+  }, [])
+  return (<Sheet title="What’s new" onClose={onClose} locked>
+    <div ref={box} className="whatsnew wn-list">{list.map((n, i) => <article key={n.id} className="wn-item"><span className="pill"><i />{i === 0 ? 'New' : 'Also new'}</span><h2>{n.title}</h2>{n.body ? <p>{n.body}</p> : null}</article>)}</div>
+    <div className="wn-foot"><button className="btn go" disabled={!read} onClick={onClose}>{read ? 'Got it' : 'Scroll to read it all'}</button></div>
+  </Sheet>)
 }

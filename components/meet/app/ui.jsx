@@ -29,17 +29,18 @@ export function Ring({ pct = 0, level, name, picture, big = false }) {
   return (<div className="ring" style={{ '--p': pct }}>{picture ? <img src={picture} alt="" referrerPolicy="no-referrer" style={{ objectFit: 'cover' }} /> : <div style={{ background: '#8fe36a' }}>{(name || '?').slice(0, 1).toUpperCase()}</div>}{level ? <span className="lv">{level}</span> : null}</div>)
 }
 // a dialog: closes on Escape and on a tap outside; focus moves into it
-export function Sheet({ title, onClose, children, wide = false }) {
+export function Sheet({ title, onClose, children, wide = false, locked = false }) {   // locked: no ✕, no Escape, no tap outside (Install 60: what's new)
   const box = useRef(null), close = useRef(onClose)
+  const lockRef = useRef(locked); lockRef.current = locked
   close.current = onClose                                                        // the latest close, without re-running the effect on every keystroke
   useEffect(() => {
-    const k = (e) => { if (e.key === 'Escape') close.current() }; document.addEventListener('keydown', k)
+    const k = (e) => { if (e.key === 'Escape' && !lockRef.current) close.current() }; document.addEventListener('keydown', k)
     const b = box.current, f = b && (b.querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=file]),select,textarea') || b.querySelector('button'))
     if (f) f.focus({ preventScroll: true })                                      // focus once, when it opens
     document.documentElement.classList.add('ma-lock'); return () => { document.removeEventListener('keydown', k); document.documentElement.classList.remove('ma-lock') }
   }, [])
-  return (<div className="sheet on" role="dialog" aria-modal="true" aria-label={title} onPointerDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-    <div ref={box} className={wide ? 'wide' : ''}><div className="sh-h"><h3>{title}</h3><button type="button" className="ib sm" aria-label="Close" onClick={onClose}>✕</button></div>{children}</div></div>)
+  return (<div className="sheet on" role="dialog" aria-modal="true" aria-label={title} onPointerDown={(e) => { if (e.target === e.currentTarget && !locked) onClose() }}>
+    <div ref={box} className={wide ? 'wide' : ''}><div className="sh-h"><h3>{title}</h3>{locked ? null : <button type="button" className="ib sm" aria-label="Close" onClick={onClose}>✕</button>}</div>{children}</div></div>)
 }
 export function Field({ label, hint, children }) { return <label className="fld"><span>{label}</span>{children}{hint ? <small>{hint}</small> : null}</label> }
 export function Empty({ icon = 'spark', title, children }) { return <div className="empty"><span className="ni bg-b"><I n={icon} /></span><b>{title}</b>{children ? <p>{children}</p> : null}</div> }
